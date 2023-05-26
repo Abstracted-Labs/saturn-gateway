@@ -1,0 +1,41 @@
+{
+  "name": "vite-template-solid",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/prismjs": "^1.26.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.23",
+    "tailwindcss": "^3.3.2",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-prismjs": "^0.0.8",
+    "vite-plugin-solid": "^2.5.0"
+  },
+  "dependencies": {
+    "@hope-ui/solid": "^0.6.7",
+    "@invarch/saturn-sdk": "^1.0.5",
+    "@polkadot-onboard/core": "^0.0.10",
+    "@polkadot-onboard/injected-wallets": "^0.0.10",
+    "@polkadot-onboard/wallet-connect": "^0.0.10",
+    "@polkadot/api": "^10.7.2",
+    "@polkadot/util": "^12.2.1",
+    "@polkadot/util-crypto": "^12.2.1",
+    "@solidjs/router": "^0.8.2",
+    "@stitches/core": "^1.2.8",
+    "@walletconnect/sign-client": "^2.7.5",
+    "@walletconnect/web3wallet": "^1.7.3",
+    "bignumber.js": "^9.1.1",
+    "solid-icons": "^1.0.4",
+    "solid-js": "^1.6.10",
+    "solid-transition-group": "^0.2.2",
+    "yaml": "^2.3.0"
+  }
+}
