@@ -1,5 +1,5 @@
 import type { Component } from 'solid-js';
-import { lazy, onMount, createSignal, Show, For } from 'solid-js';
+import { lazy, onMount, createSignal, Show, For, createEffect } from 'solid-js';
 import { Routes, Route, useParams, useSearchParams } from "@solidjs/router";
 import { A } from "@solidjs/router";
 import { ApiPromise, WsProvider } from "@polkadot/api";
@@ -30,10 +30,12 @@ import {
 } from "@hope-ui/solid";
 import { WalletAggregator, BaseWalletProvider, BaseWallet, Account } from '@polkadot-onboard/core';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
+import { AiOutlineTwitter, AiOutlineLink } from 'solid-icons/ai';
+
+
 import { CustomWalletConnectProvider } from './utils/wcImplementation';
-
-
 import logo from './assets/logo.png';
+import defaultMultisigImage from './assets/default-multisig-image.png';
 import styles from './App.module.css';
 import { Rings } from "./data/rings";
 
@@ -58,6 +60,7 @@ const MainPage: Component = () => {
     const [proposeModalOpen, setProposeModalOpen] = createSignal<boolean>(false);
     const [currentCall, setCurrentCall] = createSignal<Uint8Array>();
     const [ringApis, setRingApis] = createSignal<{[chain: string]: ApiPromise}>();
+    const [multisigIdentity, setMultisigIdentity] = createSignal<{ name: string; imageUrl: string, twitterUrl?: string; websiteUrl?: string }>({name: "Multisig", imageUrl: defaultMultisigImage, twitterUrl: undefined, websiteUrl: undefined});
 
     const createApis = async (): Promise<{
         [chain: string]: ApiPromise;
@@ -109,6 +112,26 @@ const MainPage: Component = () => {
     };
 
     const idOrAddress = params.idOrAddress;
+
+    createEffect(async () => {
+        const details = multisigDetails();
+        const ra = ringApis();
+        const mid = multisigId();
+
+        if (details && ra?.["tinkernet"] && mid) {
+            const acc = details.account;
+
+            const iden = ((await ra["tinkernet"].query.identity.identityOf(acc))?.toHuman() as {info: {display: {Raw: string}; image: {Raw: string}; twitter: {Raw: string}; web: {Raw: string};};})?.info;
+
+            const name = iden?.display?.Raw ? iden.display.Raw : `Multisig ${mid}`;
+            const imageUrl = iden?.image?.Raw ? iden.image.Raw : multisigIdentity().imageUrl;
+            const twitterUrl = iden?.twitter?.Raw ? `https://twitter.com/${iden.twitter.Raw}` : undefined;
+            const websiteUrl = iden?.web?.Raw || undefined;
+
+            setMultisigIdentity({ name, imageUrl, twitterUrl, websiteUrl });
+
+        }
+    });
 
     onMount(async () => {
 
@@ -333,20 +356,35 @@ const MainPage: Component = () => {
             </div>
             <div class={styles.rightPanel}>
                 <div class={styles.topContainer}>
-                    <div class="flex flex-row grow-1 basis-full justify-start items-center px-3 p-1.5 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl">
+                    <div class="flex flex-row basis-full items-center space-x-6 pl-4 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl">
                         <img
-                            class={styles.multisigLogo}
-                            src="https://pbs.twimg.com/profile_images/1565785888482811907/83J79V9I_400x400.png"
+                            class="object-cover w-24 h-24 rounded-md"
+                            src={multisigIdentity().imageUrl}
                         />
-                        <div class={styles.multisigNameContainer}>
-                            <h3 class={styles.multisigName}>
-                                Gabe's Multisig
-                            </h3>
+                        <div class="h-24 flex flex-col">
+                            <p class="font-display mb-1 text-2xl font-semibold text-white">
+                                {multisigIdentity().name}
+                            </p>
+                            <div class="mb-4 prose prose-sm text-gray-400">
+                                <p>{multisigDetails()?.account.toHuman()}</p>
+                            </div>
+                            <div class="flex flex-1 items-end">
+                                <Show when={multisigIdentity().twitterUrl}>
+                                    <a href={multisigIdentity().twitterUrl} target="_blank" rel="noopener noreferrer">
+                                        <AiOutlineTwitter size={20} />
+                                    </a>
+                                </Show>
+                                <Show when={multisigIdentity().websiteUrl}>
+                                    <a href={multisigIdentity().websiteUrl} target="_blank" rel="noopener noreferrer">
+                                        <AiOutlineLink size={20} />
+                                    </a>
+                                </Show>
+                            </div>
                         </div>
-                        <div class="grow"></div>
+                        <div class="grow" />
                         <Button
                             onClick={() => setWalletModalOpen(true)}
-                            class="gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]"
+                            class="gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]"
                         >{selectedAccount()?.name || "Log In"}</Button>
                         <Modal opened={walletModalOpen()} onClose={() => setWalletModalOpen(false)}>
                             <ModalOverlay />
