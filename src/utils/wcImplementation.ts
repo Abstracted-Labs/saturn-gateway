@@ -15,172 +15,177 @@ export const POLKADOT_CHAIN_ID = 'polkadot:91b171bb158e2d3848fa23a9f1c25182';
 export const WC_VERSION = '2.0';
 
 const toWalletAccount = (wcAccount: WcAccount) => {
-    let address = wcAccount.split(':')[2];
-    return { address };
+	const address = wcAccount.split(':')[2];
+	return { address };
 };
 
 class CustomWalletConnectWallet implements BaseWallet {
-  type = WalletType.WALLET_CONNECT;
-  appName: string;
-  metadata: WalletMetadata;
-  config: WalletConnectConfiguration;
-  client: SignClient | undefined;
-  signer: Signer | undefined;
-  session: SessionTypes.Struct | undefined;
-  chainId: PolkadotNamespaceChainId;
+	type = WalletType.WALLET_CONNECT;
+	appName: string;
+	metadata: WalletMetadata;
+	config: WalletConnectConfiguration;
+	client: SignClient | undefined;
+	signer: Signer | undefined;
+	session: SessionTypes.Struct | undefined;
+	chainId: PolkadotNamespaceChainId;
 
-  constructor(config: WalletConnectConfiguration, appName: string, chainId?: PolkadotNamespaceChainId) {
-    this.config = config;
-    this.appName = appName;
-    this.metadata = {
-      id: 'wallet-connect',
-      title: config.metadata?.name || 'Wallet Connect',
-      description: config.metadata?.description || '',
-      urls: { main: config.metadata?.url || '' },
-      iconUrl: config.metadata?.icons[0] || '',
-      version: WC_VERSION,
-    };
-    this.chainId = chainId || POLKADOT_CHAIN_ID;
-  }
+	constructor(config: WalletConnectConfiguration, appName: string, chainId?: PolkadotNamespaceChainId) {
+		this.config = config;
+		this.appName = appName;
+		this.metadata = {
+			id: 'wallet-connect',
+			title: config.metadata?.name || 'Wallet Connect',
+			description: config.metadata?.description || '',
+			urls: { main: config.metadata?.url || '' },
+			iconUrl: config.metadata?.icons[0] || '',
+			version: WC_VERSION,
+		};
+		this.chainId = chainId || POLKADOT_CHAIN_ID;
+	}
 
-  reset(): void {
-    this.client = undefined;
-    this.session = undefined;
-    this.signer = undefined;
-  }
+	reset(): void {
+		this.client = undefined;
+		this.session = undefined;
+		this.signer = undefined;
+	}
 
-  async getAccounts(): Promise<Account[]> {
-    let accounts: Account[] = [];
-    if (this.session) {
-      let wcAccounts = Object.values(this.session.namespaces)
-        .map((namespace) => namespace.accounts)
-        .flat();
-      accounts = wcAccounts.map((wcAccount) => toWalletAccount(wcAccount as WcAccount));
-    }
-    return accounts;
-  }
+	async getAccounts(): Promise<Account[]> {
+		let accounts: Account[] = [];
+		if (this.session) {
+			const wcAccounts = Object.values(this.session.namespaces)
+				.map(namespace => namespace.accounts)
+				.flat();
+			accounts = wcAccounts.map(wcAccount => toWalletAccount(wcAccount as WcAccount));
+		}
 
-  async connect() {
-    // reset the client
-    this.reset();
+		return accounts;
+	}
 
-    // init the client
-    let client = await SignClient.init(this.config);
-    let params = {
-      requiredNamespaces: {
-        polkadot: {
-          methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
-          chains: [this.chainId],
-          events: [],
-        },
-      },
-    };
+	async connect() {
+		// Reset the client
+		this.reset();
 
-    const { uri, approval } = await client.connect(params);
-    return new Promise<void>((resolve, reject) => {
-      // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
-      if (uri) {
-        QRCodeModal.open(uri, () => {
-          reject(new Error('Canceled pairing. QR Code Modal closed.'));
-        });
-      }
-      // Await session approval from the wallet.
-      approval()
-        .then((session) => {
-          // setup the client
-          this.client = client;
-          this.session = session;
-          this.signer = new CustomWalletConnectSigner(client, session, this.chainId);
-          resolve();
-        })
-        .catch(reject)
-        .finally(() => QRCodeModal.close());
-    });
-  }
+		// Init the client
+		const client = await SignClient.init(this.config);
+		const params = {
+			requiredNamespaces: {
+				polkadot: {
+					methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
+					chains: [this.chainId],
+					events: [],
+				},
+			},
+		};
 
-  async disconnect() {
-    if (this.session?.topic) {
-      this.client?.disconnect({
-        topic: this.session?.topic,
-        reason: {
-          code: -1,
-          message: 'Disconnected by client!',
-        },
-      });
-    }
-    this.reset();
-  }
+		const { uri, approval } = await client.connect(params);
+		return new Promise<void>((resolve, reject) => {
+			// Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
+			if (uri) {
+				QRCodeModal.open(uri, () => {
+					reject(new Error('Canceled pairing. QR Code Modal closed.'));
+				});
+			}
 
-  isConnected() {
-    return !!(this.client && this.signer && this.session);
-  }
+			// Await session approval from the wallet.
+			approval()
+				.then(session => {
+					// Setup the client
+					this.client = client;
+					this.session = session;
+					this.signer = new CustomWalletConnectSigner(client, session, this.chainId);
+					resolve();
+				})
+				.catch(reject)
+				.finally(() => {
+					QRCodeModal.close();
+				});
+		});
+	}
+
+	async disconnect() {
+		if (this.session?.topic) {
+			this.client?.disconnect({
+				topic: this.session?.topic,
+				reason: {
+					code: -1,
+					message: 'Disconnected by client!',
+				},
+			});
+		}
+
+		this.reset();
+	}
+
+	isConnected() {
+		return Boolean(this.client && this.signer && this.session);
+	}
 }
 
 export class CustomWalletConnectProvider implements BaseWalletProvider {
-    config: WalletConnectConfiguration;
-    appName: string;
-    chainId?: PolkadotNamespaceChainId;
+	config: WalletConnectConfiguration;
+	appName: string;
+	chainId?: PolkadotNamespaceChainId;
 
-    constructor(config: WalletConnectConfiguration, appName: string, chainId?: PolkadotNamespaceChainId) {
-        this.config = config;
-        this.appName = appName;
-        this.chainId = chainId;
-    }
+	constructor(config: WalletConnectConfiguration, appName: string, chainId?: PolkadotNamespaceChainId) {
+		this.config = config;
+		this.appName = appName;
+		this.chainId = chainId;
+	}
 
-    getWallets(): BaseWallet[] {
-        return [new CustomWalletConnectWallet(this.config, this.appName, this.chainId)];
-    }
+	getWallets(): BaseWallet[] {
+		return [new CustomWalletConnectWallet(this.config, this.appName, this.chainId)];
+	}
 }
 
-interface Signature {
-  signature: HexString;
-}
+type Signature = {
+	signature: HexString;
+};
 
 export class CustomWalletConnectSigner implements Signer {
-  registry: TypeRegistry;
-  client: SignClient;
-  session: SessionTypes.Struct;
-  chainId: PolkadotNamespaceChainId;
-  id = 0;
+	registry: TypeRegistry;
+	client: SignClient;
+	session: SessionTypes.Struct;
+	chainId: PolkadotNamespaceChainId;
+	id = 0;
 
-  constructor(client: SignClient, session: SessionTypes.Struct, chainId: PolkadotNamespaceChainId) {
-    this.client = client;
-    this.session = session;
-    this.registry = new TypeRegistry();
-    this.chainId = chainId;
-  }
+	constructor(client: SignClient, session: SessionTypes.Struct, chainId: PolkadotNamespaceChainId) {
+		this.client = client;
+		this.session = session;
+		this.registry = new TypeRegistry();
+		this.chainId = chainId;
+	}
 
-  // this method is set this way to be bound to this class.
-  signPayload = async (payload: SignerPayloadJSON): Promise<SignerResult> => {
-    let request = {
-      topic: this.session.topic,
-      chainId: this.chainId,
-      request: {
-        id: 1,
-        jsonrpc: '2.0',
-        method: 'polkadot_signTransaction',
-        params: { address: payload.address, transactionPayload: payload },
-      },
-    };
-    let { signature } = await this.client.request<Signature>(request);
-    return { id: ++this.id, signature };
-  };
+	// This method is set this way to be bound to this class.
+	signPayload = async (payload: SignerPayloadJSON): Promise<SignerResult> => {
+		const request = {
+			topic: this.session.topic,
+			chainId: this.chainId,
+			request: {
+				id: 1,
+				jsonrpc: '2.0',
+				method: 'polkadot_signTransaction',
+				params: { address: payload.address, transactionPayload: payload },
+			},
+		};
+		const { signature } = await this.client.request<Signature>(request);
+		return { id: ++this.id, signature };
+	};
 
-  // this method is set this way to be bound to this class.
-  // It might be used outside of the object context to sign messages.
-  // ref: https://polkadot.js.org/docs/extension/cookbook#sign-a-message
-  signRaw = async (raw: SignerPayloadRaw): Promise<SignerResult> => {
-    let request = {
-      topic: this.session.topic,
-      chainId: this.chainId,
-      request: {
-        id: 1,
-        jsonrpc: '2.0',
-        method: 'polkadot_signMessage',
-        params: { address: raw.address, message: raw.data },
-      },
-    };
-    let { signature } = await this.client.request<Signature>(request);
-    return { id: ++this.id, signature };
-  };
+	// This method is set this way to be bound to this class.
+	// It might be used outside of the object context to sign messages.
+	// ref: https://polkadot.js.org/docs/extension/cookbook#sign-a-message
+	signRaw = async (raw: SignerPayloadRaw): Promise<SignerResult> => {
+		const request = {
+			topic: this.session.topic,
+			chainId: this.chainId,
+			request: {
+				id: 1,
+				jsonrpc: '2.0',
+				method: 'polkadot_signMessage',
+				params: { address: raw.address, message: raw.data },
+			},
+		};
+		const { signature } = await this.client.request<Signature>(request);
+		return { id: ++this.id, signature };
+	};
 }
