@@ -89,9 +89,9 @@ const MainPage: Component = () => {
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
 
-        const createApis = async (): Promise<Record<string, ApiPromise>> => {
-            const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
-                async ([chain, data]) => {
+    const createApis = async (): Promise<Record<string, ApiPromise>> => {
+        const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
+            async ([chain, data]) => {
                 const res: [string, ApiPromise] = [
                     chain,
                     await ApiPromise.create({
@@ -194,16 +194,16 @@ const MainPage: Component = () => {
             const w3w = await Web3Wallet.init({
                 core,
                 metadata: {
-                name: 'Saturn',
-                description: 'Saturn Multisig',
-                url: 'https://invarch.network',
-                icons: [
-                    'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
-                ],
-            },
-        });
+                    name: 'Saturn',
+                    description: 'Saturn Multisig',
+                    url: 'https://invarch.network',
+                    icons: [
+                        'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
+                    ],
+                },
+            });
 
-        setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
+            setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
 
             const sessionProposalCallback = async (proposal: any) => {
                 console.log('session_proposal: ', proposal);
@@ -226,33 +226,33 @@ const MainPage: Component = () => {
             };
 
             const sessionRequestCallback = async (event: any) => {
-            console.log('session_request: ', event);
+                console.log('session_request: ', event);
 
-            const { topic, params, id } = event;
-            const { request } = params;
-            const requestedTx = request.params;
+                const { topic, params, id } = event;
+                const { request } = params;
+                const requestedTx = request.params;
 
-            if (
-                u8aToHex(decodeAddress(requestedTx.address))
-                != u8aToHex(decodeAddress(address))
-            ) {
-                console.log('accounts don\'t match');
-                console.log(requestedTx.address, address);
-                console.log(
-                    u8aToHex(decodeAddress(requestedTx.address)),
-                    u8aToHex(decodeAddress(address)),
-                );
-            } else {
-                openProposeModal(requestedTx.transactionPayload.method);
+                if (
+                    u8aToHex(decodeAddress(requestedTx.address))
+                    != u8aToHex(decodeAddress(address))
+                ) {
+                    console.log('accounts don\'t match');
+                    console.log(requestedTx.address, address);
+                    console.log(
+                        u8aToHex(decodeAddress(requestedTx.address)),
+                        u8aToHex(decodeAddress(address)),
+                    );
+                } else {
+                    openProposeModal(requestedTx.transactionPayload.method);
 
-                const response = {
-                    id,
-                    error: { code: 42069, message: 'Proposed to multisig.' },
-                    jsonrpc: '2.0',
-                };
+                    const response = {
+                        id,
+                        error: { code: 42069, message: 'Proposed to multisig.' },
+                        jsonrpc: '2.0',
+                    };
 
-                await w3w.respondSessionRequest({ topic, response });
-            }
+                    await w3w.respondSessionRequest({ topic, response });
+                }
             }
 
             wcContext.setters.setWalletConnect(w3w, sessionProposalCallback, sessionRequestCallback);
@@ -327,190 +327,94 @@ const MainPage: Component = () => {
 
     return (
         <div class={styles.pageContainer}>
-        <ProposeModal
-        account={selectedAccount()}
-        signer={selectedWallet()?.signer}
-        />
-        <div class={styles.leftPanel}>
-            <img class={styles.logo} src={logo} />
-            <div class={styles.pageListContainer}>
-                <For each={pages}>
-                    {(page) => (
-                    <A
-                        href={page}
-                        class={styles.pageItemContainer}
-                        activeClass={styles.enabled}
-                    >
-                        <div class={styles.selectedItemGradient} />
-                        <div class={styles.selectedItemIndicator} />
-                        {page}
-                    </A>
-                    )}
-                </For>
-            </div>
-            <div class='py-2.5'>
-                <Button
-                    onClick={() => setWcModalOpen(true)}
-                    class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
-                >
-                    <img
-                        src='https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/White/Icon.svg'
-                        class='max-h-[70%]'
-                    />
-                    WalletConnect
-                </Button>
-                <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
-                    <ModalOverlay />
-                    <ModalContent>
-                        <ModalCloseButton />
-                        <ModalHeader>WalletConnect Sessions</ModalHeader>
-                        <ModalBody>
-                            <div>
-                                <Input
-                                    value={wcUriInput()}
-                                    onInput={e => {
-                                          setWcUriInput(e.currentTarget.value);
-                                          }}
-                                />
-                                <Button
-                                    class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                    onClick={() => tryWcConnectDapp()}
-                                >
-                                    Connect to dApp
-                                </Button>
-                            </div>
-                            <div>
-                                <Table>
-                                    <Tbody>
-                                        <For each={wcActiveSessions()}>
-                                            {([sessionTopic, sessionData]) => (
-                                            <Tr>
-                                                <Td>
-                                                    <div class='flex gap-1'>
-                                                        <img
-                                                            class='max-w-[10%] object-cover'
-                                                            src={sessionData.peer.metadata.icons[0]}
-                                                        />
-                                                        {sessionData.peer.metadata.name}
-                                                    </div>
-                                                </Td>
-
-                                                <Td>
-                                                    <Button
-                                                        onClick={() =>
-                                                                    disconnectWcSession(sessionTopic)
-                                                                }
-                                                    >
-                                                        Disconnect
-                                                    </Button>
-                                                </Td>
-                                            </Tr>
-                                            )}
-                                        </For>
-                                    </Tbody>
-                                </Table>
-                            </div>
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button
-                                class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                onClick={() => setWcModalOpen(false)}
+            <ProposeModal
+                account={selectedAccount()}
+                signer={selectedWallet()?.signer}
+            />
+            <div class={styles.leftPanel}>
+                <img class={styles.logo} src={logo} />
+                <div class={styles.pageListContainer}>
+                    <For each={pages}>
+                        {(page) => (
+                            <A
+                                href={page}
+                                class={styles.pageItemContainer}
+                                activeClass={styles.enabled}
                             >
-                                Close
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
-                </Modal>
-            </div>
-        </div>
-        <div class={styles.rightPanel}>
-            <div class={styles.topContainer}>
-                <div class='flex flex-row basis-full items-center space-x-6 pl-4 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl'>
-                    <img
-                        class='object-cover w-24 h-24 rounded-md'
-                        src={multisigIdentity().imageUrl}
-                    />
-                    <div class='h-24 flex flex-col'>
-                        <p class='font-display mb-1 text-2xl font-semibold text-white'>
-                            {multisigIdentity().name}
-                        </p>
-                        <div class='mb-4 prose prose-sm text-gray-400'>
-                            <p>{multisigDetails()?.account.toHuman()}</p>
-                        </div>
-                        <div class='flex flex-1 items-end'>
-                            <Show when={multisigIdentity().twitterUrl}>
-                                <a
-                                    href={multisigIdentity().twitterUrl}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                >
-                                    <AiOutlineTwitter size={20} />
-                                </a>
-                            </Show>
-                            <Show when={multisigIdentity().websiteUrl}>
-                                <a
-                                    href={multisigIdentity().websiteUrl}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                >
-                                    <AiOutlineLink size={20} />
-                                </a>
-                            </Show>
-                        </div>
-                    </div>
-                    <div class='grow' />
+                                <div class={styles.selectedItemGradient} />
+                                <div class={styles.selectedItemIndicator} />
+                                {page}
+                            </A>
+                        )}
+                    </For>
+                </div>
+                <div class='py-2.5'>
                     <Button
-                        onClick={() => setWalletModalOpen(true)}
-                        class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
+                        onClick={() => setWcModalOpen(true)}
+                        class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
                     >
-                        {selectedAccount()?.name || 'Log In'}
+                        <img
+                            src='https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/White/Icon.svg'
+                            class='max-h-[70%]'
+                        />
+                        WalletConnect
                     </Button>
-                    <Modal
-                        opened={walletModalOpen()}
-                        onClose={() => setWalletModalOpen(false)}
-                    >
+                    <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
                         <ModalOverlay />
                         <ModalContent>
                             <ModalCloseButton />
-                            <ModalHeader>Choose a wallet</ModalHeader>
+                            <ModalHeader>WalletConnect Sessions</ModalHeader>
                             <ModalBody>
-                                <div class='flex flex-col gap-1'>
-                                    <Show
-                                        when={availableAccounts()[0]}
-                                        fallback={
-                                             <For each={availableWallets()}>
-                                             {wallet => (
-                                             <Button
-                                             class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                             onClick={() => connectUserWallet(wallet)}
-                                    >
-                                             <img
-                                             src={wallet.metadata.iconUrl}
-                                             class='max-h-[70%]'
+                                <div>
+                                    <Input
+                                        value={wcUriInput()}
+                                        onInput={e => {
+                                            setWcUriInput(e.currentTarget.value);
+                                        }}
                                     />
-                                             {wallet.metadata.title}
-                                             </Button>
-                                             )}
-                                             </For>
-                                             }
+                                    <Button
+                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                        onClick={() => tryWcConnectDapp()}
                                     >
-                                        <For each={availableAccounts()}>
-                                            {acc => (
-                                            <Button
-                                                class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                                onClick={() => connectUserAccount(acc)}
-                                            >
-                                                {acc.name}
-                                            </Button>
-                                            )}
-                                        </For>
-                                    </Show>
+                                        Connect to dApp
+                                    </Button>
+                                </div>
+                                <div>
+                                    <Table>
+                                        <Tbody>
+                                            <For each={wcActiveSessions()}>
+                                                {([sessionTopic, sessionData]) => (
+                                                    <Tr>
+                                                        <Td>
+                                                            <div class='flex gap-1'>
+                                                                <img
+                                                                    class='max-w-[10%] object-cover'
+                                                                    src={sessionData.peer.metadata.icons[0]}
+                                                                />
+                                                                {sessionData.peer.metadata.name}
+                                                            </div>
+                                                        </Td>
+
+                                                        <Td>
+                                                            <Button
+                                                                onClick={() =>
+                                                                    disconnectWcSession(sessionTopic)
+                                                                }
+                                                            >
+                                                                Disconnect
+                                                            </Button>
+                                                        </Td>
+                                                    </Tr>
+                                                )}
+                                            </For>
+                                        </Tbody>
+                                    </Table>
                                 </div>
                             </ModalBody>
                             <ModalFooter>
                                 <Button
                                     class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                    onClick={() => setWalletModalOpen(false)}
+                                    onClick={() => setWcModalOpen(false)}
                                 >
                                     Close
                                 </Button>
@@ -519,49 +423,145 @@ const MainPage: Component = () => {
                     </Modal>
                 </div>
             </div>
-            <div class={styles.mainContainer}>
-                <div class={styles.mainPanel}>
-                    <Routes>
-                        <Route
-                            path='assets'
-                            element={
-                                  <Assets />
-                                  }
+            <div class={styles.rightPanel}>
+                <div class={styles.topContainer}>
+                    <div class='flex flex-row basis-full items-center space-x-6 pl-4 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl'>
+                        <img
+                            class='object-cover w-24 h-24 rounded-md'
+                            src={multisigIdentity().imageUrl}
                         />
-                        <Route
-                            path='queue'
-                            element={
-                                  <Queue
-                                  multisigDetails={multisigDetails()}
-                                  address={selectedAccount()?.address}
-                                  signer={selectedWallet()?.signer}
-                        />
-                                  }
-                        />
-                        <Route
-                            path="members"
-                            element={<Members />}
-                        />
-                    </Routes>
+                        <div class='h-24 flex flex-col'>
+                            <p class='font-display mb-1 text-2xl font-semibold text-white'>
+                                {multisigIdentity().name}
+                            </p>
+                            <div class='mb-4 prose prose-sm text-gray-400'>
+                                <p>{multisigDetails()?.account.toHuman()}</p>
+                            </div>
+                            <div class='flex flex-1 items-end'>
+                                <Show when={multisigIdentity().twitterUrl}>
+                                    <a
+                                        href={multisigIdentity().twitterUrl}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                    >
+                                        <AiOutlineTwitter size={20} />
+                                    </a>
+                                </Show>
+                                <Show when={multisigIdentity().websiteUrl}>
+                                    <a
+                                        href={multisigIdentity().websiteUrl}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                    >
+                                        <AiOutlineLink size={20} />
+                                    </a>
+                                </Show>
+                            </div>
+                        </div>
+                        <div class='grow' />
+                        <Button
+                            onClick={() => setWalletModalOpen(true)}
+                            class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
+                        >
+                            {selectedAccount()?.name || 'Log In'}
+                        </Button>
+                        <Modal
+                            opened={walletModalOpen()}
+                            onClose={() => setWalletModalOpen(false)}
+                        >
+                            <ModalOverlay />
+                            <ModalContent>
+                                <ModalCloseButton />
+                                <ModalHeader>Choose a wallet</ModalHeader>
+                                <ModalBody>
+                                    <div class='flex flex-col gap-1'>
+                                        <Show
+                                            when={availableAccounts()[0]}
+                                            fallback={
+                                                <For each={availableWallets()}>
+                                                    {wallet => (
+                                                        <Button
+                                                            class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                                            onClick={() => connectUserWallet(wallet)}
+                                                        >
+                                                            <img
+                                                                src={wallet.metadata.iconUrl}
+                                                                class='max-h-[70%]'
+                                                            />
+                                                            {wallet.metadata.title}
+                                                        </Button>
+                                                    )}
+                                                </For>
+                                            }
+                                        >
+                                            <For each={availableAccounts()}>
+                                                {acc => (
+                                                    <Button
+                                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                                        onClick={() => connectUserAccount(acc)}
+                                                    >
+                                                        {acc.name}
+                                                    </Button>
+                                                )}
+                                            </For>
+                                        </Show>
+                                    </div>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                        onClick={() => setWalletModalOpen(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
+                    </div>
+                </div>
+                <div class={styles.mainContainer}>
+                    <div class={styles.mainPanel}>
+                        <Routes>
+                            <Route
+                                path='assets'
+                                element={
+                                    <Assets />
+                                }
+                            />
+                            <Route
+                                path='queue'
+                                element={
+                                    <Queue
+                                        multisigDetails={multisigDetails()}
+                                        address={selectedAccount()?.address}
+                                        signer={selectedWallet()?.signer}
+                                    />
+                                }
+                            />
+                            <Route
+                                path="members"
+                                element={<Members />}
+                            />
+                        </Routes>
+                    </div>
                 </div>
             </div>
         </div>
-        </div>
-        );
-        };
+    );
+};
 
-        const App: Component = () => (
-        <ProposeProvider>
-            <SaturnProvider>
-                <RingApisProvider>
-                    <WalletConnectProvider>
-                        <Routes>
-                            <Route path='/:idOrAddress/*' component={MainPage} />
-                        </Routes>
-                    </WalletConnectProvider>
-                </RingApisProvider>
-            </SaturnProvider>
-        </ProposeProvider>
-        );
+const App: Component = () => (
+    <ProposeProvider>
+        <SaturnProvider>
+            <RingApisProvider>
+                <WalletConnectProvider>
+                    <Routes>
+                        <Route path='/:idOrAddress/*' component={MainPage} />
+                    </Routes>
+                </WalletConnectProvider>
+            </RingApisProvider>
+        </SaturnProvider>
+    </ProposeProvider>
+);
 
-                        export default App;
+export default App;
