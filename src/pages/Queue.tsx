@@ -16,14 +16,13 @@ import { type ApiPromise } from '@polkadot/api';
 import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
 
 import { useRingApisContext } from "../providers/ringApisProvider";
+import { useSaturnContext } from "../providers/saturnProvider";
 import { Rings } from '../data/rings';
 import FormattedCall from '../components/FormattedCall';
 
 export type QueuePageProps = {
-	multisigId: number | undefined;
 	multisigDetails: MultisigDetails | undefined;
 	address: string | undefined;
-	saturn: Saturn | undefined;
 	signer: Signer | undefined;
 };
 
@@ -32,33 +31,34 @@ export default function Queue(props: QueuePageProps) {
 	const [viewFullCall, setViewFullCall] = createSignal<boolean>(false);
 
     const ringApisContext = useRingApisContext();
+    const saturnContext = useSaturnContext();
 
 	  createEffect(() => {
         const runAsync = async () => {
-          if (!props.saturn || typeof props.multisigId !== 'number') {
-			        return;
+            if (!saturnContext.state.saturn || typeof saturnContext.state.multisigId !== 'number') {
+			          return;
 		      }
 
-		      const pendingCalls = await props.saturn.getPendingCalls(props.multisigId);
+		        const pendingCalls = await saturnContext.state.saturn.getPendingCalls(saturnContext.state.multisigId);
 
-		      setPendingProposals(pendingCalls);
+		        setPendingProposals(pendingCalls);
       };
 
       runAsync();
 	});
 
 	const vote = async (callHash: string, aye: boolean) => {
-		if (!props.saturn || !props.address || typeof props.multisigId !== 'number' || !props.signer) {
-			return;
+		  if (!saturnContext.state.saturn || !props.address || typeof saturnContext.state.multisigId !== 'number' || !props.signer) {
+			    return;
 		}
 
-		const result = await props.saturn.vote({
-			id: props.multisigId,
-			callHash,
-			aye,
-		}).signAndSend(props.address, { signer: props.signer });
+		  const result = await saturnContext.state.saturn.vote({
+			    id: saturnContext.state.multisigId,
+			    callHash,
+			    aye,
+		  }).signAndSend(props.address, { signer: props.signer });
 
-		console.log('result: ', result);
+		  console.log('result: ', result);
 	};
 
 	const processCallDescription = (call: Call): string => {

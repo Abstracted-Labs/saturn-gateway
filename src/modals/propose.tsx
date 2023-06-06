@@ -17,12 +17,11 @@ import { type ApiPromise } from '@polkadot/api';
 import { SubmittableExtrinsic, ApiTypes } from "@polkadot/api/types";
 
 import { useProposeContext } from "../providers/proposeProvider";
+import { useSaturnContext } from "../providers/saturnProvider";
 import FormattedCall from '../components/FormattedCall';
 
 export type ProposeModalProps = {
-	saturn: Saturn | undefined;
 	account: Account | undefined;
-	multisigId: number | undefined;
 	signer: Signer | undefined;
 };
 
@@ -30,10 +29,11 @@ export default function ProposeModal(props: ProposeModalProps) {
 	const [message, setMessage] = createSignal<string>('');
 
     const [proposeContext, { closeProposeModal }] = useProposeContext();
+    const saturnContext = useSaturnContext();
 
 	  const propose = async () => {
-		    if (!props.saturn || !props.account || typeof props.multisigId !== 'number' || !props.signer || !proposeContext.proposalCall) {
-			return;
+		    if (!saturnContext.state.saturn || !props.account || typeof saturnContext.state.multisigId !== 'number' || !props.signer || !proposeContext.proposalCall) {
+			      return;
 		}
 
 		  const msg = message();
@@ -47,9 +47,9 @@ export default function ProposeModal(props: ProposeModalProps) {
       try {
           const call = proposeContext.proposalCall as Uint8Array;
 
-          await props.saturn
-			               .buildMultisigCall({ id: props.multisigId, call, proposalMetadata })
-			               .signAndSend(props.account.address, props.signer);
+          await saturnContext.state.saturn
+			                       .buildMultisigCall({ id: saturnContext.state.multisigId, call, proposalMetadata })
+			                       .signAndSend(props.account.address, props.signer);
       } catch {
           try {
               const call = proposeContext.proposalCall as MultisigCall;
@@ -73,8 +73,8 @@ export default function ProposeModal(props: ProposeModalProps) {
 	  };
 
     const a = () => {
-        const id = props.multisigId as number;
-        const sat = props.saturn as Saturn;
+        const id = saturnContext.state.multisigId as number;
+        const sat = saturnContext.state.saturn as Saturn;
 
         try {
             const call = proposeContext.proposalCall as Uint8Array;
@@ -97,7 +97,7 @@ export default function ProposeModal(props: ProposeModalProps) {
 				      <ModalHeader>Propose Multisig Call</ModalHeader>
 				      <ModalBody>
 					        <div class='flex flex-col gap-1'>
-                      <Show when={proposeContext.proposalCall && props.saturn && typeof props.multisigId === 'number'}>
+                      <Show when={proposeContext.proposalCall && saturnContext.state.saturn && typeof saturnContext.state.multisigId === 'number'}>
 						              {a()}
                       </Show>
 						          <Input

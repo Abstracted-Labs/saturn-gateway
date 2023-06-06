@@ -8,33 +8,29 @@ import { type ApiPromise } from '@polkadot/api';
 import { type Saturn } from '@invarch/saturn-sdk';
 
 import TransferModal from '../modals/transfer';
+import { useSaturnContext } from "../providers/saturnProvider";
 
 export type AssetsPageProps = {
-    multisigId: number | undefined;
-    multisigAddress: string | undefined;
-    saturn: Saturn | undefined;
 };
 
 const StakePage = {
     tinkernet_TNKR: 'https://tinker.network/staking',
 };
 
-export default function Assets(props: AssetsPageProps) {
+export default function Assets() {
     const [balances, setBalances] = createSignal<Array<[string, Array<[string, {
         freeBalance: string;
         reservedBalance: string;
         frozenFee: string;
         totalBalance: string;
     }]>]>>();
-
     const [transferModalOpen, setTransferModalOpen] = createSignal<{ network: string; asset: string } | undefined>();
 
-    createEffect(() => {
-        console.log(props.multisigAddress);
-        console.log(props.multisigId);
+    const saturnContext = useSaturnContext();
 
-        const id = props.multisigId;
-        const address = props.multisigAddress;
+    createEffect(() => {
+        const id = saturnContext.state.multisigId;
+        const address = saturnContext.state.multisigAddress;
         if (typeof id !== 'number' || !address) {
             return;
         }
@@ -84,9 +80,6 @@ export default function Assets(props: AssetsPageProps) {
             <TransferModal
                 open={transferModalOpen()}
                 setOpen={setTransferModalOpen}
-                saturn={props.saturn}
-                multisigId={props.multisigId}
-                multisigAddress={props.multisigAddress}
             />
 
             <div class='flex flex-col gap-4'>

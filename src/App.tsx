@@ -42,6 +42,7 @@ import { Rings } from './data/rings';
 import { useProposeContext, ProposeProvider } from "./providers/proposeProvider";
 import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
 import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
+import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
 
 import ProposeModal from './modals/propose';
 
@@ -49,9 +50,8 @@ const Assets = lazy(async () => import('./pages/Assets'));
 const Queue = lazy(async () => import('./pages/Queue'));
 
 const MainPage: Component = () => {
-    const [saturn, setSaturn] = createSignal<Saturn>();
-    // const [walletConnect, setWalletConnect] = createSignal<Web3WalletType>();
-    const [multisigId, setMultisigId] = createSignal<number>();
+    // const [saturn, setSaturn] = createSignal<Saturn>();
+    // const [multisigId, setMultisigId] = createSignal<number>();
     const [multisigDetails, setMultisigDetails] = createSignal<MultisigDetails>();
     const [wcUriInput, setWcUriInput] = createSignal<string>('');
     const [wcModalOpen, setWcModalOpen] = createSignal<boolean>(false);
@@ -80,6 +80,7 @@ const MainPage: Component = () => {
     const [proposeContext, { openProposeModal }] = useProposeContext();
     const wcContext = useWalletConnectContext();
     const ringApisContext = useRingApisContext();
+    const saturnContext = useSaturnContext();
 
         const createApis = async (): Promise<Record<string, ApiPromise>> => {
             const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
@@ -138,7 +139,7 @@ const MainPage: Component = () => {
     createEffect(() => {
         const details = multisigDetails();
         const ra = ringApisContext.state;
-        const mid = multisigId();
+        const mid = saturnContext.state.multisigId;
 
         if (details && ra?.tinkernet && mid) {
             const acc = details.account;
@@ -172,9 +173,9 @@ const MainPage: Component = () => {
     });
 
     createEffect(() => {
-        const address = multisigDetails()?.account.toString();
-        const mid = multisigId();
-        const sat = saturn();
+        const address = saturnContext.state.multisigAddress;
+        const mid = saturnContext.state.multisigId;
+        const sat = saturnContext.state.saturn;
 
         if (!address || typeof mid !== 'number' || !sat) return;
 
@@ -260,7 +261,7 @@ const MainPage: Component = () => {
 
         const sat = new Saturn({ api: apis.tinkernet });
 
-        setSaturn(sat);
+        saturnContext.setters.setSaturn(sat);
 
         if (isAddress(idOrAddress)) {
             const id = (await apis.tinkernet.query.inv4.coreByAccount(idOrAddress))
@@ -268,22 +269,27 @@ const MainPage: Component = () => {
                 ?.toNumber();
 
             if (typeof id === 'number') {
-                setMultisigId(id);
+                saturnContext.setters.setMultisigId(id);
 
                 const maybeDetails = await sat.getDetails(id);
 
                 if (maybeDetails) {
                     setMultisigDetails(maybeDetails);
+
+                    saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
                 }
             }
         } else {
             const numberId = parseInt(idOrAddress);
-            setMultisigId(numberId);
+
+            saturnContext.setters.setMultisigId(numberId);
 
             const maybeDetails = await sat.getDetails(numberId);
 
             if (maybeDetails) {
                 setMultisigDetails(maybeDetails);
+
+                saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
             }
         }
     });
@@ -315,8 +321,6 @@ const MainPage: Component = () => {
     return (
         <div class={styles.pageContainer}>
             <ProposeModal
-                saturn={saturn()}
-                multisigId={multisigId()}
                 account={selectedAccount()}
                 signer={selectedWallet()?.signer}
             />
@@ -520,21 +524,15 @@ const MainPage: Component = () => {
                                 <Route
                                     path='assets'
                                     element={
-                                        <Assets
-                                            multisigId={multisigId()}
-                                            multisigAddress={multisigDetails()?.account.toString()}
-                                            saturn={saturn()}
-                                        />
+                                        <Assets />
                                     }
                                 />
                                 <Route
                                     path='queue'
                                     element={
                                         <Queue
-                                            multisigId={multisigId()}
                                             multisigDetails={multisigDetails()}
                                             address={selectedAccount()?.address}
-                                            saturn={saturn()}
                                             signer={selectedWallet()?.signer}
                                         />
                                     }
@@ -549,13 +547,15 @@ const MainPage: Component = () => {
 
 const App: Component = () => (
     <ProposeProvider>
-        <RingApisProvider>
-            <WalletConnectProvider>
-                <Routes>
-                    <Route path='/:idOrAddress/*' component={MainPage} />
-                </Routes>
-            </WalletConnectProvider>
-        </RingApisProvider>
+        <SaturnProvider>
+            <RingApisProvider>
+                <WalletConnectProvider>
+                    <Routes>
+                        <Route path='/:idOrAddress/*' component={MainPage} />
+                    </Routes>
+                </WalletConnectProvider>
+            </RingApisProvider>
+        </SaturnProvider>
     </ProposeProvider>
 );
 
