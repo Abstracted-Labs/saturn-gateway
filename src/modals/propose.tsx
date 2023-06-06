@@ -1,5 +1,5 @@
 import { createSignal, Show, type Setter } from 'solid-js';
-import { type Saturn } from '@invarch/saturn-sdk';
+import { type Saturn, type MultisigCall } from '@invarch/saturn-sdk';
 import { type Account } from '@polkadot-onboard/core';
 import type { Signer } from '@polkadot/types/types';
 import {
@@ -14,63 +14,85 @@ import {
 	Input,
 } from '@hope-ui/solid';
 import { type ApiPromise } from '@polkadot/api';
-import { u8aToHex } from '@polkadot/util';
+import { SubmittableExtrinsic, ApiTypes } from "@polkadot/api/types";
 
+import { useProposeContext } from "../providers/proposeProvider";
 import FormattedCall from '../components/FormattedCall';
 
 export type ProposeModalProps = {
-	open: boolean;
-	setOpen: Setter<boolean>;
 	saturn: Saturn | undefined;
 	account: Account | undefined;
 	multisigId: number | undefined;
 	signer: Signer | undefined;
-	call: Uint8Array | undefined;
 	ringApis: Record<string, ApiPromise> | undefined;
 };
 
 export default function ProposeModal(props: ProposeModalProps) {
 	const [message, setMessage] = createSignal<string>('');
 
-	const propose = async () => {
-		if (!props.saturn || !props.account || typeof props.multisigId !== 'number' || !props.signer || !props.call) {
+    const [proposeContext, { closeProposeModal }] = useProposeContext();
+
+	  const propose = async () => {
+		    if (!props.saturn || !props.account || typeof props.multisigId !== 'number' || !props.signer || !proposeContext.proposalCall) {
 			return;
 		}
 
-		const msg = message();
+		  const msg = message();
 
-		let proposalMetadata;
+		  let proposalMetadata;
 
 		if (msg) {
 			proposalMetadata = JSON.stringify({ message: msg });
 		}
 
-		const result = await props.saturn
-			.buildMultisigCall({ id: props.multisigId, call: props.call, proposalMetadata })
-			.signAndSend(props.account.address, props.signer);
+      try {
+          const call = proposeContext.proposalCall as Uint8Array;
 
-		props.setOpen(false);
-	};
+          await props.saturn
+			               .buildMultisigCall({ id: props.multisigId, call, proposalMetadata })
+			               .signAndSend(props.account.address, props.signer);
+      } catch {
+          try {
+              const call = proposeContext.proposalCall as MultisigCall;
+
+              await call.signAndSend(props.account.address, props.signer);
+          } catch {}
+      } finally {
+          closeProposeModal();
+      }
+	  };
 
 	const cancel = () => {
-		props.setOpen(false);
+		  closeProposeModal();
 	};
 
-	const showCall = () => {
-      const call = props.call as Uint8Array;
-      const id = props.multisigId as number;
-      const ringApis = props.ringApis as Record<string, ApiPromise>;
+	  const showCall = (call: SubmittableExtrinsic<ApiTypes>) => {
+        const id = props.multisigId as number;
+        const ringApis = props.ringApis as Record<string, ApiPromise>;
 
-			console.log('call: ', u8aToHex(call));
+        return <FormattedCall
+			             fullCall={true}
+			             call={ringApis.tinkernet.createType('Call', call)}
+			             ringApis={props.ringApis} />;
+	  };
 
-		  return <FormattedCall
-			           fullCall={true}
-			           call={ringApis.tinkernet.createType('Call', props.saturn?.buildMultisigCall({ id, call }).call)}
-			           ringApis={props.ringApis} />;
-	};
+    const a = () => {
+        const id = props.multisigId as number;
+        const sat = props.saturn as Saturn;
+
+        try {
+            const call = proposeContext.proposalCall as Uint8Array;
+
+            return showCall(sat.buildMultisigCall({ id, call }).call)
+        } catch {
+            const call = proposeContext.proposalCall as MultisigCall;
+
+            return showCall(call.call)
+        }
+    };
 
 	return (
-		  <Modal opened={props.open} onClose={() => {
+		  <Modal opened={!!proposeContext.proposalCall} onClose={() => {
 			    cancel();
 		  }}>
 			    <ModalOverlay />
@@ -79,15 +101,15 @@ export default function ProposeModal(props: ProposeModalProps) {
 				      <ModalHeader>Propose Multisig Call</ModalHeader>
 				      <ModalBody>
 					        <div class='flex flex-col gap-1'>
-                      <Show when={props.call && props.saturn && typeof props.multisigId === 'number' && props.ringApis?.tinkernet}>
-						              {showCall()}
+                      <Show when={proposeContext.proposalCall && props.saturn && typeof props.multisigId === 'number' && props.ringApis?.tinkernet}>
+						              {a()}
                       </Show>
 						          <Input
 							            placeholder='Optional message'
-							                         value={message()}
-							                         onInput={e => {
-								                           setMessage(e.currentTarget.value);
-							                         }}
+							            value={message()}
+							            onInput={e => {
+								              setMessage(e.currentTarget.value);
+							            }}
 						          />
 						          <Button onClick={() => propose()}>Propose</Button>
 					        </div>

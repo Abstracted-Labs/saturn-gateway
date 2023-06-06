@@ -14,8 +14,6 @@ export type AssetsPageProps = {
     multisigAddress: string | undefined;
     saturn: Saturn | undefined;
     ringApis: Record<string, ApiPromise> | undefined;
-    setProposeModalOpen: Setter<boolean>;
-    setCurrentCall: Setter<Uint8Array>;
 };
 
 const StakePage = {
@@ -91,8 +89,6 @@ export default function Assets(props: AssetsPageProps) {
                 ringApis={props.ringApis}
                 multisigId={props.multisigId}
                 multisigAddress={props.multisigAddress}
-                setProposeModalOpen={props.setProposeModalOpen}
-                setCurrentCall={props.setCurrentCall}
             />
 
             <div class='flex flex-col gap-4'>
@@ -131,21 +127,19 @@ export default function Assets(props: AssetsPageProps) {
                                                 <td class='py-3 px-4 text-left font-medium text-white w-[20%]'>{asset}</td>
                                                 <td class='py-3 px-4 text-left w-[20%]'>{
                                                     BigNumber(b.totalBalance).minus(
-                                                        BigNumber(b.reservedBalance),
-                                                    ).minus(
-                                                        BigNumber(b.frozenFee),
+                                                        BigNumber(b.reservedBalance).plus(BigNumber(b.frozenFee))
                                                     ).div(
                                                         BigNumber('10').pow(
                                                             BigNumber(Rings[network as keyof typeof Rings].decimals),
                                                         ),
-                                                    ).toFixed(2).toString()
+                                                    ).decimalPlaces(2, 1).toString()
                                                 } {asset}</td>
                                                 <td class='w-[20%]'>{
                                                     BigNumber(b.totalBalance).div(
                                                         BigNumber('10').pow(
                                                             BigNumber(Rings[network as keyof typeof Rings].decimals),
                                                         ),
-                                                    ).toFixed(2).toString()
+                                                    ).decimalPlaces(2, 1).toString()
                                                 } {asset}</td>
                                                 <td class='flex gap-2.5 w-[40%] py-2'>
                                                     <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-[#D55E8A] hover:bg-[#E40C5B]'>Transfer</Button>

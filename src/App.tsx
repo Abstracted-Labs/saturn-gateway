@@ -1,10 +1,10 @@
 import type { Component } from 'solid-js';
 import { lazy, onMount, createSignal, Show, For, createEffect } from 'solid-js';
-import { Routes, Route, useParams, useSearchParams } from '@solidjs/router';
+import { Routes, Route, useParams } from '@solidjs/router';
 import { A } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Saturn, type MultisigDetails } from '@invarch/saturn-sdk';
-import { isAddress, decodeAddress, addressToEvm } from '@polkadot/util-crypto';
+import { Saturn, type MultisigDetails, type MultisigCall } from '@invarch/saturn-sdk';
+import { isAddress, decodeAddress } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
 import type Web3WalletType from '@walletconnect/web3wallet';
 import { Web3Wallet } from '@walletconnect/web3wallet';
@@ -21,20 +21,16 @@ import {
     ModalOverlay,
     Input,
     Table,
-    TableCaption,
-    Thead,
     Tbody,
-    Tfoot,
     Tr,
-    Th,
     Td,
 } from '@hope-ui/solid';
 import {
     WalletAggregator,
-    BaseWalletProvider,
     type BaseWallet,
     type Account,
 } from '@polkadot-onboard/core';
+
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { AiOutlineTwitter, AiOutlineLink } from 'solid-icons/ai';
 
@@ -43,6 +39,8 @@ import logo from './assets/logo.png';
 import defaultMultisigImage from './assets/default-multisig-image.png';
 import styles from './App.module.css';
 import { Rings } from './data/rings';
+import { useProposeContext, ProposeProvider } from "./providers/proposeProvider";
+import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
 
 import ProposeModal from './modals/propose';
 
@@ -51,7 +49,7 @@ const Queue = lazy(async () => import('./pages/Queue'));
 
 const MainPage: Component = () => {
     const [saturn, setSaturn] = createSignal<Saturn>();
-    const [walletConnect, setWalletConnect] = createSignal<Web3WalletType>();
+    // const [walletConnect, setWalletConnect] = createSignal<Web3WalletType>();
     const [multisigId, setMultisigId] = createSignal<number>();
     const [multisigDetails, setMultisigDetails] = createSignal<MultisigDetails>();
     const [wcUriInput, setWcUriInput] = createSignal<string>('');
@@ -66,8 +64,6 @@ const MainPage: Component = () => {
     const [availableAccounts, setAvailableAccounts] = createSignal<Account[]>([]);
     const [selectedAccount, setSelectedAccount] = createSignal<Account>();
     const [selectedWallet, setSelectedWallet] = createSignal<BaseWallet>();
-    const [proposeModalOpen, setProposeModalOpen] = createSignal<boolean>(false);
-    const [currentCall, setCurrentCall] = createSignal<Uint8Array>();
     const [ringApis, setRingApis] = createSignal<Record<string, ApiPromise>>();
     const [multisigIdentity, setMultisigIdentity] = createSignal<{
         name: string;
@@ -80,10 +76,12 @@ const MainPage: Component = () => {
         twitterUrl: undefined,
         websiteUrl: undefined,
     });
+    const [proposeContext, { openProposeModal }] = useProposeContext();
+    const wcContext = useWalletConnectContext();
 
-    const createApis = async (): Promise<Record<string, ApiPromise>> => {
-        const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
-            async ([chain, data]) => {
+        const createApis = async (): Promise<Record<string, ApiPromise>> => {
+            const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
+                async ([chain, data]) => {
                 const res: [string, ApiPromise] = [
                     chain,
                     await ApiPromise.create({
@@ -123,17 +121,13 @@ const MainPage: Component = () => {
 
     const params = useParams();
 
-    console.log('idOrAddress: ', params.idOrAddress);
-
     const tryWcConnectDapp = async () => {
         const uri = wcUriInput();
 
-        const w3w = walletConnect();
-
         console.log('uri: ', uri);
 
-        if (w3w) {
-            await w3w.core.pairing.pair({ uri });
+        if (wcContext.state.w3w) {
+            await wcContext.state.w3w.core.pairing.pair({ uri });
         }
     };
 
@@ -176,36 +170,52 @@ const MainPage: Component = () => {
     });
 
     createEffect(() => {
-        const w3w = walletConnect();
         const address = multisigDetails()?.account.toString();
         const mid = multisigId();
-        const sa = selectedAccount();
-        const sw = selectedWallet();
         const sat = saturn();
 
-        if (!w3w || !address || typeof mid !== 'number' || !sat || !sa || !sw?.signer) return;
+        if (!address || typeof mid !== 'number' || !sat) return;
 
-        w3w.on('session_proposal', async proposal => {
-            console.log('session_proposal: ', proposal);
-
-            await w3w.approveSession({
-                id: proposal.id,
-                namespaces: {
-                    polkadot: {
-                        accounts: [`polkadot:d42e9606a995dfe433dc7955dc2a70f4:${address}`],
-                        methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
-                        chains: ['polkadot:d42e9606a995dfe433dc7955dc2a70f4'],
-                        events: [],
-                    },
-                },
-            });
-
-            console.log('session approved');
-
-            setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
+        const core = new Core({
+            projectId: '04b924c5906edbafa51c651573628e23',
         });
 
-        w3w.on('session_request', async event => {
+        const runAsync = async () => {
+            const w3w = await Web3Wallet.init({
+                core,
+                metadata: {
+                name: 'Saturn',
+                description: 'Saturn Multisig',
+                url: 'https://invarch.network',
+                icons: [
+                    'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
+                ],
+            },
+        });
+
+        setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
+
+            const sessionProposalCallback = async (proposal: any) => {
+                console.log('session_proposal: ', proposal);
+
+                await w3w.approveSession({
+                    id: proposal.id,
+                    namespaces: {
+                        polkadot: {
+                            accounts: [`polkadot:d42e9606a995dfe433dc7955dc2a70f4:${address}`],
+                            methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
+                            chains: ['polkadot:d42e9606a995dfe433dc7955dc2a70f4'],
+                            events: [],
+                        },
+                    },
+                });
+
+                console.log('session approved');
+
+                setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
+            };
+
+            const sessionRequestCallback = async (event: any) => {
             console.log('session_request: ', event);
 
             const { topic, params, id } = event;
@@ -223,8 +233,7 @@ const MainPage: Component = () => {
                     u8aToHex(decodeAddress(address)),
                 );
             } else {
-                setCurrentCall(requestedTx.transactionPayload.method);
-                setProposeModalOpen(true);
+                openProposeModal(requestedTx.transactionPayload.method);
 
                 const response = {
                     id,
@@ -234,7 +243,12 @@ const MainPage: Component = () => {
 
                 await w3w.respondSessionRequest({ topic, response });
             }
-        });
+            }
+
+            wcContext.setters.setWalletConnect(w3w, sessionProposalCallback, sessionRequestCallback);
+        };
+
+        runAsync();
     });
 
     onMount(async () => {
@@ -270,42 +284,18 @@ const MainPage: Component = () => {
                 setMultisigDetails(maybeDetails);
             }
         }
-
-        const core = new Core({
-            projectId: '04b924c5906edbafa51c651573628e23',
-        });
-
-        const w3w = await Web3Wallet.init({
-            core,
-            metadata: {
-                name: 'Saturn',
-                description: 'Saturn Multisig',
-                url: 'https://invarch.network',
-                icons: [
-                    'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
-                ],
-            },
-        });
-
-        console.log(Object.entries(w3w.getActiveSessions()));
-
-        setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
-
-        setWalletConnect(w3w);
     });
 
     const disconnectWcSession = async (topic: string) => {
-        const w3w = walletConnect();
-
-        if (w3w) {
-            await w3w.disconnectSession({
+        if (wcContext.state.w3w) {
+            await wcContext.state.w3w.disconnectSession({
                 topic,
                 reason: { code: 123, message: '' },
             });
 
             console.log('session disconnected');
 
-            setWcActiveSessions(Object.entries(w3w.getActiveSessions()));
+            setWcActiveSessions(Object.entries(wcContext.state.w3w.getActiveSessions()));
         }
     };
 
@@ -323,13 +313,10 @@ const MainPage: Component = () => {
     return (
         <div class={styles.pageContainer}>
             <ProposeModal
-                open={proposeModalOpen()}
-                setOpen={setProposeModalOpen}
                 saturn={saturn()}
                 multisigId={multisigId()}
                 account={selectedAccount()}
                 signer={selectedWallet()?.signer}
-                call={currentCall()}
                 ringApis={ringApis()}
             />
             <div class={styles.leftPanel}>
@@ -528,34 +515,32 @@ const MainPage: Component = () => {
                 </div>
                 <div class={styles.mainContainer}>
                     <div class={styles.mainPanel}>
-                        <Routes>
-                            <Route
-                                path='assets'
-                                element={
-                                    <Assets
-                                        multisigId={multisigId()}
-                                        multisigAddress={multisigDetails()?.account.toString()}
-                                        saturn={saturn()}
-                                        ringApis={ringApis()}
-                                        setProposeModalOpen={setProposeModalOpen}
-                                        setCurrentCall={setCurrentCall}
-                                    />
-                                }
-                            />
-                            <Route
-                                path='queue'
-                                element={
-                                    <Queue
-                                        multisigId={multisigId()}
-                                        multisigDetails={multisigDetails()}
-                                        address={selectedAccount()?.address}
-                                        saturn={saturn()}
-                                        signer={selectedWallet()?.signer}
-                                        ringApis={ringApis()}
-                                    />
-                                }
-                            />
-                        </Routes>
+                            <Routes>
+                                <Route
+                                    path='assets'
+                                    element={
+                                        <Assets
+                                            multisigId={multisigId()}
+                                            multisigAddress={multisigDetails()?.account.toString()}
+                                            saturn={saturn()}
+                                            ringApis={ringApis()}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path='queue'
+                                    element={
+                                        <Queue
+                                            multisigId={multisigId()}
+                                            multisigDetails={multisigDetails()}
+                                            address={selectedAccount()?.address}
+                                            saturn={saturn()}
+                                            signer={selectedWallet()?.signer}
+                                            ringApis={ringApis()}
+                                        />
+                                    }
+                                />
+                            </Routes>
                     </div>
                 </div>
             </div>
@@ -564,9 +549,13 @@ const MainPage: Component = () => {
 };
 
 const App: Component = () => (
-    <Routes>
-        <Route path='/:idOrAddress/*' component={MainPage} />
-    </Routes>
+    <ProposeProvider>
+        <WalletConnectProvider>
+            <Routes>
+                <Route path='/:idOrAddress/*' component={MainPage} />
+            </Routes>
+        </WalletConnectProvider>
+    </ProposeProvider>
 );
 
 export default App;
