@@ -18,21 +18,20 @@ import { SubmittableExtrinsic, ApiTypes } from "@polkadot/api/types";
 
 import { useProposeContext } from "../providers/proposeProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
+import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import FormattedCall from '../components/FormattedCall';
 
-export type ProposeModalProps = {
-	account: Account | undefined;
-	signer: Signer | undefined;
-};
+export type ProposeModalProps = {};
 
-export default function ProposeModal(props: ProposeModalProps) {
+export default function ProposeModal() {
 	const [message, setMessage] = createSignal<string>('');
 
     const [proposeContext, { closeProposeModal }] = useProposeContext();
     const saturnContext = useSaturnContext();
+    const selectedAccountContext = useSelectedAccountContext();
 
 	  const propose = async () => {
-		    if (!saturnContext.state.saturn || !props.account || typeof saturnContext.state.multisigId !== 'number' || !props.signer || !proposeContext.proposalCall) {
+		    if (!saturnContext.state.saturn || !selectedAccountContext.state.selectedAccount || typeof saturnContext.state.multisigId !== 'number' || !selectedAccountContext.state.selectedWallet?.signer || !proposeContext.proposalCall) {
 			      return;
 		}
 
@@ -49,12 +48,12 @@ export default function ProposeModal(props: ProposeModalProps) {
 
           await saturnContext.state.saturn
 			                       .buildMultisigCall({ id: saturnContext.state.multisigId, call, proposalMetadata })
-			                       .signAndSend(props.account.address, props.signer);
+			                       .signAndSend(selectedAccountContext.state.selectedAccount.address, selectedAccountContext.state.selectedWallet.signer);
       } catch {
           try {
               const call = proposeContext.proposalCall as MultisigCall;
 
-              await call.signAndSend(props.account.address, props.signer);
+              await call.signAndSend(selectedAccountContext.state.selectedAccount.address, selectedAccountContext.state.selectedWallet.signer);
           } catch {}
       } finally {
           closeProposeModal();

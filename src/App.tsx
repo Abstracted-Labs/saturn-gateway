@@ -43,6 +43,7 @@ import { useProposeContext, ProposeProvider } from "./providers/proposeProvider"
 import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
 import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
 import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
+import { useSelectedAccountContext, SelectedAccountProvider } from "./providers/selectedAccountProvider";
 
 import ProposeModal from './modals/propose';
 
@@ -67,8 +68,6 @@ const MainPage: Component = () => {
         [],
     );
     const [availableAccounts, setAvailableAccounts] = createSignal<Account[]>([]);
-    const [selectedAccount, setSelectedAccount] = createSignal<Account>();
-    const [selectedWallet, setSelectedWallet] = createSignal<BaseWallet>();
     const [multisigIdentity, setMultisigIdentity] = createSignal<{
         name: string;
         imageUrl: string;
@@ -85,6 +84,7 @@ const MainPage: Component = () => {
     const wcContext = useWalletConnectContext();
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
+    const selectedAccountContext = useSelectedAccountContext();
 
     const createApis = async (): Promise<Record<string, ApiPromise>> => {
         const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
@@ -314,20 +314,17 @@ const MainPage: Component = () => {
     const connectUserWallet = async (wallet: BaseWallet) => {
         await wallet.connect();
         setAvailableAccounts(await wallet.getAccounts());
-        setSelectedWallet(wallet);
+        selectedAccountContext.setters.setSelectedWallet(wallet);
     };
 
     const connectUserAccount = async (acc: Account) => {
-        setSelectedAccount(acc);
+        selectedAccountContext.setters.setSelectedAccount(acc);
         setWalletModalOpen(false);
     };
 
     return (
         <div class={styles.pageContainer}>
-            <ProposeModal
-                account={selectedAccount()}
-                signer={selectedWallet()?.signer}
-            />
+            <ProposeModal />
             <div class={styles.leftPanel}>
                 <img class={styles.logo} src={logo} />
                 <div class={styles.pageListContainer}>
@@ -460,7 +457,7 @@ const MainPage: Component = () => {
                             onClick={() => setWalletModalOpen(true)}
                             class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
                         >
-                            {selectedAccount()?.name || 'Log In'}
+                            {selectedAccountContext.state.selectedAccount?.name || 'Log In'}
                         </Button>
                         <Modal
                             opened={walletModalOpen()}
@@ -528,10 +525,7 @@ const MainPage: Component = () => {
                             <Route
                                 path='queue'
                                 element={
-                                    <Queue
-                                        address={selectedAccount()?.address}
-                                        signer={selectedWallet()?.signer}
-                                    />
+                                    <Queue />
                                 }
                             />
                             <Route
@@ -551,9 +545,11 @@ const App: Component = () => (
         <SaturnProvider>
             <RingApisProvider>
                 <WalletConnectProvider>
-                    <Routes>
-                        <Route path='/:idOrAddress/*' component={MainPage} />
-                    </Routes>
+                    <SelectedAccountProvider>
+                        <Routes>
+                            <Route path='/:idOrAddress/*' component={MainPage} />
+                        </Routes>
+                    </SelectedAccountProvider>
                 </WalletConnectProvider>
             </RingApisProvider>
         </SaturnProvider>
