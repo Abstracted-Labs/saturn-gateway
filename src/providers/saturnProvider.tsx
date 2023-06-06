@@ -1,14 +1,14 @@
 import { createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
-import { type Saturn } from "@invarch/saturn-sdk";
+import { type Saturn, type MultisigDetails } from "@invarch/saturn-sdk";
 
 export const SaturnContext = createContext<{
-    state: { saturn?: Saturn, multisigId?: number, multisigAddress?: string },
+    state: { saturn?: Saturn; multisigId?: number; multisigAddress?: string; multisigDetails?: MultisigDetails },
     setters: any,
 }>({ state: {}, setters: {} });
 
 export function SaturnProvider(props: any) {
-    const [state, setState] = createStore<{ saturn?: Saturn, multisigId?: number, multisigAddress?: string }>({});
+    const [state, setState] = createStore<{ saturn?: Saturn; multisigId?: number; multisigAddress?: string; multisigDetails?: MultisigDetails }>({});
 
     const value = {
       state,
@@ -23,6 +23,10 @@ export function SaturnProvider(props: any) {
 
            setMultisigAddress(multisigAddress: string) {
                setState("multisigAddress", multisigAddress);
+           },
+
+           setMultisigDetails(multisigDetails: MultisigDetails) {
+               setState("multisigDetails", multisigDetails);
            }
        }
     };

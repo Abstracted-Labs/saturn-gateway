@@ -57,9 +57,6 @@ const pages = [
 ];
 
 const MainPage: Component = () => {
-    // const [saturn, setSaturn] = createSignal<Saturn>();
-    // const [multisigId, setMultisigId] = createSignal<number>();
-    const [multisigDetails, setMultisigDetails] = createSignal<MultisigDetails>();
     const [wcUriInput, setWcUriInput] = createSignal<string>('');
     const [wcModalOpen, setWcModalOpen] = createSignal<boolean>(false);
     const [walletModalOpen, setWalletModalOpen] = createSignal<boolean>(false);
@@ -72,7 +69,6 @@ const MainPage: Component = () => {
     const [availableAccounts, setAvailableAccounts] = createSignal<Account[]>([]);
     const [selectedAccount, setSelectedAccount] = createSignal<Account>();
     const [selectedWallet, setSelectedWallet] = createSignal<BaseWallet>();
-    // const [ringApis, setRingApis] = createSignal<Record<string, ApiPromise>>();
     const [multisigIdentity, setMultisigIdentity] = createSignal<{
         name: string;
         imageUrl: string;
@@ -84,6 +80,7 @@ const MainPage: Component = () => {
         twitterUrl: undefined,
         websiteUrl: undefined,
     });
+
     const [proposeContext, { openProposeModal }] = useProposeContext();
     const wcContext = useWalletConnectContext();
     const ringApisContext = useRingApisContext();
@@ -144,7 +141,7 @@ const MainPage: Component = () => {
     const { idOrAddress } = params;
 
     createEffect(() => {
-        const details = multisigDetails();
+        const details = saturnContext.state.multisigDetails;
         const ra = ringApisContext.state;
         const mid = saturnContext.state.multisigId;
 
@@ -281,7 +278,7 @@ const MainPage: Component = () => {
                 const maybeDetails = await sat.getDetails(id);
 
                 if (maybeDetails) {
-                    setMultisigDetails(maybeDetails);
+                    saturnContext.setters.setMultisigDetails(maybeDetails);
 
                     saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
                 }
@@ -294,7 +291,7 @@ const MainPage: Component = () => {
             const maybeDetails = await sat.getDetails(numberId);
 
             if (maybeDetails) {
-                setMultisigDetails(maybeDetails);
+                saturnContext.setters.setMultisigDetails(maybeDetails);
 
                 saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
             }
@@ -435,7 +432,7 @@ const MainPage: Component = () => {
                                 {multisigIdentity().name}
                             </p>
                             <div class='mb-4 prose prose-sm text-gray-400'>
-                                <p>{multisigDetails()?.account.toHuman()}</p>
+                                <p>{saturnContext.state.multisigAddress}</p>
                             </div>
                             <div class='flex flex-1 items-end'>
                                 <Show when={multisigIdentity().twitterUrl}>
@@ -479,18 +476,18 @@ const MainPage: Component = () => {
                                             when={availableAccounts()[0]}
                                             fallback={
                                                 <For each={availableWallets()}>
-                                                    {wallet => (
-                                                        <Button
-                                                            class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                                            onClick={() => connectUserWallet(wallet)}
-                                                        >
-                                                            <img
-                                                                src={wallet.metadata.iconUrl}
-                                                                class='max-h-[70%]'
-                                                            />
-                                                            {wallet.metadata.title}
-                                                        </Button>
-                                                    )}
+                                                          {wallet => (
+                                                              <Button
+                                                                  class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                                                  onClick={() => connectUserWallet(wallet)}
+                                                              >
+                                                                  <img
+                                                                      src={wallet.metadata.iconUrl}
+                                                                      class='max-h-[70%]'
+                                                                  />
+                                                                          {wallet.metadata.title}
+                                                              </Button>
+                                                          )}
                                                 </For>
                                             }
                                         >
@@ -532,7 +529,6 @@ const MainPage: Component = () => {
                                 path='queue'
                                 element={
                                     <Queue
-                                        multisigDetails={multisigDetails()}
                                         address={selectedAccount()?.address}
                                         signer={selectedWallet()?.signer}
                                     />
