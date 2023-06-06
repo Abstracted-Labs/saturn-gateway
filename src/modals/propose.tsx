@@ -24,7 +24,6 @@ export type ProposeModalProps = {
 	account: Account | undefined;
 	multisigId: number | undefined;
 	signer: Signer | undefined;
-	ringApis: Record<string, ApiPromise> | undefined;
 };
 
 export default function ProposeModal(props: ProposeModalProps) {
@@ -67,13 +66,10 @@ export default function ProposeModal(props: ProposeModalProps) {
 	};
 
 	  const showCall = (call: SubmittableExtrinsic<ApiTypes>) => {
-        const id = props.multisigId as number;
-        const ringApis = props.ringApis as Record<string, ApiPromise>;
-
         return <FormattedCall
 			             fullCall={true}
-			             call={ringApis.tinkernet.createType('Call', call)}
-			             ringApis={props.ringApis} />;
+			             call={call}
+			         />;
 	  };
 
     const a = () => {
@@ -101,7 +97,7 @@ export default function ProposeModal(props: ProposeModalProps) {
 				      <ModalHeader>Propose Multisig Call</ModalHeader>
 				      <ModalBody>
 					        <div class='flex flex-col gap-1'>
-                      <Show when={proposeContext.proposalCall && props.saturn && typeof props.multisigId === 'number' && props.ringApis?.tinkernet}>
+                      <Show when={proposeContext.proposalCall && props.saturn && typeof props.multisigId === 'number'}>
 						              {a()}
                       </Show>
 						          <Input

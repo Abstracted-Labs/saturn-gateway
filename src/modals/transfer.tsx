@@ -26,6 +26,7 @@ import { BN } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 
 import { useProposeContext } from "../providers/proposeProvider";
+import { useRingApisContext } from "../providers/ringApisProvider";
 import { NetworksByAsset, Rings } from '../data/rings';
 
 export type TransferModalProps = {
@@ -34,7 +35,6 @@ export type TransferModalProps = {
     saturn: Saturn | undefined;
     multisigId: number | undefined;
     multisigAddress: string | undefined;
-    ringApis: Record<string, ApiPromise> | undefined;
 };
 
 export default function TransferModal(props: TransferModalProps) {
@@ -46,6 +46,7 @@ export default function TransferModal(props: TransferModalProps) {
     const [bridgeToSelf, setBridgeToSelf] = createSignal<boolean>(false);
 
     const [{ proposalCall }, { openProposeModal, closeProposeModal }] = useProposeContext();
+    const ringApisContext = useRingApisContext();
 
     createEffect(() => {
         const a = props.open?.asset;
@@ -61,11 +62,11 @@ export default function TransferModal(props: TransferModalProps) {
     const proposeTransfer = async () => {
         const asset = props.open?.asset;
 
-        if (!props.saturn || typeof props.multisigId !== 'number' || !props.multisigAddress || !props.ringApis || !asset || amount().lte(0)) {
+        const pair = finalNetworkPair();
+
+        if (!props.saturn || typeof props.multisigId !== 'number' || !props.multisigAddress || !ringApisContext.state[pair.from] || !asset || amount().lte(0)) {
             return;
         }
-
-        const pair = finalNetworkPair();
 
         console.log('pair: ', pair);
         console.log('asset: ', asset);
@@ -74,11 +75,11 @@ export default function TransferModal(props: TransferModalProps) {
 
         if (pair.from == 'tinkernet' && pair.to == 'tinkernet') {
             if (asset == 'TNKR') {
-                call = props.ringApis.tinkernet.tx.balances.transferKeepAlive(targetAddress(), amount().times(BigNumber('10').pow(
+                call = ringApisContext.state.tinkernet.tx.balances.transferKeepAlive(targetAddress(), amount().times(BigNumber('10').pow(
                     Rings.tinkernet.decimals,
                 )).toString()).unwrap().toU8a();
             } else if (asset == 'KSM') {
-                call = props.ringApis.tinkernet.tx.tokens.transferKeepAlive(targetAddress(), 1, amount().times(BigNumber('10').pow(
+                call = ringApisContext.state.tinkernet.tx.tokens.transferKeepAlive(targetAddress(), 1, amount().times(BigNumber('10').pow(
                     BigNumber(Rings.tinkernet.decimals),
                 )).toString()).unwrap().toU8a();
             }
@@ -90,11 +91,11 @@ export default function TransferModal(props: TransferModalProps) {
 
             console.log(assetXcmRep);
 
-            if (!assetXcmRep || !props.ringApis?.[pair.from]) {
+            if (!assetXcmRep) {
                 return;
             }
 
-            const estimateFee = (await props.ringApis[pair.from].tx.polkadotXcm.reserveTransferAssets(
+            const estimateFee = (await ringApisContext.state[pair.from].tx.polkadotXcm.reserveTransferAssets(
                 { v1: { parents: 1, interior: "Here" } },
                 { v1: { parents: 0, interior: "Here" } },
                 { v1: [{ id: { concrete: { v1: { parents: 0, interior: "Here" } } }, fun: { fungible: amount().toString() } }] },
@@ -117,11 +118,11 @@ export default function TransferModal(props: TransferModalProps) {
 
             console.log(assetXcmRep);
 
-            if (!assetXcmRep || !props.ringApis?.[pair.from]) {
+            if (!assetXcmRep) {
                 return;
             }
 
-            const estimateFee = (await props.ringApis[pair.from].tx.balances.transfer(targetAddress(), amount().times(BigNumber('10').pow(
+            const estimateFee = (await ringApisContext.state[pair.from].tx.balances.transfer(targetAddress(), amount().times(BigNumber('10').pow(
                 BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
             )).toString()).paymentInfo(props.multisigAddress)).partialFee;
 
@@ -139,10 +140,6 @@ export default function TransferModal(props: TransferModalProps) {
 
         if (call) {
             openProposeModal(call);
-
-            // props.setCurrentCall(call);
-            // props.setProposeModalOpen(true);
-
             props.setOpen(undefined);
         }
     };

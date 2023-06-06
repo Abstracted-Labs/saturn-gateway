@@ -41,6 +41,7 @@ import styles from './App.module.css';
 import { Rings } from './data/rings';
 import { useProposeContext, ProposeProvider } from "./providers/proposeProvider";
 import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
+import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
 
 import ProposeModal from './modals/propose';
 
@@ -64,7 +65,7 @@ const MainPage: Component = () => {
     const [availableAccounts, setAvailableAccounts] = createSignal<Account[]>([]);
     const [selectedAccount, setSelectedAccount] = createSignal<Account>();
     const [selectedWallet, setSelectedWallet] = createSignal<BaseWallet>();
-    const [ringApis, setRingApis] = createSignal<Record<string, ApiPromise>>();
+    // const [ringApis, setRingApis] = createSignal<Record<string, ApiPromise>>();
     const [multisigIdentity, setMultisigIdentity] = createSignal<{
         name: string;
         imageUrl: string;
@@ -78,6 +79,7 @@ const MainPage: Component = () => {
     });
     const [proposeContext, { openProposeModal }] = useProposeContext();
     const wcContext = useWalletConnectContext();
+    const ringApisContext = useRingApisContext();
 
         const createApis = async (): Promise<Record<string, ApiPromise>> => {
             const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
@@ -135,7 +137,7 @@ const MainPage: Component = () => {
 
     createEffect(() => {
         const details = multisigDetails();
-        const ra = ringApis();
+        const ra = ringApisContext.state;
         const mid = multisigId();
 
         if (details && ra?.tinkernet && mid) {
@@ -254,7 +256,7 @@ const MainPage: Component = () => {
     onMount(async () => {
         const apis = await createApis();
 
-        setRingApis(apis);
+        ringApisContext.setters.setRingApisBatch(apis);
 
         const sat = new Saturn({ api: apis.tinkernet });
 
@@ -317,7 +319,6 @@ const MainPage: Component = () => {
                 multisigId={multisigId()}
                 account={selectedAccount()}
                 signer={selectedWallet()?.signer}
-                ringApis={ringApis()}
             />
             <div class={styles.leftPanel}>
                 <img class={styles.logo} src={logo} />
@@ -523,7 +524,6 @@ const MainPage: Component = () => {
                                             multisigId={multisigId()}
                                             multisigAddress={multisigDetails()?.account.toString()}
                                             saturn={saturn()}
-                                            ringApis={ringApis()}
                                         />
                                     }
                                 />
@@ -536,7 +536,6 @@ const MainPage: Component = () => {
                                             address={selectedAccount()?.address}
                                             saturn={saturn()}
                                             signer={selectedWallet()?.signer}
-                                            ringApis={ringApis()}
                                         />
                                     }
                                 />
@@ -550,11 +549,13 @@ const MainPage: Component = () => {
 
 const App: Component = () => (
     <ProposeProvider>
-        <WalletConnectProvider>
-            <Routes>
-                <Route path='/:idOrAddress/*' component={MainPage} />
-            </Routes>
-        </WalletConnectProvider>
+        <RingApisProvider>
+            <WalletConnectProvider>
+                <Routes>
+                    <Route path='/:idOrAddress/*' component={MainPage} />
+                </Routes>
+            </WalletConnectProvider>
+        </RingApisProvider>
     </ProposeProvider>
 );
 

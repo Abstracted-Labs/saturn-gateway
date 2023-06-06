@@ -13,7 +13,6 @@ export type AssetsPageProps = {
     multisigId: number | undefined;
     multisigAddress: string | undefined;
     saturn: Saturn | undefined;
-    ringApis: Record<string, ApiPromise> | undefined;
 };
 
 const StakePage = {
@@ -86,7 +85,6 @@ export default function Assets(props: AssetsPageProps) {
                 open={transferModalOpen()}
                 setOpen={setTransferModalOpen}
                 saturn={props.saturn}
-                ringApis={props.ringApis}
                 multisigId={props.multisigId}
                 multisigAddress={props.multisigAddress}
             />

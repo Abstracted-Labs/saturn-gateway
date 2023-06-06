@@ -15,6 +15,7 @@ import type { Call } from '@polkadot/types/interfaces';
 import { type ApiPromise } from '@polkadot/api';
 import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
 
+import { useRingApisContext } from "../providers/ringApisProvider";
 import { Rings } from '../data/rings';
 import FormattedCall from '../components/FormattedCall';
 
@@ -24,16 +25,17 @@ export type QueuePageProps = {
 	address: string | undefined;
 	saturn: Saturn | undefined;
 	signer: Signer | undefined;
-	ringApis: Record<string, ApiPromise> | undefined;
 };
 
 export default function Queue(props: QueuePageProps) {
 	const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
 	const [viewFullCall, setViewFullCall] = createSignal<boolean>(false);
 
-	createEffect(() => {
-      const runAsync = async () => {
-          if (!props.saturn || typeof props.multisigId !== 'number' || !props.ringApis) {
+    const ringApisContext = useRingApisContext();
+
+	  createEffect(() => {
+        const runAsync = async () => {
+          if (!props.saturn || typeof props.multisigId !== 'number') {
 			        return;
 		      }
 
@@ -65,13 +67,13 @@ export default function Queue(props: QueuePageProps) {
 				const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
 				const innerCall = (call.toHuman().args as Record<string, AnyJson>).call?.toString();
 
-				if (!chain || !innerCall || !props.ringApis) {
-					return '';
+				    if (!chain || !innerCall || !ringApisContext.state[chain]) {
+					      return '';
 				}
 
-				const xcmCall = props.ringApis[chain].createType('Call', innerCall);
+				    const xcmCall = ringApisContext.state[chain].createType('Call', innerCall);
 
-				return `Execute ${xcmCall.section}.${xcmCall.method} call`;
+				    return `Execute ${xcmCall.section}.${xcmCall.method} call`;
 
 			default:
 				return `Execute ${call.section}.${call.method} call`;
@@ -100,8 +102,8 @@ export default function Queue(props: QueuePageProps) {
 
 		const chain = (fullCall.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
 
-		if (!props.ringApis || !chain) {
-			return call;
+		  if (!chain || ringApisContext.state[chain]) {
+			    return call;
 		}
 
 		const objectOrder = {
@@ -110,7 +112,7 @@ export default function Queue(props: QueuePageProps) {
 			args: null,
 		};
 
-		return Object.assign(objectOrder, props.ringApis[chain].createType('Call', call).toHuman());
+		  return Object.assign(objectOrder, ringApisContext.state[chain].createType('Call', call).toHuman());
 	};
 
 	const processSupport = (ayes: BN): number => {
@@ -153,7 +155,7 @@ export default function Queue(props: QueuePageProps) {
 								<Show when={pc.details.actualCall.toHuman().method == 'sendCall'}>
 									<Switch defaultChecked={false} onChange={e => setViewFullCall(!viewFullCall())}>View Full Call</Switch>
 								</Show>
-								<FormattedCall fullCall={viewFullCall()} call={pc.details.actualCall} ringApis={props.ringApis} />
+								<FormattedCall fullCall={viewFullCall()} call={pc.details.actualCall} />
 								<div class='flex flex-row pt-2.5'>
 									<div class='w-[70%] pr-3'>
 										<Progress height='24px' width='100%' value={processSupport(pc.details.tally.ayes)}>
