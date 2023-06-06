@@ -48,6 +48,13 @@ import ProposeModal from './modals/propose';
 
 const Assets = lazy(async () => import('./pages/Assets'));
 const Queue = lazy(async () => import('./pages/Queue'));
+const Members = lazy(async () => import('./pages/Members'));
+
+const pages = [
+    "assets",
+    "queue",
+    "members",
+];
 
 const MainPage: Component = () => {
     // const [saturn, setSaturn] = createSignal<Saturn>();
@@ -320,100 +327,190 @@ const MainPage: Component = () => {
 
     return (
         <div class={styles.pageContainer}>
-            <ProposeModal
-                account={selectedAccount()}
-                signer={selectedWallet()?.signer}
-            />
-            <div class={styles.leftPanel}>
-                <img class={styles.logo} src={logo} />
-                <div class={styles.pageListContainer}>
+        <ProposeModal
+        account={selectedAccount()}
+        signer={selectedWallet()?.signer}
+        />
+        <div class={styles.leftPanel}>
+            <img class={styles.logo} src={logo} />
+            <div class={styles.pageListContainer}>
+                <For each={pages}>
+                    {(page) => (
                     <A
-                        href='assets'
+                        href={page}
                         class={styles.pageItemContainer}
                         activeClass={styles.enabled}
                     >
                         <div class={styles.selectedItemGradient} />
                         <div class={styles.selectedItemIndicator} />
-                        Assets
+                        {page}
                     </A>
+                    )}
+                </For>
+            </div>
+            <div class='py-2.5'>
+                <Button
+                    onClick={() => setWcModalOpen(true)}
+                    class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
+                >
+                    <img
+                        src='https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/White/Icon.svg'
+                        class='max-h-[70%]'
+                    />
+                    WalletConnect
+                </Button>
+                <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
+                    <ModalOverlay />
+                    <ModalContent>
+                        <ModalCloseButton />
+                        <ModalHeader>WalletConnect Sessions</ModalHeader>
+                        <ModalBody>
+                            <div>
+                                <Input
+                                    value={wcUriInput()}
+                                    onInput={e => {
+                                          setWcUriInput(e.currentTarget.value);
+                                          }}
+                                />
+                                <Button
+                                    class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                    onClick={() => tryWcConnectDapp()}
+                                >
+                                    Connect to dApp
+                                </Button>
+                            </div>
+                            <div>
+                                <Table>
+                                    <Tbody>
+                                        <For each={wcActiveSessions()}>
+                                            {([sessionTopic, sessionData]) => (
+                                            <Tr>
+                                                <Td>
+                                                    <div class='flex gap-1'>
+                                                        <img
+                                                            class='max-w-[10%] object-cover'
+                                                            src={sessionData.peer.metadata.icons[0]}
+                                                        />
+                                                        {sessionData.peer.metadata.name}
+                                                    </div>
+                                                </Td>
 
-                    <A
-                        href='queue'
-                        class={styles.pageItemContainer}
-                        activeClass={styles.enabled}
-                    >
-                        <div class={styles.selectedItemGradient} />
-                        <div class={styles.selectedItemIndicator} />
-                        Queue
-                    </A>
-                </div>
-                <div class='py-2.5'>
+                                                <Td>
+                                                    <Button
+                                                        onClick={() =>
+                                                                    disconnectWcSession(sessionTopic)
+                                                                }
+                                                    >
+                                                        Disconnect
+                                                    </Button>
+                                                </Td>
+                                            </Tr>
+                                            )}
+                                        </For>
+                                    </Tbody>
+                                </Table>
+                            </div>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                onClick={() => setWcModalOpen(false)}
+                            >
+                                Close
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+            </div>
+        </div>
+        <div class={styles.rightPanel}>
+            <div class={styles.topContainer}>
+                <div class='flex flex-row basis-full items-center space-x-6 pl-4 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl'>
+                    <img
+                        class='object-cover w-24 h-24 rounded-md'
+                        src={multisigIdentity().imageUrl}
+                    />
+                    <div class='h-24 flex flex-col'>
+                        <p class='font-display mb-1 text-2xl font-semibold text-white'>
+                            {multisigIdentity().name}
+                        </p>
+                        <div class='mb-4 prose prose-sm text-gray-400'>
+                            <p>{multisigDetails()?.account.toHuman()}</p>
+                        </div>
+                        <div class='flex flex-1 items-end'>
+                            <Show when={multisigIdentity().twitterUrl}>
+                                <a
+                                    href={multisigIdentity().twitterUrl}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                >
+                                    <AiOutlineTwitter size={20} />
+                                </a>
+                            </Show>
+                            <Show when={multisigIdentity().websiteUrl}>
+                                <a
+                                    href={multisigIdentity().websiteUrl}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                >
+                                    <AiOutlineLink size={20} />
+                                </a>
+                            </Show>
+                        </div>
+                    </div>
+                    <div class='grow' />
                     <Button
-                        onClick={() => setWcModalOpen(true)}
-                        class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
+                        onClick={() => setWalletModalOpen(true)}
+                        class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
                     >
-                        <img
-                            src='https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/White/Icon.svg'
-                            class='max-h-[70%]'
-                        />
-                        WalletConnect
+                        {selectedAccount()?.name || 'Log In'}
                     </Button>
-                    <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
+                    <Modal
+                        opened={walletModalOpen()}
+                        onClose={() => setWalletModalOpen(false)}
+                    >
                         <ModalOverlay />
                         <ModalContent>
                             <ModalCloseButton />
-                            <ModalHeader>WalletConnect Sessions</ModalHeader>
+                            <ModalHeader>Choose a wallet</ModalHeader>
                             <ModalBody>
-                                <div>
-                                    <Input
-                                        value={wcUriInput()}
-                                        onInput={e => {
-                                            setWcUriInput(e.currentTarget.value);
-                                        }}
-                                    />
-                                    <Button
-                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                        onClick={() => tryWcConnectDapp()}
+                                <div class='flex flex-col gap-1'>
+                                    <Show
+                                        when={availableAccounts()[0]}
+                                        fallback={
+                                             <For each={availableWallets()}>
+                                             {wallet => (
+                                             <Button
+                                             class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                             onClick={() => connectUserWallet(wallet)}
                                     >
-                                        Connect to dApp
-                                    </Button>
-                                </div>
-                                <div>
-                                    <Table>
-                                        <Tbody>
-                                            <For each={wcActiveSessions()}>
-                                                {([sessionTopic, sessionData]) => (
-                                                    <Tr>
-                                                        <Td>
-                                                            <div class='flex gap-1'>
-                                                                <img
-                                                                    class='max-w-[10%] object-cover'
-                                                                    src={sessionData.peer.metadata.icons[0]}
-                                                                />
-                                                                {sessionData.peer.metadata.name}
-                                                            </div>
-                                                        </Td>
-
-                                                        <Td>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    disconnectWcSession(sessionTopic)
-                                                                }
-                                                            >
-                                                                Disconnect
-                                                            </Button>
-                                                        </Td>
-                                                    </Tr>
-                                                )}
-                                            </For>
-                                        </Tbody>
-                                    </Table>
+                                             <img
+                                             src={wallet.metadata.iconUrl}
+                                             class='max-h-[70%]'
+                                    />
+                                             {wallet.metadata.title}
+                                             </Button>
+                                             )}
+                                             </For>
+                                             }
+                                    >
+                                        <For each={availableAccounts()}>
+                                            {acc => (
+                                            <Button
+                                                class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                                onClick={() => connectUserAccount(acc)}
+                                            >
+                                                {acc.name}
+                                            </Button>
+                                            )}
+                                        </For>
+                                    </Show>
                                 </div>
                             </ModalBody>
                             <ModalFooter>
                                 <Button
                                     class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                    onClick={() => setWcModalOpen(false)}
+                                    onClick={() => setWalletModalOpen(false)}
                                 >
                                     Close
                                 </Button>
@@ -422,141 +519,49 @@ const MainPage: Component = () => {
                     </Modal>
                 </div>
             </div>
-            <div class={styles.rightPanel}>
-                <div class={styles.topContainer}>
-                    <div class='flex flex-row basis-full items-center space-x-6 pl-4 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl'>
-                        <img
-                            class='object-cover w-24 h-24 rounded-md'
-                            src={multisigIdentity().imageUrl}
+            <div class={styles.mainContainer}>
+                <div class={styles.mainPanel}>
+                    <Routes>
+                        <Route
+                            path='assets'
+                            element={
+                                  <Assets />
+                                  }
                         />
-                        <div class='h-24 flex flex-col'>
-                            <p class='font-display mb-1 text-2xl font-semibold text-white'>
-                                {multisigIdentity().name}
-                            </p>
-                            <div class='mb-4 prose prose-sm text-gray-400'>
-                                <p>{multisigDetails()?.account.toHuman()}</p>
-                            </div>
-                            <div class='flex flex-1 items-end'>
-                                <Show when={multisigIdentity().twitterUrl}>
-                                    <a
-                                        href={multisigIdentity().twitterUrl}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                    >
-                                        <AiOutlineTwitter size={20} />
-                                    </a>
-                                </Show>
-                                <Show when={multisigIdentity().websiteUrl}>
-                                    <a
-                                        href={multisigIdentity().websiteUrl}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                    >
-                                        <AiOutlineLink size={20} />
-                                    </a>
-                                </Show>
-                            </div>
-                        </div>
-                        <div class='grow' />
-                        <Button
-                            onClick={() => setWalletModalOpen(true)}
-                            class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
-                        >
-                            {selectedAccount()?.name || 'Log In'}
-                        </Button>
-                        <Modal
-                            opened={walletModalOpen()}
-                            onClose={() => setWalletModalOpen(false)}
-                        >
-                            <ModalOverlay />
-                            <ModalContent>
-                                <ModalCloseButton />
-                                <ModalHeader>Choose a wallet</ModalHeader>
-                                <ModalBody>
-                                    <div class='flex flex-col gap-1'>
-                                        <Show
-                                            when={availableAccounts()[0]}
-                                            fallback={
-                                                <For each={availableWallets()}>
-                                                    {wallet => (
-                                                        <Button
-                                                            class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                                            onClick={() => connectUserWallet(wallet)}
-                                                        >
-                                                            <img
-                                                                src={wallet.metadata.iconUrl}
-                                                                class='max-h-[70%]'
-                                                            />
-                                                            {wallet.metadata.title}
-                                                        </Button>
-                                                    )}
-                                                </For>
-                                            }
-                                        >
-                                            <For each={availableAccounts()}>
-                                                {acc => (
-                                                    <Button
-                                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                                        onClick={() => connectUserAccount(acc)}
-                                                    >
-                                                        {acc.name}
-                                                    </Button>
-                                                )}
-                                            </For>
-                                        </Show>
-                                    </div>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button
-                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                        onClick={() => setWalletModalOpen(false)}
-                                    >
-                                        Close
-                                    </Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
-                    </div>
-                </div>
-                <div class={styles.mainContainer}>
-                    <div class={styles.mainPanel}>
-                            <Routes>
-                                <Route
-                                    path='assets'
-                                    element={
-                                        <Assets />
-                                    }
-                                />
-                                <Route
-                                    path='queue'
-                                    element={
-                                        <Queue
-                                            multisigDetails={multisigDetails()}
-                                            address={selectedAccount()?.address}
-                                            signer={selectedWallet()?.signer}
-                                        />
-                                    }
-                                />
-                            </Routes>
-                    </div>
+                        <Route
+                            path='queue'
+                            element={
+                                  <Queue
+                                  multisigDetails={multisigDetails()}
+                                  address={selectedAccount()?.address}
+                                  signer={selectedWallet()?.signer}
+                        />
+                                  }
+                        />
+                        <Route
+                            path="members"
+                            element={<Members />}
+                        />
+                    </Routes>
                 </div>
             </div>
         </div>
-    );
-};
+        </div>
+        );
+        };
 
-const App: Component = () => (
-    <ProposeProvider>
-        <SaturnProvider>
-            <RingApisProvider>
-                <WalletConnectProvider>
-                    <Routes>
-                        <Route path='/:idOrAddress/*' component={MainPage} />
-                    </Routes>
-                </WalletConnectProvider>
-            </RingApisProvider>
-        </SaturnProvider>
-    </ProposeProvider>
-);
+        const App: Component = () => (
+        <ProposeProvider>
+            <SaturnProvider>
+                <RingApisProvider>
+                    <WalletConnectProvider>
+                        <Routes>
+                            <Route path='/:idOrAddress/*' component={MainPage} />
+                        </Routes>
+                    </WalletConnectProvider>
+                </RingApisProvider>
+            </SaturnProvider>
+        </ProposeProvider>
+        );
 
-export default App;
+                        export default App;
