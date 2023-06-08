@@ -6,6 +6,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn, type MultisigDetails, type MultisigCall } from '@invarch/saturn-sdk';
 import { isAddress, decodeAddress } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
+import { BN } from '@polkadot/util';
 import type Web3WalletType from '@walletconnect/web3wallet';
 import { Web3Wallet } from '@walletconnect/web3wallet';
 import type { SessionTypes } from '@walletconnect/types';
@@ -57,6 +58,12 @@ const pages = [
     "members",
 ];
 
+declare global {
+    interface Window { thisMultisigData: { name: string; address: string }; sendMultisigData: () => void }
+}
+
+window.thisMultisigData = window.thisMultisigData || undefined;
+
 const MainPage: Component = () => {
     const [wcUriInput, setWcUriInput] = createSignal<string>('');
     const [wcModalOpen, setWcModalOpen] = createSignal<boolean>(false);
@@ -85,6 +92,37 @@ const MainPage: Component = () => {
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
     const selectedAccountContext = useSelectedAccountContext();
+
+    window.addEventListener('message', ({ data, source }) => {
+
+        if (data.type === "IN_GATEWAY" && data.text === "sign_payload") {
+            console.log("received payload to propose: ", data.payload);
+
+            if (!saturnContext.state.saturn || !saturnContext.state.multisigId) return;
+
+            if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {} else {
+                const chain = Object.entries(Rings).find(([chain, ringData]) => ringData.genesisHash === data.payload.genesisHash)?.[0];
+
+                if (!chain) return;
+
+                const xcmFeeAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets[0].registerType;
+
+                if (!xcmFeeAsset) return;
+
+                const proposal = saturnContext.state.saturn.sendXCMCall({
+                    id: saturnContext.state.multisigId,
+                    destination: chain,
+                    weight: new BN("5000000000"), // TODO
+                    xcmFeeAsset, // TODO
+                    xcmFee: new BN("50000000000000"), // TODO
+                    callData: data.payload.method,
+                });
+
+                openProposeModal(proposal);
+            }
+
+        }
+    });
 
     const createApis = async (): Promise<Record<string, ApiPromise>> => {
         const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
@@ -170,6 +208,10 @@ const MainPage: Component = () => {
                 const websiteUrl = iden?.web?.Raw || undefined;
 
                 setMultisigIdentity({ name, imageUrl, twitterUrl, websiteUrl });
+
+                window.thisMultisigData = { name, address: window.thisMultisigData.address };
+
+                window.sendMultisigData();
             };
 
             runAsync();
@@ -281,6 +323,8 @@ const MainPage: Component = () => {
                     saturnContext.setters.setMultisigDetails(maybeDetails);
 
                     saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+
+                    window.thisMultisigData = { name: maybeDetails.account.toHuman(), address: maybeDetails.account.toHuman() };
                 }
             }
         } else {
@@ -294,6 +338,8 @@ const MainPage: Component = () => {
                 saturnContext.setters.setMultisigDetails(maybeDetails);
 
                 saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+
+                window.thisMultisigData = { name: maybeDetails.account.toHuman(), address: maybeDetails.account.toHuman() };
             }
         }
     });

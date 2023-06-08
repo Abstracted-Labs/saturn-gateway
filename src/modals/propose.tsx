@@ -24,7 +24,7 @@ import FormattedCall from '../components/FormattedCall';
 export type ProposeModalProps = {};
 
 export default function ProposeModal() {
-	const [message, setMessage] = createSignal<string>('');
+	  const [message, setMessage] = createSignal<string>('');
 
     const [proposeContext, { closeProposeModal }] = useProposeContext();
     const saturnContext = useSaturnContext();

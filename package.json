@@ -10,9 +10,10 @@
   },
   "license": "MIT",
   "xo": {
-      "prettier": true
+    "prettier": true
   },
   "devDependencies": {
+    "@types/md5": "^2.3.2",
     "@types/prismjs": "^1.26.0",
     "@typescript-eslint/eslint-plugin": ">=5.57.0",
     "@typescript-eslint/parser": ">=5.57.0",
@@ -31,11 +32,12 @@
   },
   "dependencies": {
     "@hope-ui/solid": "^0.6.7",
-    "@invarch/saturn-sdk": "^1.0.5",
+    "@invarch/saturn-sdk": "^1.0.6",
     "@polkadot-onboard/core": "^0.0.10",
     "@polkadot-onboard/injected-wallets": "^0.0.10",
     "@polkadot-onboard/wallet-connect": "^0.0.10",
     "@polkadot/api": "^10.7.2",
+    "@polkadot/types": "^10.8.1",
     "@polkadot/util": "^12.2.1",
     "@polkadot/util-crypto": "^12.2.1",
     "@solidjs/router": "^0.8.2",
@@ -43,6 +45,8 @@
     "@walletconnect/sign-client": "^2.7.5",
     "@walletconnect/web3wallet": "^1.7.3",
     "bignumber.js": "^9.1.1",
+    "colorjs.io": "^0.4.5",
+    "md5": "^2.3.0",
     "solid-icons": "^1.0.4",
     "solid-js": "^1.6.10",
     "solid-transition-group": "^0.2.2",

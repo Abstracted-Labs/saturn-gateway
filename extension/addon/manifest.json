@@ -1,0 +1,38 @@
+{
+    "manifest_version": 2,
+    "name": "Saturn Connect",
+    "version": "0.0.1",
+    "background": {
+        "scripts": ["./background/index.js"]
+    },
+    "content_scripts": [
+        {
+            "js": [
+                "./gateway_content/index.js"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "run_at": "document_idle"
+    },
+        {
+            "js": [
+                "./content/index.js"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "run_at": "document_start"
+    }
+    ],
+    "browser_action": {
+        "default_icon": "assets/icon.png",
+        "default_title": "Saturn Connect",
+        "default_popup": "popup/index.html"
+    },
+    "permissions": [
+        "tabs"
+    ]
+}

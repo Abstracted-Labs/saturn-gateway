@@ -10,6 +10,7 @@ export type RingsData = {
     decimals: number;
     icon: string;
     websocket: string;
+    genesisHash: string;
 };
 
 export type RingsType = {
@@ -25,6 +26,7 @@ export const Rings: RingsType = {
         decimals: 12,
         icon: tinkernetIcon,
         websocket: 'wss://invarch-tinkernet.api.onfinality.io/public-ws',
+        genesisHash: "",
     },
     basilisk: {
         wcNamespace: 'polkadot:a85cfb9b9fd4d622a5b28289a02347af',
@@ -32,6 +34,7 @@ export const Rings: RingsType = {
         decimals: 12,
         icon: basiliskIcon,
         websocket: 'wss://rpc.basilisk.cloud',
+        genesisHash: "0xa85cfb9b9fd4d622a5b28289a02347af987d8f73fa3108450e2b4a11c1ce5755",
     },
     picasso: {
         wcNamespace: 'polkadot:6811a339673c9daa897944dcdac99c6e',
@@ -39,6 +42,7 @@ export const Rings: RingsType = {
         decimals: 12,
         icon: picassoIcon,
         websocket: 'wss://rpc.composablenodes.tech',
+        genesisHash: "",
     },
 };
 
