@@ -2,8 +2,7 @@ import { injectExtension } from '@polkadot/extension-inject';
 
 const handlers = {};
 let metadata = {};
-
-const nothing = async () => {};
+let usingSC = false;
 
 function sendMessage(message) {
     return new Promise((resolve, reject) => {
@@ -13,8 +12,101 @@ function sendMessage(message) {
     });
 }
 
-    const enable = async () => {
-        console.log("enable called");
+    const enablePJS = async () => {
+        console.log("enablePJS called");
+
+        const injectedAccounts = {
+            get: async (anyType) => {
+                if (usingSC) {
+                    console.log("dapp asked for PJS accounts but SC is aready enabled.");
+
+                    if (window.injectedWeb3["polkadot-js"].version === "saturn-connect-0.0.1") {
+                        delete window.injectedWeb3["polkadot-js"];
+                    }
+
+                    return Promise.resolve([]);
+                } else {
+                    return sendMessage({ type: "FROM_PAGE", text: "get_multisigs" });
+                }
+            },
+
+            subscribe: (cb) => {
+                return () => {};
+            }
+        };
+
+        const injectedSigner = {
+            signPayload: async (payload) => {
+
+                if (usingSC) {
+                    console.log("dapp asked for PJS signer but SC is aready enabled.");
+
+                    if (window.injectedWeb3["polkadot-js"].version === "saturn-connect-0.0.1") {
+                        delete window.injectedWeb3["polkadot-js"];
+                    }
+
+                    return Promise.resolve({});
+                } else {
+                    console.log("signPayload payload: ", payload);
+
+                    sendMessage({ type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload });
+
+                    return Promise.resolve({ error: 69420, message: "Proposed to multisig." });
+                }
+            },
+        };
+
+        const injectedMetadata = {
+            get: async () => {
+                if (usingSC) {
+                    console.log("dapp asked for PJS metadata but SC is aready enabled.");
+
+                    if (window.injectedWeb3["polkadot-js"].version === "saturn-connect-0.0.1") {
+                        delete window.injectedWeb3["polkadot-js"];
+                    }
+
+                    return Promise.resolve([]);
+                } else {
+
+                    console.log("dapp requesting metadata list: ", metadata);
+
+                    return Promise.resolve(Object.values(metadata));
+                }
+            },
+
+            provide: async (m) => {
+                if (usingSC) {
+                    console.log("dapp asked for PJS metadata but SC is aready enabled.");
+
+                    if (window.injectedWeb3["polkadot-js"].version === "saturn-connect-0.0.1") {
+                        delete window.injectedWeb3["polkadot-js"];
+                    }
+
+                    return Promise.resolve(false);
+                } else {
+
+                    console.log("dapp providing metadata: ", m);
+
+                    metadata[m.genesisHash] = m;
+
+                    return Promise.resolve(true);
+                }
+            }
+        };
+
+        const injected = {
+            accounts: injectedAccounts,
+            signer: injectedSigner,
+            metadata: injectedMetadata,
+        };
+
+        return Promise.resolve(injected);
+    };
+
+    const enableSC = async () => {
+        console.log("enableSC called");
+
+        usingSC = true;
 
         const injectedAccounts = {
             get: async (anyType) => {
@@ -40,16 +132,16 @@ function sendMessage(message) {
         const injectedMetadata = {
             get: async () => {
 
-                console.log("get metadata: ", metadata);
+                console.log("dapp requesting metadata list: ", metadata);
 
-                return Promise.resolve({ genesisHash: metadata.genesisHash, specVersion: metadata.specVersion });
+                return Promise.resolve(Object.values(metadata));
             },
 
             provide: async (m) => {
 
-                console.log("provide metadata: ", m);
+                console.log("dapp providing metadata: ", m);
 
-                metadata = m;
+                metadata[m.genesisHash] = m;
 
                 return Promise.resolve(true);
             }
@@ -65,7 +157,8 @@ function sendMessage(message) {
     };
 
 function inject() {
-    injectExtension(enable, { name: 'polkadot-js', version: "0.0.1" });
+    injectExtension(enableSC, { name: 'Saturn Connect', version: "0.0.1" });
+    injectExtension(enablePJS, { name: 'polkadot-js', version: "saturn-connect-0.0.1" });
 
     console.log("injected");
 }
