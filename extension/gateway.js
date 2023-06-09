@@ -9,9 +9,11 @@ function sendMessage(message) {
 function inject() {
     console.log("injecting gateway code...");
 
-        window.sendMultisigData = (multisigData) => {
+    window.saturnConnect = {
+        sendMultisigData: (multisigData) => {
             sendMultisigData(multisigData);
-        };
+        }
+    };
 
     console.log("injected gateway code");
 }

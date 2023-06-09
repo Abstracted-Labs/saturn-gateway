@@ -5,7 +5,11 @@ import { type SaturnContextType } from "../providers/saturnProvider";
 import { type OpenProposeModalType } from "../providers/proposeProvider";
 
 declare global {
-    interface Window { sendMultisigData: (multisigData: { name: string; address: string }) => void }
+    interface Window {
+        saturnConnect: {
+            sendMultisigData: (multisigData: { name: string; address: string }) => void;
+        }
+    }
 }
 
 export function setupSaturnConnect(saturnContext: SaturnContextType, openProposeModal: OpenProposeModalType) {
@@ -42,5 +46,5 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, openPropose
 }
 
 export function setSaturnConnectAccount(name: string, address: string) {
-    window.sendMultisigData({ name, address });
+    window.saturnConnect.sendMultisigData({ name, address });
 }

@@ -55,35 +55,20 @@ browser.runtime.onMessage.addListener((data) => {
     return false;
 });
 
-console.log("document.location.host: ", document.location.host);
+const script = document.createElement('script');
 
-if (document.location.host === "localhost:5173") {
+if (document.getElementById("isSaturnGateway")) {
     console.log("page is Saturn Gateway");
 
-    if (document.location.hash.split('/')[1] !== "") {
-        const script = document.createElement('script');
-
-        script.src = chrome.extension.getURL('../gateway/index.js');
-
-        script.onload = () => {
-            if (script.parentNode) {
-                script.parentNode.removeChild(script);
-            }
-        };
-
-        (document.head || document.documentElement).appendChild(script);
-    }
+    script.src = chrome.extension.getURL('../gateway/index.js');
 } else {
-    const script = document.createElement('script');
-
     script.src = chrome.extension.getURL('../inject/index.js');
-
-    script.onload = () => {
-        // remove the injecting tag when loaded
-        if (script.parentNode) {
-            script.parentNode.removeChild(script);
-        }
-    };
-
-    (document.head || document.documentElement).appendChild(script);
 }
+
+script.onload = () => {
+    if (script.parentNode) {
+        script.parentNode.removeChild(script);
+    }
+};
+
+(document.head || document.documentElement).appendChild(script);

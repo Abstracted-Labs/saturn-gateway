@@ -8,23 +8,13 @@
     "content_scripts": [
         {
             "js": [
-                "./gateway_content/index.js"
-            ],
-            "matches": [
-                "http://*/*",
-                "https://*/*"
-            ],
-            "run_at": "document_idle"
-    },
-        {
-            "js": [
                 "./content/index.js"
             ],
             "matches": [
                 "http://*/*",
                 "https://*/*"
             ],
-            "run_at": "document_start"
+            "run_at": "document_end"
     }
     ],
     "browser_action": {
