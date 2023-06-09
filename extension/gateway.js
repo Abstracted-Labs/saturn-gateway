@@ -9,8 +9,8 @@ function sendMessage(message) {
 function inject() {
     console.log("injecting gateway code...");
 
-        window.sendMultisigData = () => {
-            sendMultisigData();
+        window.sendMultisigData = (multisigData) => {
+            sendMultisigData(multisigData);
         };
 
     console.log("injected gateway code");
@@ -18,19 +18,14 @@ function inject() {
 
 inject();
 
-function sendMultisigData() {
-    console.log("sendMultisigData called with thisMultisigData being: ", window.thisMultisigData);
-    if (window.thisMultisigData) {
-        const multisigData = window.thisMultisigData;
+function sendMultisigData(multisigData) {
+    console.log("sendMultisigData called with thisMultisigData being: ", multisigData);
 
-        window.postMessage({ type: "FROM_GATEWAY", text: "multisig_data", multisigData }, "*");
+    window.postMessage({ type: "FROM_GATEWAY", text: "multisig_data", multisigData }, "*");
 
-        console.log("gateway posted message to gateway_content with multisigData");
-    } else {
-        console.log("window.thisMultisigData not initialized");
-    }
+    console.log("gateway posted message to gateway_content with multisigData");
 
-    }
+}
 
 window.addEventListener('message', ({ data, source }) => {
 
@@ -40,5 +35,3 @@ window.addEventListener('message', ({ data, source }) => {
         window.postMessage({ type: "IN_GATEWAY", text: "sign_payload", payload: data.payload }, "*");
     }
 });
-
-//sendMultisigData();

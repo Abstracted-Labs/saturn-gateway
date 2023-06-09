@@ -35,6 +35,7 @@ import {
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { AiOutlineTwitter, AiOutlineLink } from 'solid-icons/ai';
 
+import { setupSaturnConnect, setSaturnConnectAccount } from "./utils/setupSaturnConnect";
 import { CustomWalletConnectProvider } from './utils/wcImplementation';
 import logo from './assets/logo.png';
 import defaultMultisigImage from './assets/default-multisig-image.png';
@@ -57,12 +58,6 @@ const pages = [
     "queue",
     "members",
 ];
-
-declare global {
-    interface Window { thisMultisigData: { name: string; address: string }; sendMultisigData: () => void }
-}
-
-window.thisMultisigData = window.thisMultisigData || undefined;
 
 const MainPage: Component = () => {
     const [wcUriInput, setWcUriInput] = createSignal<string>('');
@@ -93,36 +88,7 @@ const MainPage: Component = () => {
     const saturnContext = useSaturnContext();
     const selectedAccountContext = useSelectedAccountContext();
 
-    window.addEventListener('message', ({ data, source }) => {
-
-        if (data.type === "IN_GATEWAY" && data.text === "sign_payload") {
-            console.log("received payload to propose: ", data.payload);
-
-            if (!saturnContext.state.saturn || !saturnContext.state.multisigId) return;
-
-            if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {} else {
-                const chain = Object.entries(Rings).find(([chain, ringData]) => ringData.genesisHash === data.payload.genesisHash)?.[0];
-
-                if (!chain) return;
-
-                const xcmFeeAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets[0].registerType;
-
-                if (!xcmFeeAsset) return;
-
-                const proposal = saturnContext.state.saturn.sendXCMCall({
-                    id: saturnContext.state.multisigId,
-                    destination: chain,
-                    weight: new BN("5000000000"), // TODO
-                    xcmFeeAsset, // TODO
-                    xcmFee: new BN("50000000000000"), // TODO
-                    callData: data.payload.method,
-                });
-
-                openProposeModal(proposal);
-            }
-
-        }
-    });
+    setupSaturnConnect(saturnContext, openProposeModal);
 
     const createApis = async (): Promise<Record<string, ApiPromise>> => {
         const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
@@ -183,7 +149,7 @@ const MainPage: Component = () => {
         const ra = ringApisContext.state;
         const mid = saturnContext.state.multisigId;
 
-        if (details && ra?.tinkernet && mid) {
+        if (details && ra?.tinkernet && typeof mid === "number") {
             const acc = details.account;
 
             const runAsync = async () => {
@@ -208,14 +174,19 @@ const MainPage: Component = () => {
                 const websiteUrl = iden?.web?.Raw || undefined;
 
                 setMultisigIdentity({ name, imageUrl, twitterUrl, websiteUrl });
-
-                window.thisMultisigData = { name, address: window.thisMultisigData.address };
-
-                window.sendMultisigData();
             };
 
             runAsync();
         }
+    });
+
+    createEffect(() => {
+        const name = multisigIdentity().name;
+        const address = saturnContext.state.multisigAddress;
+
+        if (!address || name === "Multisig") return;
+
+        setSaturnConnectAccount(name, address);
     });
 
     createEffect(() => {
@@ -323,8 +294,6 @@ const MainPage: Component = () => {
                     saturnContext.setters.setMultisigDetails(maybeDetails);
 
                     saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
-
-                    window.thisMultisigData = { name: maybeDetails.account.toHuman(), address: maybeDetails.account.toHuman() };
                 }
             }
         } else {
@@ -338,8 +307,6 @@ const MainPage: Component = () => {
                 saturnContext.setters.setMultisigDetails(maybeDetails);
 
                 saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
-
-                window.thisMultisigData = { name: maybeDetails.account.toHuman(), address: maybeDetails.account.toHuman() };
             }
         }
     });

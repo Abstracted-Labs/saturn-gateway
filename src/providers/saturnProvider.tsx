@@ -2,10 +2,12 @@ import { createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { type Saturn, type MultisigDetails } from "@invarch/saturn-sdk";
 
-export const SaturnContext = createContext<{
+export type SaturnContextType = {
     state: { saturn?: Saturn; multisigId?: number; multisigAddress?: string; multisigDetails?: MultisigDetails },
     setters: any,
-}>({ state: {}, setters: {} });
+};
+
+export const SaturnContext = createContext<SaturnContextType>({ state: {}, setters: {} });
 
 export function SaturnProvider(props: any) {
     const [state, setState] = createStore<{ saturn?: Saturn; multisigId?: number; multisigAddress?: string; multisigDetails?: MultisigDetails }>({});

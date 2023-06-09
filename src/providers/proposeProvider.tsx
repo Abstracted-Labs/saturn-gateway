@@ -2,6 +2,8 @@ import { createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { MultisigCall } from "@invarch/saturn-sdk";
 
+export type OpenProposeModalType = (proposalCall: Uint8Array | MultisigCall) => void;
+
 export const ProposeContext = createContext<[{ proposalCall?: Uint8Array | MultisigCall }, {
     openProposeModal(proposalCall: Uint8Array | MultisigCall): void;
     closeProposeModal(): void;
