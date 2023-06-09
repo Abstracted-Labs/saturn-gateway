@@ -13,7 +13,7 @@ browser.runtime.onMessage.addListener(
             const tabId = sender.tab.id;
 
 
-            multisigs[data.multisigData.address] = { ...data.multisigData, tabId };
+            multisigs[tabId] = { ...data.multisigData, tabId };
         }
 
         if (data === 'get_multisigs') {
@@ -39,3 +39,5 @@ browser.runtime.onMessage.addListener(
         return false;
     }
 );
+
+browser.tabs.onRemoved.addListener((tabId) => delete multisigs[tabId]);
