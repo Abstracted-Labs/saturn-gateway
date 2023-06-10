@@ -26,7 +26,7 @@ function sendMessage(message) {
 
                     return Promise.resolve([]);
                 } else {
-                    return sendMessage({ type: "FROM_PAGE", text: "get_multisigs" });
+                    return sendMessage({ type: "FROM_PAGE", text: "get_multisigs", hostname: window.location.hostname });
                 }
             },
 
@@ -49,7 +49,7 @@ function sendMessage(message) {
                 } else {
                     console.log("signPayload payload: ", payload);
 
-                    sendMessage({ type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload });
+                    sendMessage({ type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload, hostname: window.location.hostname });
 
                     return Promise.resolve({ error: 69420, message: "Proposed to multisig." });
                 }
@@ -110,7 +110,7 @@ function sendMessage(message) {
 
         const injectedAccounts = {
             get: async (anyType) => {
-                return sendMessage({ type: "FROM_PAGE", text: "get_multisigs" });
+                return sendMessage({ type: "FROM_PAGE", text: "get_multisigs", hostname: window.location.hostname });
             },
 
             subscribe: (cb) => {
@@ -123,7 +123,7 @@ function sendMessage(message) {
 
                 console.log("signPayload payload: ", payload);
 
-                sendMessage({ type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload });
+                sendMessage({ type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload, hostname: window.location.hostname });
 
                 return Promise.resolve({ error: 69420, message: "Proposed to multisig." });
             },

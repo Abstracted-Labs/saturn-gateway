@@ -23,6 +23,7 @@
         "default_popup": "popup/index.html"
     },
     "permissions": [
-        "tabs"
+        "tabs",
+        "storage"
     ]
 }

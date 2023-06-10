@@ -14,7 +14,7 @@ window.addEventListener('message', ({ data, source }) => {
     if (data.type === "FROM_PAGE" && data.text === "get_multisigs") {
         console.log("injected script is asking for multisigs");
 
-        browser.runtime.sendMessage("", "get_multisigs").then((multisigs) => {
+        browser.runtime.sendMessage("", { text: "get_multisigs", hostname: data.hostname }).then((multisigs) => {
             console.log("content got multisigs: ", multisigs);
 
             window.postMessage({ type: "TO_PAGE", text: "multisigs", multisigs }, "*");
@@ -32,7 +32,7 @@ window.addEventListener('message', ({ data, source }) => {
     if (data.type === "FROM_PAGE_TO_GATEWAY" && data.text === "sign_payload") {
         console.log("injected script is asking for multisigs");
 
-        browser.runtime.sendMessage("", { type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload: data.payload });
+        browser.runtime.sendMessage("", { type: "FROM_PAGE_TO_GATEWAY", text: "sign_payload", payload: data.payload, hostname: data.hostname });
     }
 
     // only allow messages from our window, by the inject
