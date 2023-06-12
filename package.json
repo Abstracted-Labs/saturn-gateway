@@ -5,8 +5,10 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
+    "build:app": "vite build",
+    "serve": "vite preview",
+    "build:extension": "yarn --cwd extension/ build",
+    "build": "yarn build:app && yarn build:extension"
   },
   "license": "MIT",
   "xo": {

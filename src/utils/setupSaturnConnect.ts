@@ -1,8 +1,8 @@
-import { BN } from '@polkadot/util';
+import { BN, hexToU8a } from '@polkadot/util';
 
 import { Rings } from "../data/rings";
 import { type SaturnContextType } from "../providers/saturnProvider";
-import { type OpenProposeModalType } from "../providers/proposeProvider";
+import { type ProposeContextType } from "../providers/proposeProvider";
 
 declare global {
     interface Window {
@@ -12,7 +12,7 @@ declare global {
     }
 }
 
-export function setupSaturnConnect(saturnContext: SaturnContextType, openProposeModal: OpenProposeModalType) {
+export function setupSaturnConnect(saturnContext: SaturnContextType, proposeContext: ProposeContextType) {
     window.addEventListener('message', ({ data, source }) => {
 
         if (data.type === "IN_GATEWAY" && data.text === "sign_payload") {
@@ -20,7 +20,9 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, openPropose
 
             if (!saturnContext.state.saturn || !saturnContext.state.multisigId) return;
 
-            if (data.payload.genesisHash === Rings.tinkernet.genesisHash) { } else {
+            if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {
+                proposeContext.setters.openProposeModal(hexToU8a(data.payload.method), false);
+            } else {
                 const chain = Object.entries(Rings).find(([chain, ringData]) => ringData.genesisHash === data.payload.genesisHash)?.[0];
 
                 if (!chain) return;
@@ -38,7 +40,7 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, openPropose
                     callData: data.payload.method,
                 });
 
-                openProposeModal(proposal);
+                proposeContext.setters.openProposeModal(proposal, true);
             }
 
         }

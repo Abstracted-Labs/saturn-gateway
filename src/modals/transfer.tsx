@@ -43,7 +43,7 @@ export default function TransferModal(props: TransferModalProps) {
     const [targetAddress, setTargetAddress] = createSignal<string>('');
     const [bridgeToSelf, setBridgeToSelf] = createSignal<boolean>(false);
 
-    const [{ proposalCall }, { openProposeModal, closeProposeModal }] = useProposeContext();
+    const proposeContext = useProposeContext();
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
 
@@ -74,8 +74,11 @@ export default function TransferModal(props: TransferModalProps) {
         }
 
         let call;
+        let wrapped;
 
         if (pair.from == 'tinkernet' && pair.to == 'tinkernet') {
+            wrapped = false;
+
             if (asset == 'TNKR') {
                 call = ringApisContext.state.tinkernet.tx.balances.transferKeepAlive(targetAddress(), amount().times(BigNumber('10').pow(
                     Rings.tinkernet.decimals,
@@ -104,6 +107,8 @@ export default function TransferModal(props: TransferModalProps) {
                 0
             ).paymentInfo(saturnContext.state.multisigAddress)).partialFee;
 
+            wrapped = true;
+
             call = saturnContext.state.saturn.bridgeXcmAsset({
                 id: saturnContext.state.multisigId,
                 asset: assetXcmRep,
@@ -128,6 +133,8 @@ export default function TransferModal(props: TransferModalProps) {
                 BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
             )).toString()).paymentInfo(saturnContext.state.multisigAddress)).partialFee;
 
+            wrapped = true;
+
             call = saturnContext.state.saturn.transferXcmAsset({
                 id: saturnContext.state.multisigId,
                 asset: assetXcmRep,
@@ -141,7 +148,7 @@ export default function TransferModal(props: TransferModalProps) {
         }
 
         if (call) {
-            openProposeModal(call);
+            proposeContext.setters.openProposeModal(call, wrapped);
             props.setOpen(undefined);
         }
     };

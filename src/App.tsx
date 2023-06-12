@@ -1,5 +1,6 @@
 import type { Component } from 'solid-js';
 import { lazy, onMount, createSignal, Show, For, createEffect } from 'solid-js';
+import { Portal } from 'solid-js/web';
 import { Routes, Route, useParams } from '@solidjs/router';
 import { A } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
@@ -46,8 +47,10 @@ import { useWalletConnectContext, WalletConnectProvider } from "./providers/wall
 import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
 import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
 import { useSelectedAccountContext, SelectedAccountProvider } from "./providers/selectedAccountProvider";
+import { IdentityProvider } from "./providers/identityProvider";
 
 import ProposeModal from './modals/propose';
+import IdentityCardModal from './modals/identityCard';
 
 const Assets = lazy(async () => import('./pages/Assets'));
 const Queue = lazy(async () => import('./pages/Queue'));
@@ -82,13 +85,13 @@ const MainPage: Component = () => {
         websiteUrl: undefined,
     });
 
-    const [proposeContext, { openProposeModal }] = useProposeContext();
+    const proposeContext = useProposeContext();
     const wcContext = useWalletConnectContext();
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
     const selectedAccountContext = useSelectedAccountContext();
 
-    setupSaturnConnect(saturnContext, openProposeModal);
+    setupSaturnConnect(saturnContext, proposeContext);
 
     const createApis = async (): Promise<Record<string, ApiPromise>> => {
         const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
@@ -253,7 +256,7 @@ const MainPage: Component = () => {
                         u8aToHex(decodeAddress(address)),
                     );
                 } else {
-                    openProposeModal(requestedTx.transactionPayload.method);
+                    proposeContext.setters.openProposeModal(requestedTx.transactionPayload.method, true);
 
                     const response = {
                         id,
@@ -337,7 +340,10 @@ const MainPage: Component = () => {
 
     return (
         <div class={styles.pageContainer}>
-            <ProposeModal />
+            <Portal>
+                <ProposeModal />
+                <IdentityCardModal />
+            </Portal>
             <div class={styles.leftPanel}>
                 <img class={styles.logo} src={logo} />
                 <div class={styles.pageListContainer}>
@@ -366,6 +372,7 @@ const MainPage: Component = () => {
                         />
                         WalletConnect
                     </Button>
+                    <Portal>
                     <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
                         <ModalOverlay />
                         <ModalContent>
@@ -428,6 +435,7 @@ const MainPage: Component = () => {
                             </ModalFooter>
                         </ModalContent>
                     </Modal>
+                    </Portal>
                 </div>
             </div>
             <div class={styles.rightPanel}>
@@ -472,6 +480,7 @@ const MainPage: Component = () => {
                         >
                             {selectedAccountContext.state.selectedAccount?.name || 'Log In'}
                         </Button>
+                        <Portal>
                         <Modal
                             opened={walletModalOpen()}
                             onClose={() => setWalletModalOpen(false)}
@@ -524,6 +533,7 @@ const MainPage: Component = () => {
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
+                        </Portal>
                     </div>
                 </div>
                 <div class={styles.mainContainer}>
@@ -559,9 +569,11 @@ const App: Component = () => (
             <RingApisProvider>
                 <WalletConnectProvider>
                     <SelectedAccountProvider>
-                        <Routes>
-                            <Route path='/:idOrAddress/*' component={MainPage} />
-                        </Routes>
+                        <IdentityProvider>
+                            <Routes>
+                                <Route path='/:idOrAddress/*' component={MainPage} />
+                            </Routes>
+                        </IdentityProvider>
                     </SelectedAccountProvider>
                 </WalletConnectProvider>
             </RingApisProvider>

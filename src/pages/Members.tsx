@@ -7,19 +7,11 @@ import { type Saturn } from '@invarch/saturn-sdk';
 
 import { useSaturnContext } from "../providers/saturnProvider";
 import TalismanIdenticon from '../components/TalismanIdenticon';
+import Identity from '../components/Identity';
 import { getBestIdentity, type AggregatedIdentity } from "../utils/identityProcessor";
-
-const getIdentities = async (members: { address: string }[]) => {
-    const identityList = await Promise.all(members.map((member) => getBestIdentity(member.address)));
-
-    const identityObj = identityList.reduce((o, identity) => ({ ...o, [identity.address]: identity }), {});
-
-    return identityObj;
-}
 
 export default function Members() {
     const [members, setMembers] = createSignal<{ address: string, votes: BigNumber }[]>([]);
-    const [identities, { mutate, refetch }] = createResource<{ [address: string]: AggregatedIdentity }, { address: string, votes: BigNumber }[]>(members, getIdentities);
 
     const saturnContext = useSaturnContext();
 
@@ -63,28 +55,7 @@ export default function Members() {
                         {(member) =>
                             <tr>
                                 <td class='py-3 px-4 h-full text-left font-medium text-white'>
-                                    <div class="flex flex-row gap-2.5 items-center">
-                                        <Suspense fallback={
-                                            <>
-                                                <TalismanIdenticon value={member.address} size={40} />
-                                                                         {member.address}
-                                            </>
-                                        }>
-                                            <Show
-                                                when={identities()?.[member.address]?.image?.value}
-                                                fallback={
-                                                    <TalismanIdenticon value={member.address} size={40} />
-                                                }
-                                            >
-                                                <img class="h-[40px] w-[40px] rounded-full"
-                                                    src={identities()?.[member.address]?.image?.value}
-                                                />
-                                            </Show>
-
-                                            { identities()?.[member.address]?.name ? identities()?.[member.address].name : member.address }
-
-                                        </Suspense>
-                                    </div>
+                                    <Identity address={member.address} />
                                 </td>
                                 <td class='py-3 px-4 h-full text-left'>
                                     {member.votes.div("1000000").decimalPlaces(2, 1).toString()}
