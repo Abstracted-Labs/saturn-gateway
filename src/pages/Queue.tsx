@@ -79,6 +79,21 @@ export default function Queue() {
         }
     };
 
+    const processCallData = (call: Call): Call => {
+        if (call.method === "sendCall") {
+            const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
+            const innerCall = (call.toHuman().args as Record<string, AnyJson>).call?.toString();
+
+            if (!chain || !innerCall || !ringApisContext.state[chain]) {
+                return call;
+            }
+
+            return ringApisContext.state[chain].createType('Call', innerCall) as unknown as Call;
+        } else {
+            return call;
+        }
+    }
+
     const processNetworkIcons = (call: Call): string[] => {
         switch (call.method) {
             case 'sendCall':
@@ -135,7 +150,7 @@ export default function Queue() {
                     <h2>
                         <AccordionButton class='ps-0'>
                             <div class='flex px-2 gap-1'>
-                                <For each={processNetworkIcons(pc.details.actualCall)}>
+                                <For each={processNetworkIcons(pc.details.actualCall as unknown as Call)}>
                                     {(icon: string) =>
                                         <div class='flex items-center justify-center h-6 w-6 rounded-full border border-white'>
                                             <img src={icon} class='max-h-5 rounded-full' />
@@ -143,7 +158,7 @@ export default function Queue() {
                                     }</For>
                             </div>
                             <Text flex={1} fontWeight='$medium' textAlign='start'>
-                                {processCallDescription(pc.details.actualCall)}
+                                {processCallDescription(pc.details.actualCall as unknown as Call)}
                             </Text>
                             <AccordionIcon />
                         </AccordionButton>
@@ -151,10 +166,9 @@ export default function Queue() {
                     <AccordionPanel>
                         <div class='flex flex-row divide-x'>
                             <div class='px-1 basis-5/6 max-w-[83%]'>
-                                <Show when={pc.details.actualCall.toHuman().method == 'sendCall'}>
-                                    <Switch defaultChecked={false} onChange={e => setViewFullCall(!viewFullCall())}>View Full Call</Switch>
-                                </Show>
-                                <FormattedCall fullCall={viewFullCall()} call={pc.details.actualCall} />
+
+                                <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call)} />
+
                                 <div class='flex flex-row pt-2.5'>
                                     <div class='w-[70%] pr-3'>
                                         <Progress height='24px' width='100%' value={processSupport(pc.details.tally.ayes)}>
@@ -197,8 +211,8 @@ export default function Queue() {
                                                             <div class='relative flex space-x-3'>
                                                                 <div class='flex h-8 w-8 items-center justify-center rounded-full'>
                                                                     {vote.aye
-                                                                        ? <FaSolidCircleCheck size={24} color='#8fb9a8' />
-                                                                        : <FaSolidCircleXmark size={24} color='#f2828d' />
+                                                                    ? <FaSolidCircleCheck size={24} color='#8fb9a8' />
+                                                                    : <FaSolidCircleXmark size={24} color='#f2828d' />
                                                                     }
                                                                 </div>
                                                                 <div class='flex min-w-0 flex-1 justify-between space-x-4 pt-1.5'>

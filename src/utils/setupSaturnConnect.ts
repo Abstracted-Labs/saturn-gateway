@@ -21,7 +21,7 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, proposeCont
             if (!saturnContext.state.saturn || !saturnContext.state.multisigId) return;
 
             if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {
-                proposeContext.setters.openProposeModal(hexToU8a(data.payload.method), false);
+                proposeContext.setters.openProposeModal(hexToU8a(data.payload.method), "tinkernet");
             } else {
                 const chain = Object.entries(Rings).find(([chain, ringData]) => ringData.genesisHash === data.payload.genesisHash)?.[0];
 
@@ -40,7 +40,7 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, proposeCont
                     callData: data.payload.method,
                 });
 
-                proposeContext.setters.openProposeModal(proposal, true);
+                proposeContext.setters.openProposeModal(data.payload.method, chain);
             }
 
         }

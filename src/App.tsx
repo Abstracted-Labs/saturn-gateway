@@ -244,6 +244,7 @@ const MainPage: Component = () => {
                 const { topic, params, id } = event;
                 const { request } = params;
                 const requestedTx = request.params;
+                const chainId = params.chainId;
 
                 if (
                     u8aToHex(decodeAddress(requestedTx.address))
@@ -256,7 +257,11 @@ const MainPage: Component = () => {
                         u8aToHex(decodeAddress(address)),
                     );
                 } else {
-                    proposeContext.setters.openProposeModal(requestedTx.transactionPayload.method, true);
+                    const chain = Object.entries(Rings).find(([_, value]) => value.wcNamespace == chainId)?.[0];
+
+                    console.log("chain: ", chain)
+
+                    proposeContext.setters.openProposeModal(requestedTx.transactionPayload.method, chain);
 
                     const response = {
                         id,
