@@ -6,7 +6,7 @@ import { A } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn, type MultisigDetails, type MultisigCall } from '@invarch/saturn-sdk';
 import { isAddress, decodeAddress } from '@polkadot/util-crypto';
-import { u8aToHex } from '@polkadot/util';
+import { u8aToHex, hexToU8a } from '@polkadot/util';
 import { BN } from '@polkadot/util';
 import type Web3WalletType from '@walletconnect/web3wallet';
 import { Web3Wallet } from '@walletconnect/web3wallet';
@@ -42,7 +42,7 @@ import logo from './assets/logo.png';
 import defaultMultisigImage from './assets/default-multisig-image.png';
 import styles from './App.module.css';
 import { Rings } from './data/rings';
-import { useProposeContext, ProposeProvider } from "./providers/proposeProvider";
+import { useProposeContext, ProposeProvider, Proposal, ProposalType } from "./providers/proposeProvider";
 import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
 import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
 import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
@@ -259,9 +259,15 @@ const MainPage: Component = () => {
                 } else {
                     const chain = Object.entries(Rings).find(([_, value]) => value.wcNamespace == chainId)?.[0];
 
-                    console.log("chain: ", chain)
+                    console.log("chain: ", chain);
 
-                    proposeContext.setters.openProposeModal(requestedTx.transactionPayload.method, chain);
+                    if (!chain) return;
+
+                    const proposalType = chain === "tinkernet" ? ProposalType.LocalCall : ProposalType.XcmCall;
+
+                    proposeContext.setters.openProposeModal(
+                        new Proposal(proposalType, { chain, encodedCall: hexToU8a(requestedTx.transactionPayload.method) })
+                    );
 
                     const response = {
                         id,

@@ -54,3 +54,18 @@ export const NetworksByAsset: NetworksByAssetType = {
     PICA: ["picasso"],
     KSM: ["tinkernet", "basilisk", "picasso"],
 };
+
+export const RingAssets = {
+    TNKR: {
+        decimals: 12,
+    },
+    BSX: {
+        decimals: 12,
+    },
+    PICA: {
+        decimals: 12,
+    },
+    KSM: {
+        decimals: 12,
+    },
+};

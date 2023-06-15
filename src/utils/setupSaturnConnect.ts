@@ -2,7 +2,7 @@ import { BN, hexToU8a } from '@polkadot/util';
 
 import { Rings } from "../data/rings";
 import { type SaturnContextType } from "../providers/saturnProvider";
-import { type ProposeContextType } from "../providers/proposeProvider";
+import { type ProposeContextType, ProposalType, Proposal } from "../providers/proposeProvider";
 
 declare global {
     interface Window {
@@ -21,26 +21,17 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, proposeCont
             if (!saturnContext.state.saturn || !saturnContext.state.multisigId) return;
 
             if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {
-                proposeContext.setters.openProposeModal(hexToU8a(data.payload.method), "tinkernet");
+                proposeContext.setters.openProposeModal(
+                    new Proposal(ProposalType.LocalCall, { chain: "tinkernet", encodedCall: hexToU8a(data.payload.method) })
+                );
             } else {
                 const chain = Object.entries(Rings).find(([chain, ringData]) => ringData.genesisHash === data.payload.genesisHash)?.[0];
 
                 if (!chain) return;
 
-                const xcmFeeAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets[0].registerType;
-
-                if (!xcmFeeAsset) return;
-
-                const proposal = saturnContext.state.saturn.sendXCMCall({
-                    id: saturnContext.state.multisigId,
-                    destination: chain,
-                    weight: new BN("5000000000"), // TODO
-                    xcmFeeAsset, // TODO
-                    xcmFee: new BN("50000000000000"), // TODO
-                    callData: data.payload.method,
-                });
-
-                proposeContext.setters.openProposeModal(data.payload.method, chain);
+                proposeContext.setters.openProposeModal(
+                    new Proposal(ProposalType.XcmCall, { chain, encodedCall: hexToU8a(data.payload.method) })
+                );
             }
 
         }

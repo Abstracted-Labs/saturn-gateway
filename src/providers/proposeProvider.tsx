@@ -1,27 +1,52 @@
 import { createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { MultisigCall } from "@invarch/saturn-sdk";
+import { BN } from '@polkadot/util';
+import { type BigNumber } from 'bignumber.js';
 
-export type OpenProposeModalType = (proposalCall: Uint8Array, chain: string) => void;
-
-export type ProposeContextType = {
-    state: { proposalCall?: Uint8Array, chain?: string },
-    setters: any,
+export enum ProposalType {
+    LocalCall,
+    LocalTransfer,
+    XcmCall,
+    XcmTransfer,
+    XcmBridge,
 };
 
-export const ProposeContext = createContext<ProposeContextType>({ state: {}, setters: {} });
+export type ProposalData = { chain: string; encodedCall: Uint8Array } | // LocalCall | XcmCall
+                           { chain: string; asset: string; amount: BN | BigNumber | string; to: string; } | // LocalTransfer | XcmTransfer
+                           { chain: string; asset: string; destinationChain: string; amount: BN | BigNumber | string; to?: string; }; // XcmBridge
+
+export class Proposal {
+    proposalType: ProposalType;
+    data: ProposalData
+
+    constructor(proposalType: ProposalType, data: ProposalData) {
+        this.proposalType = proposalType;
+        this.data = data;
+    }
+
+};
+
+export type OpenProposeModalType = (proposal: Proposal) => void;
+
+export type ProposeContextType = {
+    state: { proposal?: Proposal },
+    setters: { openProposeModal: OpenProposeModalType; closeProposeModal: () => void },
+};
+
+export const ProposeContext = createContext<ProposeContextType>({ state: {}, setters: { openProposeModal: (_: Proposal) => {}, closeProposeModal: () => {} } });
 
 export function ProposeProvider(props: any) {
-    const [state, setState] = createStore<{ proposalCall?: Uint8Array, chain?: string }>({});
+    const [state, setState] = createStore<{ proposal?: Proposal }>({});
 
     const value = {
       state,
        setters: {
-           openProposeModal(proposalCall: Uint8Array, chain: string) {
-               setState({ proposalCall, chain });
+           openProposeModal(proposal: Proposal) {
+               setState({ proposal });
            },
            closeProposeModal() {
-               setState({ proposalCall: undefined, chain: undefined });
+               setState({ proposal: undefined });
            },
        }
     };

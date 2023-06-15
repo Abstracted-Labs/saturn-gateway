@@ -25,7 +25,7 @@ import { type ApiPromise } from '@polkadot/api';
 import { BN } from '@polkadot/util';
 import { BigNumber } from 'bignumber.js';
 
-import { useProposeContext } from "../providers/proposeProvider";
+import { useProposeContext, Proposal, ProposalType } from "../providers/proposeProvider";
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { NetworksByAsset, Rings } from '../data/rings';
@@ -73,84 +73,41 @@ export default function TransferModal(props: TransferModalProps) {
             return;
         }
 
-        let call;
-        let wrapped;
-
         if (pair.from == 'tinkernet' && pair.to == 'tinkernet') {
-            wrapped = false;
+            const amountPlank = amount().times(BigNumber('10').pow(
+                Rings.tinkernet.decimals,
+            ));
 
-            if (asset == 'TNKR') {
-                call = ringApisContext.state.tinkernet.tx.balances.transferKeepAlive(targetAddress(), amount().times(BigNumber('10').pow(
-                    Rings.tinkernet.decimals,
-                )).toString()).unwrap().toU8a();
-            } else if (asset == 'KSM') {
-                call = ringApisContext.state.tinkernet.tx.tokens.transferKeepAlive(targetAddress(), 1, amount().times(BigNumber('10').pow(
-                    BigNumber(Rings.tinkernet.decimals),
-                )).toString()).unwrap().toU8a();
-            }
+            proposeContext.setters.openProposeModal(
+                new Proposal(ProposalType.LocalTransfer, { chain: "tinkernet", asset, amount: amountPlank, to: targetAddress() })
+            );
+
         } else if (pair.from == 'tinkernet' && pair.to != 'tinkernet') {
             // Handle bridging TNKR or KSM from Tinkernet to other chains.
         } else if (pair.from != 'tinkernet' && pair.from != pair.to) {
             // Handle bridging assets between other chains.
-            const assetXcmRep = saturnContext.state.saturn.chains.find(c => c.chain.toLowerCase() == pair.from)?.assets.find(a => a.label == asset)?.registerType;
 
-            console.log(assetXcmRep);
+            const amountPlank = amount().times(BigNumber('10').pow(
+                BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
+            ));
 
-            if (!assetXcmRep) {
-                return;
-            }
+            proposeContext.setters.openProposeModal(
+                new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset, amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
+            );
 
-            const estimateFee = (await ringApisContext.state[pair.from].tx.polkadotXcm.reserveTransferAssets(
-                { v1: { parents: 1, interior: "Here" } },
-                { v1: { parents: 0, interior: "Here" } },
-                { v1: [{ id: { concrete: { v1: { parents: 0, interior: "Here" } } }, fun: { fungible: amount().toString() } }] },
-                0
-            ).paymentInfo(saturnContext.state.multisigAddress)).partialFee;
-
-            wrapped = true;
-
-            call = saturnContext.state.saturn.bridgeXcmAsset({
-                id: saturnContext.state.multisigId,
-                asset: assetXcmRep,
-                amount: new BN(amount().times(BigNumber('10').pow(
-                    BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
-                )).toString()),
-                destination: pair.to,
-                to: bridgeToSelf() ? undefined : targetAddress(),
-                xcmFee: estimateFee.mul(new BN('2')),
-            });
         } else if (pair.from != 'tinkernet' && pair.from == pair.to) {
             // Handle balance transfer of assets within another chain.
-            const assetXcmRep = saturnContext.state.saturn.chains.find(c => c.chain.toLowerCase() == pair.from)?.assets.find(a => a.label == asset)?.registerType;
 
-            console.log(assetXcmRep);
-
-            if (!assetXcmRep) {
-                return;
-            }
-
-            const estimateFee = (await ringApisContext.state[pair.from].tx.balances.transfer(targetAddress(), amount().times(BigNumber('10').pow(
+            const amountPlank = amount().times(BigNumber('10').pow(
                 BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
-            )).toString()).paymentInfo(saturnContext.state.multisigAddress)).partialFee;
+            ));
 
-            wrapped = true;
-
-            call = saturnContext.state.saturn.transferXcmAsset({
-                id: saturnContext.state.multisigId,
-                asset: assetXcmRep,
-                amount: new BN(amount().times(BigNumber('10').pow(
-                    BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
-                )).toString()),
-                to: targetAddress(),
-                xcmFeeAsset: assetXcmRep,
-                xcmFee: estimateFee.mul(new BN('2')),
-            });
+            proposeContext.setters.openProposeModal(
+                new Proposal(ProposalType.XcmTransfer, { chain: pair.from, asset, amount: amountPlank, to: targetAddress() })
+            );
         }
 
-        if (call) {
-            proposeContext.setters.openProposeModal(call, wrapped);
-            props.setOpen(undefined);
-        }
+        props.setOpen(undefined);
     };
 
     return (
