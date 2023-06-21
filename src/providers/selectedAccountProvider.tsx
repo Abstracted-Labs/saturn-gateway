@@ -1,24 +1,27 @@
 import { createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { type BaseWallet, type Account } from '@polkadot-onboard/core';
+import { createStorageSignal, createLocalStorage } from "@solid-primitives/storage";
 
 export const SelectedAccountContext = createContext<{
-    state: { selectedAccount?: Account; selectedWallet?: BaseWallet },
+    state: { account?: Account; wallet?: BaseWallet },
     setters: any,
 }>({ state: {}, setters: {} });
 
 export function SelectedAccountProvider(props: any) {
-    const [state, setState] = createStore<{ selectedAccount?: Account; selectedWallet?: BaseWallet }>({});
+    const [state, setState] = createStore<{ account?: Account; wallet?: BaseWallet }>({});
+
+    const { getSelected, setSelected, clearSelected } = useSelectedAccountStorage();
 
     const value = {
-      state,
-       setters: {
+        state: getSelected,
+        setters: {
            setSelectedAccount(account: Account) {
-               setState("selectedAccount", account);
+               setState("account", account);
            },
 
            setSelectedWallet(wallet: BaseWallet) {
-               setState("selectedWallet", wallet);
+               setState("wallet", wallet);
            }
        }
     };
@@ -28,6 +31,23 @@ export function SelectedAccountProvider(props: any) {
             {props.children}
         </SelectedAccountContext.Provider>
     );
+}
+
+export function useSelectedAccountStorage() {
+    const [storageState, setStorageState, { clear }] = createLocalStorage();
+
+    const setSelected = (account: Account, wallet: BaseWallet) => {
+        setStorageState("selectedAccount", JSON.stringify({ account, wallet }));
+    };
+
+    const getSelected = (): { account: Account, wallet: BaseWallet } | undefined => {
+        const data = JSON.parse(storageState.selectedAccount);
+        if (data.account && data.wallet) {
+            return data;
+        }
+    }
+
+    return { getSelected, setSelected, clearSelected: clear };
 }
 
 export function useSelectedAccountContext() {

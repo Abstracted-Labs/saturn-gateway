@@ -25,7 +25,7 @@ import { BigNumber } from 'bignumber.js';
 import { useProposeContext, ProposalType } from "../providers/proposeProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useRingApisContext } from "../providers/ringApisProvider";
-import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
+import { useSelectedAccountStorage } from "../providers/selectedAccountProvider";
 import FormattedCall from '../components/FormattedCall';
 import { RingAssets } from "../data/rings";
 
@@ -72,10 +72,12 @@ export default function ProposeModal() {
     const ringApisContext = useRingApisContext();
     const proposeContext = useProposeContext();
     const saturnContext = useSaturnContext();
-    const selectedAccountContext = useSelectedAccountContext();
+    const { getSelected } = useSelectedAccountStorage();
 
     const propose = async () => {
-        if (!saturnContext.state.saturn || !selectedAccountContext.state.selectedAccount || typeof saturnContext.state.multisigId !== 'number' || !selectedAccountContext.state.selectedWallet?.signer || !proposeContext.state.proposal) {
+        const selected = getSelected();
+
+        if (!saturnContext.state.saturn || !selected || !selected.wallet.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
             return;
         }
 
@@ -90,6 +92,8 @@ export default function ProposeModal() {
         const proposalData = proposeContext.state.proposal.data;
         const proposalType = proposeContext.state.proposal.proposalType;
 
+        console.log("data, type: ", proposalData, proposalType);
+
         if (proposalType === ProposalType.LocalCall && (proposalData as { encodedCall: Uint8Array }).encodedCall) {
             await saturnContext.state.saturn
                                .buildMultisigCall({
@@ -98,21 +102,30 @@ export default function ProposeModal() {
                                    proposalMetadata,
                                    feeAsset: feeAsset()
                                })
-                               .signAndSend(selectedAccountContext.state.selectedAccount.address, selectedAccountContext.state.selectedWallet.signer, feeAsset());
+                               .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
         } else if (
             proposalType === ProposalType.XcmCall &&
             (proposalData as { encodedCall: Uint8Array }).encodedCall &&
             (proposalData as { chain: string }).chain
         ) {
 
+            console.log("in xcmcall");
+
             const chain = (proposalData as { chain: string }).chain;
             const callData = (proposalData as { encodedCall: Uint8Array }).encodedCall;
+
+            console.log("callData: ", u8aToHex(callData));
 
             const xcmFeeAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets[0].registerType;
 
             if (!xcmFeeAsset || !saturnContext.state.multisigAddress) return;
 
-            const { weight, partialFee } = await ringApisContext.state[chain].tx(callData).paymentInfo(saturnContext.state.multisigAddress);
+            const c = ringApisContext.state[chain].createType("Call", callData);
+
+            const { weight, partialFee } = await ringApisContext.state[chain].tx(c).paymentInfo(saturnContext.state.multisigAddress);
+
+            const totalWeight = new BN(weight.refTime.toString()).add(new BN(weight.proofSize.toString()));
+            const fee = new BN(partialFee.toString());
 
             await saturnContext.state.saturn
                                .sendXCMCall({
@@ -120,11 +133,11 @@ export default function ProposeModal() {
                                    destination: chain,
                                    callData,
                                    xcmFeeAsset,
-                                   xcmFee: new BN(partialFee).mul(new BN("2")),
-                                   weight: new BN(weight.toString()).mul(new BN("2")),
+                                   xcmFee: fee.mul(new BN("10")),
+                                   weight: totalWeight,
                                    proposalMetadata,
                                })
-                               .signAndSend(selectedAccountContext.state.selectedAccount.address, selectedAccountContext.state.selectedWallet.signer, feeAsset());
+                   .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
         } else if (
             proposalType === ProposalType.XcmTransfer &&
             (proposalData as { amount: BN | BigNumber | string }).amount &&
@@ -154,7 +167,7 @@ export default function ProposeModal() {
                                    xcmFee: new BN(partialFee).mul(new BN("2")),
                                    proposalMetadata,
                                })
-                               .signAndSend(selectedAccountContext.state.selectedAccount.address, selectedAccountContext.state.selectedWallet.signer, feeAsset());
+                               .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
         }
 
         // TODO: Implement LocalTransfer and XcmBridge.
@@ -206,6 +219,7 @@ export default function ProposeModal() {
                                 onChange={() => feeAsset() === FeeAsset.TNKR ? setFeeAsset(FeeAsset.KSM) : setFeeAsset(FeeAsset.TNKR)}
                             >TNKR</Switch>
                             <span>KSM</span>
+
                         </div>
                         <p>Network: <span class="capitalize">{proposeContext.state.proposal?.data.chain}</span></p>
 

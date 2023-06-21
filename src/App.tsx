@@ -46,7 +46,7 @@ import { useProposeContext, ProposeProvider, Proposal, ProposalType } from "./pr
 import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
 import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
 import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
-import { useSelectedAccountContext, SelectedAccountProvider } from "./providers/selectedAccountProvider";
+import { useSelectedAccountContext, SelectedAccountProvider, useSelectedAccountStorage } from "./providers/selectedAccountProvider";
 import { IdentityProvider } from "./providers/identityProvider";
 
 import ProposeModal from './modals/propose';
@@ -72,7 +72,7 @@ const MainPage: Component = () => {
     const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
         [],
     );
-    const [availableAccounts, setAvailableAccounts] = createSignal<Account[]>([]);
+    const [availableAccounts, setAvailableAccounts] = createSignal<{ wallet: BaseWallet, accounts: Account[] }>();
     const [multisigIdentity, setMultisigIdentity] = createSignal<{
         name: string;
         imageUrl: string;
@@ -89,7 +89,8 @@ const MainPage: Component = () => {
     const wcContext = useWalletConnectContext();
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
-    const selectedAccountContext = useSelectedAccountContext();
+
+    const { getSelected, setSelected } = useSelectedAccountStorage();
 
     setupSaturnConnect(saturnContext, proposeContext);
 
@@ -340,13 +341,14 @@ const MainPage: Component = () => {
 
     const connectUserWallet = async (wallet: BaseWallet) => {
         await wallet.connect();
-        setAvailableAccounts(await wallet.getAccounts());
-        selectedAccountContext.setters.setSelectedWallet(wallet);
+        setAvailableAccounts({ wallet, accounts: await wallet.getAccounts() });
     };
 
-    const connectUserAccount = async (acc: Account) => {
-        selectedAccountContext.setters.setSelectedAccount(acc);
-        setWalletModalOpen(false);
+    const connectUserAccount = async (acc: Account, wallet?: BaseWallet,) => {
+        if (wallet) {
+            setSelected(acc, wallet);
+            setWalletModalOpen(false);
+        }
     };
 
     return (
@@ -384,68 +386,68 @@ const MainPage: Component = () => {
                         WalletConnect
                     </Button>
                     <Portal>
-                    <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
-                        <ModalOverlay />
-                        <ModalContent>
-                            <ModalCloseButton />
-                            <ModalHeader>WalletConnect Sessions</ModalHeader>
-                            <ModalBody>
-                                <div>
-                                    <Input
-                                        value={wcUriInput()}
-                                        onInput={e => {
-                                            setWcUriInput(e.currentTarget.value);
-                                        }}
-                                    />
+                        <Modal opened={wcModalOpen()} onClose={() => setWcModalOpen(false)}>
+                            <ModalOverlay />
+                            <ModalContent>
+                                <ModalCloseButton />
+                                <ModalHeader>WalletConnect Sessions</ModalHeader>
+                                <ModalBody>
+                                    <div>
+                                        <Input
+                                            value={wcUriInput()}
+                                            onInput={e => {
+                                                setWcUriInput(e.currentTarget.value);
+                                            }}
+                                        />
+                                        <Button
+                                            class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                            onClick={() => tryWcConnectDapp()}
+                                        >
+                                            Connect to dApp
+                                        </Button>
+                                    </div>
+                                    <div>
+                                        <Table>
+                                            <Tbody>
+                                                <For each={wcActiveSessions()}>
+                                                    {([sessionTopic, sessionData]) => (
+                                                        <Tr>
+                                                            <Td>
+                                                                <div class='flex gap-1'>
+                                                                    <img
+                                                                        class='max-w-[10%] object-cover'
+                                                                        src={sessionData.peer.metadata.icons[0]}
+                                                                    />
+                                                                    {sessionData.peer.metadata.name}
+                                                                </div>
+                                                            </Td>
+
+                                                            <Td>
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        disconnectWcSession(sessionTopic)
+                                                                    }
+                                                                >
+                                                                    Disconnect
+                                                                </Button>
+                                                            </Td>
+                                                        </Tr>
+                                                    )}
+                                                </For>
+                                            </Tbody>
+                                        </Table>
+                                    </div>
+                                </ModalBody>
+                                <ModalFooter>
                                     <Button
                                         class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                        onClick={() => tryWcConnectDapp()}
+                                        onClick={() => setWcModalOpen(false)}
                                     >
-                                        Connect to dApp
+                                        Close
                                     </Button>
-                                </div>
-                                <div>
-                                    <Table>
-                                        <Tbody>
-                                            <For each={wcActiveSessions()}>
-                                                {([sessionTopic, sessionData]) => (
-                                                    <Tr>
-                                                        <Td>
-                                                            <div class='flex gap-1'>
-                                                                <img
-                                                                    class='max-w-[10%] object-cover'
-                                                                    src={sessionData.peer.metadata.icons[0]}
-                                                                />
-                                                                {sessionData.peer.metadata.name}
-                                                            </div>
-                                                        </Td>
-
-                                                        <Td>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    disconnectWcSession(sessionTopic)
-                                                                }
-                                                            >
-                                                                Disconnect
-                                                            </Button>
-                                                        </Td>
-                                                    </Tr>
-                                                )}
-                                            </For>
-                                        </Tbody>
-                                    </Table>
-                                </div>
-                            </ModalBody>
-                            <ModalFooter>
-                                <Button
-                                    class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                    onClick={() => setWcModalOpen(false)}
-                                >
-                                    Close
-                                </Button>
-                            </ModalFooter>
-                        </ModalContent>
-                    </Modal>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
                     </Portal>
                 </div>
             </div>
@@ -489,61 +491,57 @@ const MainPage: Component = () => {
                             onClick={() => setWalletModalOpen(true)}
                             class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
                         >
-                            {selectedAccountContext.state.selectedAccount?.name || 'Log In'}
+                            {getSelected()?.account.name || 'Log In'}
                         </Button>
                         <Portal>
-                        <Modal
-                            opened={walletModalOpen()}
-                            onClose={() => setWalletModalOpen(false)}
-                        >
-                            <ModalOverlay />
-                            <ModalContent>
-                                <ModalCloseButton />
-                                <ModalHeader>Choose a wallet</ModalHeader>
-                                <ModalBody>
-                                    <div class='flex flex-col gap-1'>
-                                        <Show
-                                            when={availableAccounts()[0]}
-                                            fallback={
-                                                <For each={availableWallets()}>
-                                                          {wallet => (
-                                                              <Button
-                                                                  class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                                                  onClick={() => connectUserWallet(wallet)}
-                                                              >
-                                                                  <img
-                                                                      src={wallet.metadata.iconUrl}
-                                                                      class='max-h-[70%]'
-                                                                  />
-                                                                          {wallet.metadata.title}
-                                                              </Button>
-                                                          )}
+                            <Modal
+                                opened={walletModalOpen()}
+                                onClose={() => setWalletModalOpen(false)}
+                            >
+                                <ModalOverlay />
+                                <ModalContent>
+                                    <ModalCloseButton />
+                                    <ModalHeader>Choose a wallet</ModalHeader>
+                                    <ModalBody>
+                                        <div class='flex flex-col gap-1'>
+                                            <Show
+                                                when={availableAccounts()?.accounts[0]}
+                                                fallback={
+                                                    <For each={availableWallets()}>
+                                                              {wallet => (
+                                                                  <Button
+                                                                      class='gap-1 bg-[#D55E8A] hover:bg-[#E40C5B] capitalize'
+                                                                      onClick={() => connectUserWallet(wallet)}
+                                                                  >
+                                                                 {wallet.type === "WALLET_CONNECT" ? "Wallet Connect" : wallet.metadata.title}
+                                                                  </Button>
+                                                              )}
+                                                    </For>
+                                                }
+                                            >
+                                                <For each={availableAccounts()?.accounts}>
+                                                    {acc => (
+                                                        <Button
+                                                            class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                                            onClick={() => connectUserAccount(acc, availableAccounts()?.wallet)}
+                                                        >
+                                                            {acc.name}
+                                                        </Button>
+                                                    )}
                                                 </For>
-                                            }
+                                            </Show>
+                                        </div>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button
+                                            class='bg-[#D55E8A] hover:bg-[#E40C5B]'
+                                            onClick={() => setWalletModalOpen(false)}
                                         >
-                                            <For each={availableAccounts()}>
-                                                {acc => (
-                                                    <Button
-                                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                                        onClick={() => connectUserAccount(acc)}
-                                                    >
-                                                        {acc.name}
-                                                    </Button>
-                                                )}
-                                            </For>
-                                        </Show>
-                                    </div>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button
-                                        class='bg-[#D55E8A] hover:bg-[#E40C5B]'
-                                        onClick={() => setWalletModalOpen(false)}
-                                    >
-                                        Close
-                                    </Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
+                                            Close
+                                        </Button>
+                                    </ModalFooter>
+                                </ModalContent>
+                            </Modal>
                         </Portal>
                     </div>
                 </div>
@@ -579,13 +577,11 @@ const App: Component = () => (
         <SaturnProvider>
             <RingApisProvider>
                 <WalletConnectProvider>
-                    <SelectedAccountProvider>
                         <IdentityProvider>
                             <Routes>
                                 <Route path='/:idOrAddress/*' component={MainPage} />
                             </Routes>
                         </IdentityProvider>
-                    </SelectedAccountProvider>
                 </WalletConnectProvider>
             </RingApisProvider>
         </SaturnProvider>

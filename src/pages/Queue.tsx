@@ -17,7 +17,7 @@ import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
 
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
-import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
+import { useSelectedAccountStorage } from "../providers/selectedAccountProvider";
 import { Rings } from '../data/rings';
 import FormattedCall from '../components/FormattedCall';
 
@@ -30,7 +30,7 @@ export default function Queue() {
 
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
-    const selectedAccountContext = useSelectedAccountContext();
+    const { getSelected } = useSelectedAccountStorage();
 
     createEffect(() => {
         const runAsync = async () => {
@@ -47,7 +47,10 @@ export default function Queue() {
     });
 
     const vote = async (callHash: string, aye: boolean) => {
-        if (!saturnContext.state.saturn || !selectedAccountContext.state.selectedAccount || typeof saturnContext.state.multisigId !== 'number' || !selectedAccountContext.state.selectedWallet?.signer) {
+
+        const selected = getSelected();
+
+        if (!saturnContext.state.saturn || !selected || !selected.wallet.signer || typeof saturnContext.state.multisigId !== 'number') {
             return;
         }
 
@@ -55,7 +58,7 @@ export default function Queue() {
             id: saturnContext.state.multisigId,
             callHash,
             aye,
-        }).signAndSend(selectedAccountContext.state.selectedAccount.address, { signer: selectedAccountContext.state.selectedWallet.signer });
+        }).signAndSend(selected.account.address, { signer: selected.wallet.signer });
 
         console.log('result: ', result);
     };
