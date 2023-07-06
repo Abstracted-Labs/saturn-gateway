@@ -25,7 +25,7 @@ import { BigNumber } from 'bignumber.js';
 import { useProposeContext, ProposalType } from "../providers/proposeProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useRingApisContext } from "../providers/ringApisProvider";
-import { useSelectedAccountStorage } from "../providers/selectedAccountProvider";
+import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import FormattedCall from '../components/FormattedCall';
 import { RingAssets } from "../data/rings";
 
@@ -72,12 +72,12 @@ export default function ProposeModal() {
     const ringApisContext = useRingApisContext();
     const proposeContext = useProposeContext();
     const saturnContext = useSaturnContext();
-    const { getSelected } = useSelectedAccountStorage();
+    const selectedAccountContext = useSelectedAccountContext();
 
     const propose = async () => {
-        const selected = getSelected();
+        const selected = selectedAccountContext.state;
 
-        if (!saturnContext.state.saturn || !selected || !selected.wallet.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
+        if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
             return;
         }
 

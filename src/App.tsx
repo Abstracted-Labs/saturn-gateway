@@ -46,8 +46,10 @@ import { useProposeContext, ProposeProvider, Proposal, ProposalType } from "./pr
 import { useWalletConnectContext, WalletConnectProvider } from "./providers/walletConnectProvider";
 import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvider";
 import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
-import { useSelectedAccountContext, SelectedAccountProvider, useSelectedAccountStorage } from "./providers/selectedAccountProvider";
+import { useSelectedAccountContext, SelectedAccountProvider } from "./providers/selectedAccountProvider";
 import { IdentityProvider } from "./providers/identityProvider";
+
+import { MultisigList } from "./components";
 
 import ProposeModal from './modals/propose';
 import IdentityCardModal from './modals/identityCard';
@@ -55,12 +57,51 @@ import IdentityCardModal from './modals/identityCard';
 const Assets = lazy(async () => import('./pages/Assets'));
 const Queue = lazy(async () => import('./pages/Queue'));
 const Members = lazy(async () => import('./pages/Members'));
+const Create = lazy(async () => import('./pages/Create'));
 
 const pages = [
     "assets",
     "queue",
     "members",
 ];
+
+const createApis = async (): Promise<Record<string, ApiPromise>> => {
+    const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
+        async ([chain, data]) => {
+            const res: [string, ApiPromise] = [
+                chain,
+                await ApiPromise.create({
+                    provider: new WsProvider(data.websocket),
+                }),
+            ];
+
+            return res;
+        },
+    );
+
+    return Object.fromEntries(await Promise.all(entries));
+};
+
+const walletConnectParams = {
+    projectId: '04b924c5906edbafa51c651573628e23',
+    relayUrl: 'wss://relay.walletconnect.com',
+    metadata: {
+        name: 'Saturn UI',
+        description: 'Saturn Multisig UI',
+        url: 'https://invarch.network',
+        icons: [
+            'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
+        ],
+    },
+};
+const walletAggregator = new WalletAggregator([
+    new InjectedWalletProvider({}, 'Saturn UI'),
+    new CustomWalletConnectProvider(
+        walletConnectParams,
+        'Saturn UI',
+        'polkadot:d42e9606a995dfe433dc7955dc2a70f4',
+    ),
+]);
 
 const MainPage: Component = () => {
     const [wcUriInput, setWcUriInput] = createSignal<string>('');
@@ -90,47 +131,9 @@ const MainPage: Component = () => {
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
 
-    const { getSelected, setSelected } = useSelectedAccountStorage();
+    const selectedAccountContext = useSelectedAccountContext();
 
     setupSaturnConnect(saturnContext, proposeContext);
-
-    const createApis = async (): Promise<Record<string, ApiPromise>> => {
-        const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
-            async ([chain, data]) => {
-                const res: [string, ApiPromise] = [
-                    chain,
-                    await ApiPromise.create({
-                        provider: new WsProvider(data.websocket),
-                    }),
-                ];
-
-                return res;
-            },
-        );
-
-        return Object.fromEntries(await Promise.all(entries));
-    };
-
-    const walletConnectParams = {
-        projectId: '04b924c5906edbafa51c651573628e23',
-        relayUrl: 'wss://relay.walletconnect.com',
-        metadata: {
-            name: 'Saturn UI',
-            description: 'Saturn Multisig UI',
-            url: 'https://invarch.network',
-            icons: [
-                'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
-            ],
-        },
-    };
-    const walletAggregator = new WalletAggregator([
-        new InjectedWalletProvider({}, 'Saturn UI'),
-        new CustomWalletConnectProvider(
-            walletConnectParams,
-            'Saturn UI',
-            'polkadot:d42e9606a995dfe433dc7955dc2a70f4',
-        ),
-    ]);
 
     setAvailableWallets(walletAggregator.getWallets());
 
@@ -286,17 +289,19 @@ const MainPage: Component = () => {
         runAsync();
     });
 
-    onMount(async () => {
-        const apis = await createApis();
+    createEffect(() => {
 
-        ringApisContext.setters.setRingApisBatch(apis);
+        const tinkernetApi = ringApisContext.state.tinkernet;
+        const sat = saturnContext.state.saturn;
 
-        const sat = new Saturn({ api: apis.tinkernet });
+        console.log(tinkernetApi, sat)
 
-        saturnContext.setters.setSaturn(sat);
+        if (!tinkernetApi || !sat) return;
 
-        if (isAddress(idOrAddress)) {
-            const id = (await apis.tinkernet.query.inv4.coreByAccount(idOrAddress))
+        const runAsync = async () => {
+
+            if (isAddress(idOrAddress)) {
+            const id = (await tinkernetApi.query.inv4.coreByAccount(idOrAddress))
                 .unwrapOr(null)
                 ?.toNumber();
 
@@ -324,6 +329,9 @@ const MainPage: Component = () => {
                 saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
             }
         }
+        }
+
+        runAsync();
     });
 
     const disconnectWcSession = async (topic: string) => {
@@ -346,7 +354,7 @@ const MainPage: Component = () => {
 
     const connectUserAccount = async (acc: Account, wallet?: BaseWallet,) => {
         if (wallet) {
-            setSelected(acc, wallet);
+            selectedAccountContext.setters.setSelected(acc, wallet);
             setWalletModalOpen(false);
         }
     };
@@ -491,7 +499,7 @@ const MainPage: Component = () => {
                             onClick={() => setWalletModalOpen(true)}
                             class='gap-1 rounded-tr-3xl self-start bg-[#D55E8A] hover:bg-[#E40C5B]'
                         >
-                            {getSelected()?.account.name || 'Log In'}
+                            { selectedAccountContext.state.account?.name || 'Log In'}
                         </Button>
                         <Portal>
                             <Modal
@@ -572,16 +580,58 @@ const MainPage: Component = () => {
     );
 };
 
+const Outer: Component = () => {
+    const ringApisContext = useRingApisContext();
+    const saturnContext = useSaturnContext();
+
+    const selectedAccountContext = useSelectedAccountContext();
+
+    onMount(async () => {
+        const current = selectedAccountContext.setters.getSelectedStorage();
+
+        if (current) {
+            const { address, wallet } = current;
+
+            const w = walletAggregator.getWallets().find((w) => w.metadata.title ==  wallet);
+
+            if (w) {
+                await w.connect();
+
+                const a = (await w.getAccounts()).find((a) => a.address == address);
+
+                if (a) {
+                    selectedAccountContext.setters.setSelected(a, w);
+                }
+            }
+        }
+
+        const apis = await createApis();
+
+        ringApisContext.setters.setRingApisBatch(apis);
+
+        const sat = new Saturn({ api: apis.tinkernet });
+
+        saturnContext.setters.setSaturn(sat);
+    });
+
+    return (
+        <Routes>
+            <Route path="/create" component={Create} />
+            <Route path='/:idOrAddress/*' component={MainPage} />
+        </Routes>
+    );
+}
+
 const App: Component = () => (
     <ProposeProvider>
         <SaturnProvider>
             <RingApisProvider>
                 <WalletConnectProvider>
+                    <SelectedAccountProvider>
                         <IdentityProvider>
-                            <Routes>
-                                <Route path='/:idOrAddress/*' component={MainPage} />
-                            </Routes>
+                            <Outer />
                         </IdentityProvider>
+                    </SelectedAccountProvider>
                 </WalletConnectProvider>
             </RingApisProvider>
         </SaturnProvider>

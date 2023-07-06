@@ -26,6 +26,7 @@ export const Rings: RingsType = {
         decimals: 12,
         icon: tinkernetIcon,
         websocket: 'wss://invarch-tinkernet.api.onfinality.io/public-ws',
+        // websocket: "ws://localhost:8000",
         genesisHash: "0xd42e9606a995dfe433dc7955dc2a70f495f350f373daa200098ae84437816ad2",
     },
     basilisk: {

@@ -49,6 +49,7 @@
     "bignumber.js": "^9.1.1",
     "colorjs.io": "^0.4.5",
     "md5": "^2.3.0",
+    "solid-forms": "^0.4.8",
     "solid-icons": "^1.0.4",
     "solid-js": "^1.6.10",
     "solid-transition-group": "^0.2.2",

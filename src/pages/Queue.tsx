@@ -17,7 +17,7 @@ import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
 
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
-import { useSelectedAccountStorage } from "../providers/selectedAccountProvider";
+import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { Rings } from '../data/rings';
 import FormattedCall from '../components/FormattedCall';
 
@@ -30,7 +30,7 @@ export default function Queue() {
 
     const ringApisContext = useRingApisContext();
     const saturnContext = useSaturnContext();
-    const { getSelected } = useSelectedAccountStorage();
+    const selectedAccountContext = useSelectedAccountContext();
 
     createEffect(() => {
         const runAsync = async () => {
@@ -48,9 +48,9 @@ export default function Queue() {
 
     const vote = async (callHash: string, aye: boolean) => {
 
-        const selected = getSelected();
+        const selected = selectedAccountContext.state;
 
-        if (!saturnContext.state.saturn || !selected || !selected.wallet.signer || typeof saturnContext.state.multisigId !== 'number') {
+        if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number') {
             return;
         }
 
