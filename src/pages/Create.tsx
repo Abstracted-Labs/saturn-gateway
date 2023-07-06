@@ -1,5 +1,6 @@
 import type { Setter } from 'solid-js';
 import { createSignal, For, createEffect, Show, Suspense, lazy, createResource } from 'solid-js';
+import { useNavigate } from '@solidjs/router'
 import { Button, Input } from '@hope-ui/solid';
 import { BigNumber } from 'bignumber.js';
 import { type ApiPromise } from '@polkadot/api';
@@ -20,9 +21,12 @@ export default function Create() {
     const selectedAccountContext = useSelectedAccountContext();
     const ringApisContext = useRingApisContext();
 
+    const navigate = useNavigate();
+
     const [nameField, setNameField] = createSignal<string>('');
     const [minimumSupportField, setMinimumSupportField] = createSignal<string>('');
     const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('');
+    const [secondMember, setSecondMember] = createSignal<string>('');
 
     const group = createFormGroup({
         minimumSupport: createFormControl("", {
@@ -70,6 +74,7 @@ export default function Create() {
         const name = nameField();
         const requiredApproval = requiredApprovalField();
         const minimumSupport = minimumSupportField();
+        const sm = secondMember();
 
         const { account, wallet } = selected;
 
@@ -91,18 +96,28 @@ export default function Create() {
             creationFeeAsset: FeeAsset.TNKR
         }).signAndSend(account.address, wallet.signer);
 
-        const multisigAddress = createMultisigResult.account;
+        console.log("createMultisigResult: ", createMultisigResult);
+
+        const multisigAddress = createMultisigResult.account.toHuman();
         const multisigId = createMultisigResult.id;
+
+        let innerCalls = [
+            tinkernetApi.tx.identity.setIdentity({ display: { Raw: name } })
+        ];
+
+        if (sm) innerCalls.push(tinkernetApi.tx.inv4.tokenMint("1000000", sm));
 
         const calls = [
             tinkernetApi.tx.balances.transferKeepAlive(multisigAddress, new BN("7000000000000")),
             saturn.buildMultisigCall({
                 id: multisigId,
-                call: tinkernetApi.tx.identity.setIdentity({ display: name }),
+                call: tinkernetApi.tx.utility.batchAll(innerCalls),
             }).call
         ];
 
-        await tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer });
+        tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, ({ status }) => {
+            if (status.isFinalized || status.isInBlock) navigate(`/${multisigId}/members`, { resolve: false });
+        });
     };
 
     return (
@@ -131,6 +146,14 @@ export default function Create() {
                     value={minimumSupportField()}
                     onInput={e => {
                         setMinimumSupportField(e.currentTarget.value);
+                    }}
+                />
+
+                <label for="secondMember">Second Member</label>
+                <Input
+                    value={secondMember()}
+                    onInput={e => {
+                        setSecondMember(e.currentTarget.value);
                     }}
                 />
 
