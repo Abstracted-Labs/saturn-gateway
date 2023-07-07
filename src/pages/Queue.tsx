@@ -170,37 +170,41 @@ export default function Queue() {
                         <div class='flex flex-row divide-x'>
                             <div class='px-1 basis-5/6 max-w-[83%]'>
 
-                                <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call)} />
+                                <div class="flex flex-col">
+                                    <div class="max-h-[300px] overflow-scroll">
+                                        <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call)} />
+                                    </div>
 
-                                <div class='flex flex-row pt-2.5'>
-                                    <div class='w-[70%] pr-3'>
-                                        <Progress height='24px' width='100%' value={processSupport(pc.details.tally.ayes)}>
-                                            <ProgressIndicator color='#D55E8A'>
-                                                <ProgressLabel fontSize='15px' />
-                                            </ProgressIndicator>
-                                        </Progress>
-                                        Support needed: {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                                    </div>
-                                    <div>
-                                        <div style={{ position: 'relative' }}>
-                                            <CircularProgress
-                                                style={{ position: 'absolute', top: '0', left: '0' }}
-                                                value={processApprovalAye(pc.details.tally.ayes, pc.details.tally.nays)}
-                                                trackColor='rgba(0,0,0,0)'
-                                            >
-                                                <CircularProgressIndicator class='-scale-x-100 -scale-y-100' color='$success9' />
-                                                <CircularProgressLabel />
-                                            </CircularProgress>
-                                            <CircularProgress value={processApprovalNay(pc.details.tally.ayes, pc.details.tally.nays)} trackColor='rgba(0,0,0,0)' >
-                                                <CircularProgressIndicator class='-scale-y-100' color='#f2828d' />
-                                            </CircularProgress>
+                                    <div class='flex flex-row pt-2.5'>
+                                        <div class='w-[70%] pr-3'>
+                                            <Progress height='24px' width='100%' value={processSupport(pc.details.tally.ayes)}>
+                                                <ProgressIndicator color='#D55E8A'>
+                                                    <ProgressLabel fontSize='15px' />
+                                                </ProgressIndicator>
+                                            </Progress>
+                                            Support needed: {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
                                         </div>
-                                        Approval needed: {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                                        <div>
+                                            <div style={{ position: 'relative' }}>
+                                                <CircularProgress
+                                                    style={{ position: 'absolute', top: '0', left: '0' }}
+                                                    value={processApprovalAye(pc.details.tally.ayes, pc.details.tally.nays)}
+                                                    trackColor='rgba(0,0,0,0)'
+                                                >
+                                                    <CircularProgressIndicator class='-scale-x-100 -scale-y-100' color='$success9' />
+                                                    <CircularProgressLabel />
+                                                </CircularProgress>
+                                                <CircularProgress value={processApprovalNay(pc.details.tally.ayes, pc.details.tally.nays)} trackColor='rgba(0,0,0,0)' >
+                                                    <CircularProgressIndicator class='-scale-y-100' color='#f2828d' />
+                                                </CircularProgress>
+                                            </div>
+                                            Approval needed: {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class='flex gap-2'>
-                                    <Button class='bg-[#D55E8A] hover:bg-[#E40C5B]' onClick={() => vote(pc.callHash.toString(), true)}>Aye</Button>
-                                    <Button class='bg-[#D55E8A] hover:bg-[#E40C5B]' onClick={() => vote(pc.callHash.toString(), false)}>Nay</Button>
+                                    <div class='flex gap-2'>
+                                        <Button class='bg-[#D55E8A] hover:bg-[#E40C5B]' onClick={() => vote(pc.callHash.toString(), true)}>Aye</Button>
+                                        <Button class='bg-[#D55E8A] hover:bg-[#E40C5B]' onClick={() => vote(pc.callHash.toString(), false)}>Nay</Button>
+                                    </div>
                                 </div>
                             </div>
                             <div class='px-1 basis-1/6 max-w-[16%]'>

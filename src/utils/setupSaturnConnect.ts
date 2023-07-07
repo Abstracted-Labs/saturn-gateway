@@ -18,7 +18,7 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, proposeCont
         if (data.type === "IN_GATEWAY" && data.text === "sign_payload") {
             console.log("received payload to propose: ", data.payload);
 
-            if (!saturnContext.state.saturn || !saturnContext.state.multisigId) return;
+            if (!saturnContext.state.saturn || typeof saturnContext.state.multisigId != "number") return;
 
             if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {
                 proposeContext.setters.openProposeModal(
