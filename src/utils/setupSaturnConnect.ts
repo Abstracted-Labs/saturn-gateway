@@ -39,5 +39,6 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, proposeCont
 }
 
 export function setSaturnConnectAccount(name: string, address: string) {
-    window.saturnConnect.sendMultisigData({ name, address });
+    if (window.saturnConnect?.sendMultisigData)
+        window.saturnConnect.sendMultisigData({ name, address });
 }

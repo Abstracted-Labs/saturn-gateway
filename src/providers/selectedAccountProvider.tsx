@@ -15,7 +15,7 @@ export function SelectedAccountProvider(props: any) {
 
     const getSelectedStorage = (): { address: string, wallet: string } | undefined => {
         const data = JSON.parse(storageState.selectedAccount);
-        if (data.address && data.wallet) {
+        if (data?.address && data?.wallet) {
             return data;
         }
     }
