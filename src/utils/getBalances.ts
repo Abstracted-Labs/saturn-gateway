@@ -1,34 +1,49 @@
-import { Rings, SubIdStartUrl } from '../data/rings';
+import { Rings } from '../data/rings';
 
-export type ResultBalances = Array<Record<string, {
-	freeBalance: string;
-	reservedBalance: string;
-	frozenFee: string;
-	totalBalance: string;
-}>>;
+const PolkaholicStartUrl = "https://api.polkaholic.io/account/realtime/";
 
-export type ResultBalancesWithNetwork = Record<string, ResultBalances>;
+const AllChainsUrl = Object.values(Rings).map((r) => r.polkaholicId).reduce((prev, pId) => { return `${prev}${pId},` }, "?chainfilters=");
 
-export type NetworkBalances = {
-	[Property in keyof typeof Rings]: ResultBalances;
+export type AssetsBalances = Record<string, Balances>;
+
+export type Balances = {
+	  freeBalance: string;
+	  reservedBalance: string;
+	  frozenBalance: string;
 };
 
-export async function getBalancesFromNetwork(address: string, balancesUrl: string, network: string): Promise<ResultBalancesWithNetwork> {
-	return fetch(
-		SubIdStartUrl + address + balancesUrl,
-	).then(async response => response.json().then(res => ({ [network]: res as ResultBalances })));
-}
+export type ResultBalancesWithNetwork = Record<string, AssetsBalances>;
+
+export type NetworkBalances = {
+	  [Property in keyof typeof Rings]: AssetsBalances;
+};
 
 export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
-	const promises = [];
+  return fetch(
+        PolkaholicStartUrl + address + AllChainsUrl + "&decrate=f",
+	 ).then(async response => response.json().then(res => {
+       const newRes = (res as { state: { free_raw?: string, reserved_raw?: string, frozen_raw?: string, id: string, symbol: string } }[]);
 
-	for (const [network, networkData] of Object.entries(Rings)) {
-		promises.push(getBalancesFromNetwork(address, networkData.subIdBalancesUrl, network));
-	}
+       const balances: NetworkBalances = newRes
+           .map((asset) => { return { [asset.state.id as keyof typeof Rings]: {
+               [asset.state.symbol]: {
+                   freeBalance: asset.state.free_raw || "0",
+                   reservedBalance: asset.state.reserved_raw || "0",
+                   frozenBalance: asset.state.frozen_raw || "0",
+               }
+           } } as NetworkBalances})
+           .reduce((prev: NetworkBalances, asset) => {
+               let newPrev = prev;
+               let assets = prev[Object.keys(asset)[0] as keyof typeof Rings] || {};
 
-	const results: ResultBalancesWithNetwork[] = await Promise.all(promises);
+               assets[Object.keys(Object.values(asset)[0])[0]] = Object.values(Object.values(asset)[0])[0];
 
-	const allBalances: NetworkBalances = Object.assign({}, ...results);
+               newPrev[Object.keys(asset)[0] as keyof typeof Rings] = assets;
 
-	return allBalances;
+               return newPrev;
+       }, {} as NetworkBalances);
+
+       return balances;
+   }
+                                                ));
 }

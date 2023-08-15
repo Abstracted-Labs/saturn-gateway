@@ -9,6 +9,7 @@ import { type Saturn } from '@invarch/saturn-sdk';
 
 import TransferModal from '../modals/transfer';
 import { useSaturnContext } from "../providers/saturnProvider";
+import type { AssetsBalances, Balances } from "../utils/getBalances";
 
 export type AssetsPageProps = {
 };
@@ -18,12 +19,7 @@ const StakePage = {
 };
 
 export default function Assets() {
-    const [balances, setBalances] = createSignal<Array<[string, Array<[string, {
-        freeBalance: string;
-        reservedBalance: string;
-        frozenFee: string;
-        totalBalance: string;
-    }]>]>>();
+    const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>();
     const [transferModalOpen, setTransferModalOpen] = createSignal<{ network: string; asset: string } | undefined>();
 
     const saturnContext = useSaturnContext();
@@ -38,33 +34,17 @@ export default function Assets() {
         const runAsync = async () => {
             const nb = await getBalancesFromAllNetworks(address);
 
-            const remapped = Object.entries(nb).map(([key, value]) => {
-                const ret: [string, Array<[string, {
-                    freeBalance: string;
-                    reservedBalance: string;
-                    frozenFee: string;
-                    totalBalance: string;
-                }]>] = [key,
-                        Object.entries(value)
-                            .map(([asset, assetBalances]) => {
-                                const ret: [string, {
-                                    freeBalance: string;
-                                    reservedBalance: string;
-                                    frozenFee: string;
-                                    totalBalance: string;
-                                }] = [asset, assetBalances as unknown as {
-                                    freeBalance: string;
-                                    reservedBalance: string;
-                                    frozenFee: string;
-                                    totalBalance: string;
-                                }];
+            const remapped = Object.entries(nb).map(([network, assets]) => {
+                const ret: [string, [string, Balances][]] = [network,
+                                                       Object.entries(assets)
+                                                             .map(([asset, assetBalances]) => {
+                                const ret: [string, Balances] = [asset, assetBalances as Balances];
 
                                 return ret;
                             })
-                            .filter(([asset, assetBalances]) => assetBalances.freeBalance != '0'
+                            .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
                                 || assetBalances.reservedBalance != '0'
-                                || assetBalances.frozenFee != '0'
-                                || assetBalances.totalBalance != '0')];
+                                || assetBalances.frozenBalance != '0')];
 
                 return ret;
             });
@@ -117,16 +97,19 @@ export default function Assets() {
                                             <tr>
                                                 <td class='py-3 px-4 text-left font-medium text-white w-[20%]'>{asset}</td>
                                                 <td class='py-3 px-4 text-left w-[20%]'>{
-                                                    BigNumber(b.totalBalance).minus(
-                                                        BigNumber(b.reservedBalance).plus(BigNumber(b.frozenFee))
-                                                    ).div(
-                                                        BigNumber('10').pow(
-                                                            BigNumber(Rings[network as keyof typeof Rings].decimals),
-                                                        ),
-                                                    ).decimalPlaces(2, 1).toString()
+                                                    BigNumber(b.freeBalance)
+                                                        .div(
+                                                            BigNumber('10').pow(
+                                                                BigNumber(Rings[network as keyof typeof Rings].decimals),
+                                                            ),
+                                                        ).decimalPlaces(2, 1).toString()
                                                 } {asset}</td>
                                                 <td class='w-[20%]'>{
-                                                    BigNumber(b.totalBalance).div(
+                                                    BigNumber(b.freeBalance)
+                                                        .plus(
+                                                            BigNumber(b.reservedBalance).plus(BigNumber(b.frozenBalance))
+                                                        )
+                                                        .div(
                                                         BigNumber('10').pow(
                                                             BigNumber(Rings[network as keyof typeof Rings].decimals),
                                                         ),
@@ -149,8 +132,8 @@ export default function Assets() {
                         </Show>
                     }</For>
 
-                ) : null}
+                                                    ) : null}
             </div>
         </>
-    );
+                );
 }

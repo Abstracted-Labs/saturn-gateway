@@ -2,11 +2,9 @@ import basiliskIcon from '../assets/basilisk-icon.png';
 import tinkernetIcon from '../assets/tinkernet-icon.jpg';
 import picassoIcon from '../assets/picasso-icon.png';
 
-export const SubIdStartUrl = 'https://sub.id/api/v1/';
-
 export type RingsData = {
     wcNamespace: string;
-    subIdBalancesUrl: string;
+    polkaholicId: string;
     decimals: number;
     icon: string;
     websocket: string;
@@ -22,7 +20,7 @@ export type RingsType = {
 export const Rings: RingsType = {
     tinkernet: {
         wcNamespace: 'polkadot:d42e9606a995dfe433dc7955dc2a70f4',
-        subIdBalancesUrl: '/balances/invArch',
+        polkaholicId: 'tinkernet',
         decimals: 12,
         icon: tinkernetIcon,
         websocket: 'wss://invarch-tinkernet.api.onfinality.io/public-ws',
@@ -31,7 +29,7 @@ export const Rings: RingsType = {
     },
     basilisk: {
         wcNamespace: 'polkadot:a85cfb9b9fd4d622a5b28289a02347af',
-        subIdBalancesUrl: '/balances/basilisk',
+        polkaholicId: 'basilisk',
         decimals: 12,
         icon: basiliskIcon,
         websocket: 'wss://rpc.basilisk.cloud',
@@ -39,7 +37,7 @@ export const Rings: RingsType = {
     },
     picasso: {
         wcNamespace: 'polkadot:6811a339673c9daa897944dcdac99c6e',
-        subIdBalancesUrl: '/balances/picasso',
+        polkaholicId: 'picasso',
         decimals: 12,
         icon: picassoIcon,
         websocket: 'wss://rpc.composablenodes.tech',

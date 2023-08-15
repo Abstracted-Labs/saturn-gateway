@@ -307,6 +307,82 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
+"@capi/collectives@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/collectives.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/collectives.tar#be2fa247398bf000ef557580f1f069a9c1d368cd"
+
+"@capi/contracts-dev@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/contracts-dev.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/contracts-dev.tar#439db0b2eaf9cc22d08998f6ffb83bf7690b511c"
+
+"@capi/polkadot-dev@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/polkadot-dev.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/polkadot-dev.tar#0d311e20801be6742369ee70830696bd23a824c1"
+
+"@capi/polkadot@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/polkadot.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/polkadot.tar#84039fa390d4049227b384b436c3440a45bffa1a"
+
+"@capi/rococo-dev-contracts@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-contracts.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-contracts.tar#52c214fdc3f06059d4b8037bbe48d562642f0f4d"
+
+"@capi/rococo-dev-westmint@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-westmint.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-westmint.tar#1669632e2e1c3933f0bcfe4f6042e2e0c3bc324d"
+
+"@capi/rococo-dev-xcm-statemine@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm-statemine.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm-statemine.tar#40090d1f67fce8b1382df92cebd6edb48428fd2f"
+
+"@capi/rococo-dev-xcm-trappist@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm-trappist.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm-trappist.tar#98bed62a36eb044c275e5fece274a6b458276367"
+
+"@capi/rococo-dev-xcm@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm.tar#eb305ae0c2328d98ea58ed2630aad716d170e700"
+
+"@capi/rococo-dev@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev.tar#b9d6528eb3cbc1e181342833f59d58aa57c8a6cf"
+
+"@capi/spiritnet@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/spiritnet.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/spiritnet.tar#b16cd558292fcd7056cc0903507b4420432c14bd"
+
+"@capi/statemint@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/statemint.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/statemint.tar#764fd8bf4ba8b5998d37343a16cdaae3707ff71d"
+
+"@capi/westend-dev@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/westend-dev.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/westend-dev.tar#48fa90b3cf74f2fe53233663b69d6ce54ea90d44"
+
+"@capi/westend@https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/westend.tar":
+  version "0.0.0-TODO"
+  resolved "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/westend.tar#d42e1c754e72076b5e8fac92fe0719079dbe4b53"
+
+"@cspotcode/source-map-support@^0.8.0":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
+  integrity sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==
+  dependencies:
+    "@jridgewell/trace-mapping" "0.3.9"
+
+"@deno/shim-deno-test@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@deno/shim-deno-test/-/shim-deno-test-0.4.0.tgz#2ff56821854c51323c0cd08a4a56d668f84367ba"
+  integrity sha512-oYWcD7CpERZy/TXMTM9Tgh1HD/POHlbY9WpzmAk+5H8DohcxG415Qws8yLGlim3EaKBT2v3lJv01x4G0BosnaQ==
+
+"@deno/shim-deno@~0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@deno/shim-deno/-/shim-deno-0.16.1.tgz#f7d3925745c74337c83818de7d6435557c816c60"
+  integrity sha512-s9v0kzF5bm/o9TgdwvsraHx6QNllYrXXmKzgOG2lh4LFXnVMr2gpjK/c/ve6EflQn1MqImcWmVD8HAv5ahuuZQ==
+  dependencies:
+    "@deno/shim-deno-test" "^0.4.0"
+    which "^2.0.2"
+
 "@esbuild/android-arm64@0.16.17":
   version "0.16.17"
   resolved "https://registry.yarnpkg.com/@esbuild/android-arm64/-/android-arm64-0.16.17.tgz#cf91e86df127aa3d141744edafcba0abdc577d23"
@@ -676,6 +752,11 @@
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.0.tgz#2203b118c157721addfe69d47b70465463066d78"
   integrity sha512-F2msla3tad+Mfht5cJq7LSXcdudKTWCVYUgw6pLFOOHSTtZlj6SWNYAp+AhuqLmWdBO2X5hPrLcu8cVP8fy28w==
 
+"@jridgewell/resolve-uri@^3.0.3":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz#c08679063f279615a3326583ba3a90d1d82cc721"
+  integrity sha512-dSYZh7HhCDtCKm4QakX0xFpsRDqjjtZf/kjI/v3T3Nwt5r8/qz/M19F9ySyOqU94SXBmeG9ttTul+YnR4LOxFA==
+
 "@jridgewell/set-array@^1.0.1":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@jridgewell/set-array/-/set-array-1.1.2.tgz#7c6cf998d6d20b914c0a55a91ae928ff25965e72"
@@ -690,6 +771,14 @@
   version "1.4.15"
   resolved "https://registry.yarnpkg.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.15.tgz#d7c6e6755c78567a951e04ab52ef0fd26de59f32"
   integrity sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==
+
+"@jridgewell/trace-mapping@0.3.9":
+  version "0.3.9"
+  resolved "https://registry.yarnpkg.com/@jridgewell/trace-mapping/-/trace-mapping-0.3.9.tgz#6534fd5933a53ba7cbf3a17615e273a0d1273ff9"
+  integrity sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==
+  dependencies:
+    "@jridgewell/resolve-uri" "^3.0.3"
+    "@jridgewell/sourcemap-codec" "^1.4.10"
 
 "@jridgewell/trace-mapping@^0.3.17", "@jridgewell/trace-mapping@^0.3.9":
   version "0.3.18"
@@ -1778,6 +1867,26 @@
   resolved "https://registry.yarnpkg.com/@substrate/ss58-registry/-/ss58-registry-1.40.0.tgz#2223409c496271df786c1ca8496898896595441e"
   integrity sha512-QuU2nBql3J4KCnOWtWDw4n1K4JU0T79j54ZZvm/9nhsX6AIar13FyhsaBfs6QkJ2ixTQAnd7TocJIoJRWbqMZA==
 
+"@tsconfig/node10@^1.0.7":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.9.tgz#df4907fc07a886922637b15e02d4cebc4c0021b2"
+  integrity sha512-jNsYVVxU8v5g43Erja32laIDHXeoNvFEpX33OK4d6hljo3jDhCBDhx5dhCCTMWUojscpAagGiRkBKxpdl9fxqA==
+
+"@tsconfig/node12@^1.0.7":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@tsconfig/node12/-/node12-1.0.11.tgz#ee3def1f27d9ed66dac6e46a295cffb0152e058d"
+  integrity sha512-cqefuRsh12pWyGsIoBKJA9luFu3mRxCA+ORZvA4ktLSzIuCUtWVxGIuXigEwO5/ywWFMZ2QEGKWvkZG1zDMTag==
+
+"@tsconfig/node14@^1.0.0":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@tsconfig/node14/-/node14-1.0.3.tgz#e4386316284f00b98435bf40f72f75a09dabf6c1"
+  integrity sha512-ysT8mhdixWK6Hw3i1V2AeRqZ5WfXg1G43mqoYlM2nc6388Fq5jcXyr5mRsqViLx/GJYdoL0bfXD8nmF+Zn/Iow==
+
+"@tsconfig/node16@^1.0.2":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@tsconfig/node16/-/node16-1.0.4.tgz#0b92dcc0cc1c81f6f306a381f28e31b1a56536e9"
+  integrity sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==
+
 "@types/babel__core@^7.1.20":
   version "7.20.0"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.20.0.tgz#61bc5a4cae505ce98e1e36c5445e4bee060d8891"
@@ -2292,6 +2401,16 @@ acorn-jsx@^5.3.2:
   resolved "https://registry.yarnpkg.com/acorn-jsx/-/acorn-jsx-5.3.2.tgz#7ed5bb55908b3b2f1bc55c6af1653bada7f07937"
   integrity sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==
 
+acorn-walk@^8.1.1:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/acorn-walk/-/acorn-walk-8.2.0.tgz#741210f2e2426454508853a2f44d0ab83b7f69c1"
+  integrity sha512-k+iyHEuPgSw6SbuDpGQM+06HQUa04DZ3o+F6CSzXMvvI5KMvnaEqXe+YVe555R9nn6GPt404fos4wcgpw12SDA==
+
+acorn@^8.4.1:
+  version "8.10.0"
+  resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.10.0.tgz#8be5b3907a67221a81ab23c7889c4c5526b62ec5"
+  integrity sha512-F0SAmZ8iUtS//m8DmCTA0jlh6TDKkHQyK6xc6V4KDTyZKA9dnvX9/3sRTVQrWm79glUAZbnmmNcdYwUIHWVybw==
+
 acorn@^8.8.0:
   version "8.8.2"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.8.2.tgz#1b2f25db02af965399b9776b0c2c391276d37c4a"
@@ -2343,6 +2462,11 @@ anymatch@~3.1.2:
   dependencies:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
+
+arg@^4.1.0:
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/arg/-/arg-4.1.3.tgz#269fc7ad5b8e42cb63c896d5666017261c144089"
+  integrity sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==
 
 arg@^5.0.2:
   version "5.0.2"
@@ -2537,6 +2661,34 @@ caniuse-lite@^1.0.30001449, caniuse-lite@^1.0.30001464:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001488.tgz#d19d7b6e913afae3e98f023db97c19e9ddc5e91f"
   integrity sha512-NORIQuuL4xGpIy6iCCQGN4iFjlBXtfKWIenlUuyZJumLRIindLb7wXM+GO8erEhb7vXfcnf4BAg2PrSDN5TNLQ==
 
+capi@^0.1.1-beta.1:
+  version "0.1.1-beta.1"
+  resolved "https://registry.yarnpkg.com/capi/-/capi-0.1.1-beta.1.tgz#144529b74401c84086936e6611b7bd791919032a"
+  integrity sha512-v1w0vKI8cZTU9DcHSYBOT8FmDC7jUk+e65QTdc0qSg7/BVZIveHsUtYLI8Wiop0VYTR51d73JRTE/s7kcR/f0g==
+  dependencies:
+    "@capi/collectives" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/collectives.tar"
+    "@capi/contracts-dev" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/contracts-dev.tar"
+    "@capi/polkadot" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/polkadot.tar"
+    "@capi/polkadot-dev" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/polkadot-dev.tar"
+    "@capi/rococo-dev" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev.tar"
+    "@capi/rococo-dev-contracts" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-contracts.tar"
+    "@capi/rococo-dev-westmint" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-westmint.tar"
+    "@capi/rococo-dev-xcm" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm.tar"
+    "@capi/rococo-dev-xcm-statemine" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm-statemine.tar"
+    "@capi/rococo-dev-xcm-trappist" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/rococo-dev-xcm-trappist.tar"
+    "@capi/spiritnet" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/spiritnet.tar"
+    "@capi/statemint" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/statemint.tar"
+    "@capi/westend" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/westend.tar"
+    "@capi/westend-dev" "https://capi.dev/@v0.1.1-beta.1/7544978d8abdc81c/westend-dev.tar"
+    "@deno/shim-deno" "~0.16.1"
+    isomorphic-ws "5.0.0"
+    scale-codec "0.13.0"
+    smoldot "1.0.6"
+    ts-node "^10.9.1"
+    tslib "^2.4.1"
+    wat-the-crypto "0.0.3"
+    ws "8.13.0"
+
 cbor-web@^8.0.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/cbor-web/-/cbor-web-8.1.0.tgz#c1148e91ca6bfc0f5c07c1df164854596e2e33d6"
@@ -2644,6 +2796,11 @@ copy-to-clipboard@^3.3.1:
   dependencies:
     toggle-selection "^1.0.6"
 
+create-require@^1.1.0:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
+  integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
+
 cross-spawn@^7.0.2:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.3.tgz#f73a85b9d5d41d045551c177e2882d4ac85728a6"
@@ -2722,6 +2879,11 @@ didyoumean@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/didyoumean/-/didyoumean-1.2.2.tgz#989346ffe9e839b4555ecf5666edea0d3e8ad037"
   integrity sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw==
+
+diff@^4.0.1:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/diff/-/diff-4.0.2.tgz#60f3aecb89d5fae520c11aa19efc2bb982aade7d"
+  integrity sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==
 
 dijkstrajs@^1.0.1:
   version "1.0.3"
@@ -3600,6 +3762,11 @@ isomorphic-unfetch@^3.1.0:
     node-fetch "^2.6.1"
     unfetch "^4.2.0"
 
+isomorphic-ws@5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/isomorphic-ws/-/isomorphic-ws-5.0.0.tgz#e5529148912ecb9b451b46ed44d53dae1ce04bbf"
+  integrity sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==
+
 jiti@^1.18.2:
   version "1.18.2"
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-1.18.2.tgz#80c3ef3d486ebf2450d9335122b32d121f2a83cd"
@@ -3731,6 +3898,11 @@ lru-cache@^6.0.0:
   integrity sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==
   dependencies:
     yallist "^4.0.0"
+
+make-error@^1.1.1:
+  version "1.3.6"
+  resolved "https://registry.yarnpkg.com/make-error/-/make-error-1.3.6.tgz#2eb2e37ea9b67c4891f684a1394799af484cf7a2"
+  integrity sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==
 
 md5@^2.3.0:
   version "2.3.0"
@@ -4276,6 +4448,11 @@ safe-stable-stringify@^2.1.0:
   resolved "https://registry.yarnpkg.com/safe-stable-stringify/-/safe-stable-stringify-2.4.3.tgz#138c84b6f6edb3db5f8ef3ef7115b8f55ccbf886"
   integrity sha512-e2bDA2WJT0wxseVd4lsDP4+3ONX6HpMXQa1ZhFQ7SU+GjvORCmShbCMltrtIDfkYhVHrOcPtj+KhmDBdPdZD1g==
 
+scale-codec@0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/scale-codec/-/scale-codec-0.13.0.tgz#7c9842412e0e4fdab5f9f10b475e3fbd40fdb23f"
+  integrity sha512-HxLaGxglkZP7SwjCLZPMsWGKN8Q/h5bjIH9YLFRcsG3Fmh+qsCOZYRLhntvTyP6B/Q7xHPBc2YKODOSfH0rH8g==
+
 scroll-lock@2.1.5:
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/scroll-lock/-/scroll-lock-2.1.5.tgz#18bb7697f02176cbfd093726c3c972b7cbc9975f"
@@ -4333,6 +4510,14 @@ smoldot@1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/smoldot/-/smoldot-1.0.4.tgz#e4c38cedad68d699a11b5b9ce72bb75c891bfd98"
   integrity sha512-N3TazI1C4GGrseFH/piWyZCCCRJTRx2QhDfrUKRT4SzILlW5m8ayZ3QTKICcz1C/536T9cbHHJyP7afxI6Mi1A==
+  dependencies:
+    pako "^2.0.4"
+    ws "^8.8.1"
+
+smoldot@1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/smoldot/-/smoldot-1.0.6.tgz#1f88a56cf5a13b90c1c231a55a89477c6ba92acc"
+  integrity sha512-eooOKiJJax2frJOFi9gROemQFAJqVa975KZnDeImfFXe2b+odI4IYf0I4NI0c1vOdcM7xUWBOxYeAIVQQILa7w==
   dependencies:
     pako "^2.0.4"
     ws "^8.8.1"
@@ -4633,6 +4818,25 @@ ts-interface-checker@^0.1.9:
   resolved "https://registry.yarnpkg.com/ts-interface-checker/-/ts-interface-checker-0.1.13.tgz#784fd3d679722bc103b1b4b8030bcddb5db2a699"
   integrity sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==
 
+ts-node@^10.9.1:
+  version "10.9.1"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-10.9.1.tgz#e73de9102958af9e1f0b168a6ff320e25adcff4b"
+  integrity sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==
+  dependencies:
+    "@cspotcode/source-map-support" "^0.8.0"
+    "@tsconfig/node10" "^1.0.7"
+    "@tsconfig/node12" "^1.0.7"
+    "@tsconfig/node14" "^1.0.0"
+    "@tsconfig/node16" "^1.0.2"
+    acorn "^8.4.1"
+    acorn-walk "^8.1.1"
+    arg "^4.1.0"
+    create-require "^1.1.0"
+    diff "^4.0.1"
+    make-error "^1.1.1"
+    v8-compile-cache-lib "^3.0.1"
+    yn "3.1.1"
+
 tslib@1.14.1, tslib@^1.8.1:
   version "1.14.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
@@ -4642,6 +4846,11 @@ tslib@^2.1.0, tslib@^2.5.0, tslib@^2.5.2:
   version "2.5.2"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.5.2.tgz#1b6f07185c881557b0ffa84b111a0106989e8338"
   integrity sha512-5svOrSA2w3iGFDs1HibEVBGbDrAY82bFQ3HZ3ixB+88nsbsWQoKqDRb5UBYAUPEzbBn6dAp5gRNXglySbx1MlA==
+
+tslib@^2.4.1:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.6.0.tgz#b295854684dbda164e181d259a22cd779dcd7bc3"
+  integrity sha512-7At1WUettjcSRHXCyYtTselblcHl9PJFFVKiCAy/bY97+BPZXSQ2wbq0P9s8tK2G7dFQfNnlJnPAiArVBVBsfA==
 
 tslib@^2.5.3:
   version "2.5.3"
@@ -4740,6 +4949,11 @@ uuid@^9.0.0:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.0.tgz#592f550650024a38ceb0c562f2f6aa435761efb5"
   integrity sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==
 
+v8-compile-cache-lib@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz#6336e8d71965cb3d35a1bbb7868445a7c05264bf"
+  integrity sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==
+
 validate-html-nesting@^1.2.1:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/validate-html-nesting/-/validate-html-nesting-1.2.2.tgz#2d74de14b598a0de671fad01bd71deabb93b8aca"
@@ -4774,6 +4988,11 @@ vitefu@^0.2.3:
   version "0.2.4"
   resolved "https://registry.yarnpkg.com/vitefu/-/vitefu-0.2.4.tgz#212dc1a9d0254afe65e579351bed4e25d81e0b35"
   integrity sha512-fanAXjSaf9xXtOOeno8wZXIhgia+CZury481LsDaV++lSvcU2R9Ch2bPh3PYFyoHW+w9LqAeYRISVQjUIew14g==
+
+wat-the-crypto@0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/wat-the-crypto/-/wat-the-crypto-0.0.3.tgz#8ff4035191432d12c722142e6a30a4a7f770f34d"
+  integrity sha512-Ob4HtNrDNUnk20CKZKBPaawn5R8wGqFhv1+RH/v3ypFyi0GnB1YE0xwrvW1JQwzoUHmcQh26tiO4seF4Qvy3Kw==
 
 web-streams-polyfill@^3.0.3:
   version "3.2.1"
@@ -4821,7 +5040,7 @@ which-typed-array@^1.1.9:
     has-tostringtag "^1.0.0"
     is-typed-array "^1.1.10"
 
-which@^2.0.1:
+which@^2.0.1, which@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/which/-/which-2.0.2.tgz#7c6a8dd0a636a0327e10b59c9286eee93f3f51b1"
   integrity sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==
@@ -4847,15 +5066,15 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
+ws@8.13.0, ws@^8.13.0, ws@^8.8.1:
+  version "8.13.0"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.13.0.tgz#9a9fb92f93cf41512a0735c8f4dd09b8a1211cd0"
+  integrity sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==
+
 ws@^7.5.1:
   version "7.5.9"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.5.9.tgz#54fa7db29f4c7cec68b1ddd3a89de099942bb591"
   integrity sha512-F+P9Jil7UiSKSkppIiD94dN07AwvFixvLIj1Og1Rl9GGMuNipJnV9JzjD6XuqmAeiswGvUmNLjr5cFuXwNS77Q==
-
-ws@^8.13.0, ws@^8.8.1:
-  version "8.13.0"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-8.13.0.tgz#9a9fb92f93cf41512a0735c8f4dd09b8a1211cd0"
-  integrity sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==
 
 y18n@^4.0.0:
   version "4.0.3"
@@ -4905,6 +5124,11 @@ yargs@^13.2.4:
     which-module "^2.0.0"
     y18n "^4.0.0"
     yargs-parser "^13.1.2"
+
+yn@3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/yn/-/yn-3.1.1.tgz#1e87401a09d767c1d5eab26a6e4c185182d2eb50"
+  integrity sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==
 
 yocto-queue@^0.1.0:
   version "0.1.0"
