@@ -36,15 +36,15 @@ export default function Assets() {
 
             const remapped = Object.entries(nb).map(([network, assets]) => {
                 const ret: [string, [string, Balances][]] = [network,
-                                                       Object.entries(assets)
-                                                             .map(([asset, assetBalances]) => {
-                                const ret: [string, Balances] = [asset, assetBalances as Balances];
+                    Object.entries(assets)
+                        .map(([asset, assetBalances]) => {
+                            const ret: [string, Balances] = [asset, assetBalances as Balances];
 
-                                return ret;
-                            })
-                            .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
-                                || assetBalances.reservedBalance != '0'
-                                || assetBalances.frozenBalance != '0')];
+                            return ret;
+                        })
+                        .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
+                            || assetBalances.reservedBalance != '0'
+                            || assetBalances.frozenBalance != '0')];
 
                 return ret;
             });
@@ -110,10 +110,10 @@ export default function Assets() {
                                                             BigNumber(b.reservedBalance).plus(BigNumber(b.frozenBalance))
                                                         )
                                                         .div(
-                                                        BigNumber('10').pow(
-                                                            BigNumber(Rings[network as keyof typeof Rings].decimals),
-                                                        ),
-                                                    ).decimalPlaces(2, 1).toString()
+                                                            BigNumber('10').pow(
+                                                                BigNumber(Rings[network as keyof typeof Rings].decimals),
+                                                            ),
+                                                        ).decimalPlaces(2, 1).toString()
                                                 } {asset}</td>
                                                 <td class='flex gap-2.5 w-[40%] py-2'>
                                                     <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-[#D55E8A] hover:bg-[#E40C5B]'>Transfer</Button>
@@ -132,8 +132,8 @@ export default function Assets() {
                         </Show>
                     }</For>
 
-                                                    ) : null}
+                ) : null}
             </div>
         </>
-                );
+    );
 }
