@@ -5,10 +5,8 @@ import { Button, Input } from '@hope-ui/solid';
 import { BigNumber } from 'bignumber.js';
 import { type ApiPromise } from '@polkadot/api';
 import { type Saturn, FeeAsset } from '@invarch/saturn-sdk';
-import { createFormGroup, createFormControl } from "solid-forms";
 import { BN } from '@polkadot/util';
 
-import { TextInput } from "../components";
 import { useSaturnContext } from "../providers/saturnProvider";
 import TalismanIdenticon from '../components/TalismanIdenticon';
 import Identity from '../components/Identity';
@@ -27,30 +25,6 @@ export default function Create() {
     const [minimumSupportField, setMinimumSupportField] = createSignal<string>('');
     const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('');
     const [secondMember, setSecondMember] = createSignal<string>('');
-
-    const group = createFormGroup({
-        minimumSupport: createFormControl("", {
-            required: true,
-            validators: (value: string) => {
-                const x = parseFloat(value);
-                return isNaN(x) || x < 0 || x > 100 ? { isMissing: true } : null;
-            }
-        }),
-
-        requiredApproval: createFormControl("", {
-            required: true,
-            validators: (value: string) => {
-                const x = parseFloat(value);
-                return isNaN(x) || x < 0 || x > 100 ? { isMissing: true } : null;
-            }
-        }),
-
-        name: createFormControl("", {
-            required: true,
-            validators: (value: string) =>
-                value.length === 0 ? { isMissing: true } : null,
-        }),
-    });
 
     createEffect(() => {
         const saturn = saturnContext.state.saturn;

@@ -32,12 +32,11 @@ import {
     type BaseWallet,
     type Account,
 } from '@polkadot-onboard/core';
-
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
+import { WalletConnectProvider as WCProvider, type WalletConnectConfiguration } from '@polkadot-onboard/wallet-connect';
 import { AiOutlineTwitter, AiOutlineLink } from 'solid-icons/ai';
 
 import { setupSaturnConnect, setSaturnConnectAccount } from "./utils/setupSaturnConnect";
-import { CustomWalletConnectProvider } from './utils/wcImplementation';
 import logo from './assets/logo.png';
 import defaultMultisigImage from './assets/default-multisig-image.png';
 import styles from './App.module.css';
@@ -48,8 +47,6 @@ import { useRingApisContext, RingApisProvider } from "./providers/ringApisProvid
 import { useSaturnContext, SaturnProvider } from "./providers/saturnProvider";
 import { useSelectedAccountContext, SelectedAccountProvider } from "./providers/selectedAccountProvider";
 import { IdentityProvider } from "./providers/identityProvider";
-
-import { MultisigList } from "./components";
 
 import ProposeModal from './modals/propose';
 import IdentityCardModal from './modals/identityCard';
@@ -82,25 +79,22 @@ const createApis = async (): Promise<Record<string, ApiPromise>> => {
     return Object.fromEntries(await Promise.all(entries));
 };
 
-const walletConnectParams = {
+const walletConnectParams: WalletConnectConfiguration = {
     projectId: '04b924c5906edbafa51c651573628e23',
     relayUrl: 'wss://relay.walletconnect.com',
     metadata: {
-        name: 'Saturn UI',
-        description: 'Saturn Multisig UI',
+        name: 'Saturn Gateway',
+        description: 'Saturn Gateway',
         url: 'https://invarch.network',
         icons: [
             'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
         ],
     },
+    chainIds: ["polkadot:d42e9606a995dfe433dc7955dc2a70f4"],
 };
 const walletAggregator = new WalletAggregator([
     new InjectedWalletProvider({}, 'Saturn UI'),
-    new CustomWalletConnectProvider(
-        walletConnectParams,
-        'Saturn UI',
-        'polkadot:d42e9606a995dfe433dc7955dc2a70f4',
-    ),
+    new WCProvider(walletConnectParams, "Saturn Gateway"),
 ]);
 
 const MainPage: Component = () => {
