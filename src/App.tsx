@@ -82,21 +82,21 @@ const createApis = async (): Promise<Record<string, ApiPromise>> => {
 };
 
 const walletConnectParams: WalletConnectConfiguration = {
-    projectId: '04b924c5906edbafa51c651573628e23',
-    relayUrl: 'wss://relay.walletconnect.com',
-    metadata: {
-        name: 'Saturn Gateway',
-        description: 'Saturn Gateway',
-        url: 'https://invarch.network',
-        icons: [
-            'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
-        ],
-    },
-    chainIds: ["polkadot:d42e9606a995dfe433dc7955dc2a70f4"],
+  projectId: '04b924c5906edbafa51c651573628e23',
+  relayUrl: 'wss://relay.walletconnect.com',
+  metadata: {
+    name: 'Saturn Gateway',
+    description: 'Saturn Gateway',
+    url: 'https://invarch.network',
+    icons: [
+      'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
+    ],
+  },
+  // chainIds: ["polkadot:d42e9606a995dfe433dc7955dc2a70f4"], // ts error
 };
 const walletAggregator = new WalletAggregator([
-    new InjectedWalletProvider({}, 'Saturn UI'),
-    new WCProvider(walletConnectParams, "Saturn Gateway"),
+  new InjectedWalletProvider({}, 'Saturn UI'),
+  new WCProvider(walletConnectParams, "Saturn Gateway"),
 ]);
 
 const MainPage: Component = () => {
