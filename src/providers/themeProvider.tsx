@@ -37,10 +37,7 @@ export function ThemeProvider(props: any) {
 
   function getColorMode(): string | undefined {
     const data = JSON.parse(storageState['colorMode']);
-    if (data) {
-      console.log({ data });
-      return data;
-    }
+    return data.colorMode;
   };
 
   function setMode(colorMode: ColorModeEnum): void {

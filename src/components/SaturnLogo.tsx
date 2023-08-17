@@ -1,22 +1,21 @@
 import { Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { ColorModeEnum } from "./ColorSwitch";
+import { useThemeContext } from "../providers/themeProvider";
 
 const SaturnLogo = () => {
   const [lightMode, setLightMode] = createSignal<boolean>(false);
   const darkString = "/src/assets/icons/saturn-logo-dark-beta.svg";
   const lightString = "/src/assets/icons/saturn-logo-light-beta.svg";
-  const localTheme = createMemo(() => localStorage.getItem('color-theme'));
+  const theme = useThemeContext();
+  const lightTheme = createMemo(() => theme.getColorMode() === ColorModeEnum.LIGHT);
 
-  createEffect(on(localTheme, () => {
-    console.log('localTheme changed', localTheme());
-    if (localTheme() === ColorModeEnum.LIGHT) {
+  createEffect(on(lightTheme, () => {
+    if (lightTheme()) {
       setLightMode(true);
-      console.log('light mode');
     } else {
       setLightMode(false);
-      console.log('dark mode');
     }
-  }, { defer: true }));
+  }));
 
   return <a href="/" class="flex ml-2 md:mr-24">
     <Show when={lightMode()}>
