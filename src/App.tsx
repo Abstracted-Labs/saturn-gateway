@@ -50,7 +50,7 @@ import { IdentityProvider } from "./providers/identityProvider";
 
 import ProposeModal from './modals/propose';
 import IdentityCardModal from './modals/identityCard';
-import Layout from './components/Layout';
+import Layout from './components/legos/Layout';
 import { ThemeProvider } from './providers/themeProvider';
 
 const Assets = lazy(async () => import('./pages/Assets'));
@@ -361,7 +361,7 @@ const MainPage: Component = () => {
         <ProposeModal />
         <IdentityCardModal />
       </Portal>
-      <div class={styles.leftPanel}>
+      {/* <div class={styles.leftPanel}>
         <img class={styles.logo} src={logo} />
         <div class={styles.pageListContainer}>
           <For each={pages}>
@@ -454,7 +454,7 @@ const MainPage: Component = () => {
             </Modal>
           </Portal>
         </div>
-      </div>
+      </div> */}
       <div class={styles.rightPanel}>
         <div class={styles.topContainer}>
           <div class='flex flex-row basis-full items-center space-x-6 pl-4 min-h-[75px] bg-[#222222] border-[#333333] rounded-3xl'>
@@ -576,7 +576,7 @@ const MainPage: Component = () => {
   );
 };
 
-const Outer: Component = () => {
+const HomePlanet: Component = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
 
@@ -628,7 +628,7 @@ const App: Component = () => (
           <SelectedAccountProvider>
             <IdentityProvider>
               <ThemeProvider>
-                <Outer />
+                <HomePlanet />
               </ThemeProvider>
             </IdentityProvider>
           </SelectedAccountProvider>

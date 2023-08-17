@@ -1,6 +1,6 @@
 import { Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { ColorModeEnum } from "./ColorSwitch";
-import { useThemeContext } from "../providers/themeProvider";
+import { useThemeContext } from "../../providers/themeProvider";
 
 const SaturnLogo = () => {
   const [lightMode, setLightMode] = createSignal<boolean>(false);

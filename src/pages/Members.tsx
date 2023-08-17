@@ -1,14 +1,8 @@
-import type { Setter } from 'solid-js';
-import { createSignal, For, createEffect, Show, Suspense, lazy, createResource } from 'solid-js';
+import { createSignal, For, createEffect } from 'solid-js';
 import { Button } from '@hope-ui/solid';
 import { BigNumber } from 'bignumber.js';
-import { type ApiPromise } from '@polkadot/api';
-import { type Saturn } from '@invarch/saturn-sdk';
-
 import { useSaturnContext } from "../providers/saturnProvider";
-import TalismanIdenticon from '../components/TalismanIdenticon';
-import Identity from '../components/Identity';
-import { getBestIdentity, type AggregatedIdentity } from "../utils/identityProcessor";
+import Identity from '../components/identity/Identity';
 
 export default function Members() {
   const [members, setMembers] = createSignal<{ address: string, votes: BigNumber; }[]>([]);
@@ -45,7 +39,7 @@ export default function Members() {
   });
 
   return (
-    <div class='border border-green-500 shadow-sm rounded-lg overflow-hidden mx-auto w-fit'>
+    <div class='ml-64 border border-green-500 shadow-sm rounded-lg overflow-hidden mx-auto w-fit'>
       <table class='w-full text-sm leading-5'>
         <thead class='bg-green-500'>
           <tr>

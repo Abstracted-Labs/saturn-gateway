@@ -1,33 +1,24 @@
-import type { Setter } from 'solid-js';
-import { createSignal, For, createEffect, Show, Suspense, lazy, createResource } from 'solid-js';
+import { createSignal, createEffect } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { Button, Input } from '@hope-ui/solid';
-import { BigNumber } from 'bignumber.js';
-import { type ApiPromise } from '@polkadot/api';
-import { type Saturn, FeeAsset } from '@invarch/saturn-sdk';
+import { Input } from '@hope-ui/solid';
+import { FeeAsset } from '@invarch/saturn-sdk';
 import { BN } from '@polkadot/util';
-
 import { useSaturnContext } from "../providers/saturnProvider";
-import TalismanIdenticon from '../components/TalismanIdenticon';
-import Identity from '../components/Identity';
-import { getBestIdentity, type AggregatedIdentity } from "../utils/identityProcessor";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { useRingApisContext } from "../providers/ringApisProvider";
 
 export default function Create() {
-    const saturnContext = useSaturnContext();
-    const selectedAccountContext = useSelectedAccountContext();
-    const ringApisContext = useRingApisContext();
+  const saturnContext = useSaturnContext();
+  const selectedAccountContext = useSelectedAccountContext();
+  const ringApisContext = useRingApisContext();
+  const navigate = useNavigate();
+  const [nameField, setNameField] = createSignal<string>('');
+  const [minimumSupportField, setMinimumSupportField] = createSignal<string>('');
+  const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('');
+  const [secondMember, setSecondMember] = createSignal<string>('');
 
-    const navigate = useNavigate();
-
-    const [nameField, setNameField] = createSignal<string>('');
-    const [minimumSupportField, setMinimumSupportField] = createSignal<string>('');
-    const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('');
-    const [secondMember, setSecondMember] = createSignal<string>('');
-
-    createEffect(() => {
-        const saturn = saturnContext.state.saturn;
+  createEffect(() => {
+    const saturn = saturnContext.state.saturn;
 
     if (!saturn) return;
 
@@ -95,7 +86,7 @@ export default function Create() {
   };
 
   return (
-    <div class='flex justify-center items-center'>
+    <div class='ml-64 flex justify-center items-center'>
       <div
         class="flex flex-col gap-4"
       >

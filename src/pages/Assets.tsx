@@ -24,36 +24,36 @@ export default function Assets() {
 
   const saturnContext = useSaturnContext();
 
-    createEffect(() => {
-        const id = saturnContext.state.multisigId;
-        const address = saturnContext.state.multisigAddress;
-        if (typeof id !== 'number' || !address) {
-            return;
-        }
+  createEffect(() => {
+    const id = saturnContext.state.multisigId;
+    const address = saturnContext.state.multisigAddress;
+    if (typeof id !== 'number' || !address) {
+      return;
+    }
 
-        const runAsync = async () => {
-            const nb = await getBalancesFromAllNetworks(address);
+    const runAsync = async () => {
+      const nb = await getBalancesFromAllNetworks(address);
 
-            const remapped = Object.entries(nb).map(([network, assets]) => {
-                const ret: [string, [string, Balances][]] = [network,
-                    Object.entries(assets)
-                        .map(([asset, assetBalances]) => {
-                            const ret: [string, Balances] = [asset, assetBalances as Balances];
+      const remapped = Object.entries(nb).map(([network, assets]) => {
+        const ret: [string, [string, Balances][]] = [network,
+          Object.entries(assets)
+            .map(([asset, assetBalances]) => {
+              const ret: [string, Balances] = [asset, assetBalances as Balances];
 
-                            return ret;
-                        })
-                        .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
-                            || assetBalances.reservedBalance != '0'
-                            || assetBalances.frozenBalance != '0')];
+              return ret;
+            })
+            .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
+              || assetBalances.reservedBalance != '0'
+              || assetBalances.frozenBalance != '0')];
 
-                return ret;
-            });
+        return ret;
+      });
 
-            setBalances(remapped);
-        };
+      setBalances(remapped);
+    };
 
-        runAsync();
-    });
+    runAsync();
+  });
 
   return (
     <>
@@ -62,7 +62,7 @@ export default function Assets() {
         setOpen={setTransferModalOpen}
       />
 
-      <div class='flex flex-col gap-4'>
+      <div class='ml-64 flex flex-col gap-4'>
         {balances() ? (
 
           <For each={balances()}>{([network, assets]) =>
@@ -106,14 +106,14 @@ export default function Assets() {
                         } {asset}</td>
                         <td class='w-[20%]'>{
                           BigNumber(b.freeBalance)
-                          .plus(
-                            BigNumber(b.reservedBalance).plus(BigNumber(b.frozenBalance))
-                          )
-                          .div(
-                            BigNumber('10').pow(
-                              BigNumber(Rings[network as keyof typeof Rings].decimals),
-                            ),
-                          ).decimalPlaces(2, 1).toString()
+                            .plus(
+                              BigNumber(b.reservedBalance).plus(BigNumber(b.frozenBalance))
+                            )
+                            .div(
+                              BigNumber('10').pow(
+                                BigNumber(Rings[network as keyof typeof Rings].decimals),
+                              ),
+                            ).decimalPlaces(2, 1).toString()
                         } {asset}</td>
                         <td class='flex gap-2.5 w-[40%] py-2'>
                           <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-green-500 hover:bg-saturn-red'>Transfer</Button>

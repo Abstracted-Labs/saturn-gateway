@@ -2,7 +2,7 @@ import ColorSwitch from "./ColorSwitch";
 import SaturnLogo from "./SaturnLogo";
 
 const Navbar = ({ ...props }) => {
-  return <nav {...props} class="bg-saturn-offwhite dark:bg-saturn-black fixed w-full z-20 top-0 left-0">
+  return <nav {...props} class="bg-saturn-offwhite dark:bg-saturn-black fixed w-full z-50 top-0 left-0">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
       <div class="flex items-center justify-between">
         {/* left side */}

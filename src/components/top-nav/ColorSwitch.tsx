@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSignal } from "solid-js";
-import { useThemeContext } from "../providers/themeProvider";
+import { useThemeContext } from "../../providers/themeProvider";
 
 export enum ColorModeEnum {
   LIGHT = 'light',
