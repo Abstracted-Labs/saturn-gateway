@@ -14,6 +14,7 @@ import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call } from '@polkadot/types/interfaces';
 import { type ApiPromise } from '@polkadot/api';
 import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
+import { useSearchParams } from '@solidjs/router';
 
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
@@ -25,8 +26,9 @@ export type QueuePageProps = {
 };
 
 export default function Queue() {
-  const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
-  const [viewFullCall, setViewFullCall] = createSignal<boolean>(false);
+    const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
+
+    const [searchParams, setSearchParams] = useSearchParams();
 
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
@@ -147,7 +149,10 @@ export default function Queue() {
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
   return (
-    <Accordion>
+     <Accordion
+            index={pendingProposals().findIndex((p) => p.callHash.toString() == searchParams.prop)}
+            onChange={(index) => (index as number) >= 0 ? setSearchParams({ prop: pendingProposals()[index as number].callHash.toString() }) : setSearchParams({ prop: null })}
+     >
       <For each={pendingProposals()}>
         {(pc: CallDetailsWithHash) => <AccordionItem>
           <h2>
