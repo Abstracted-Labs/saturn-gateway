@@ -53,6 +53,8 @@ import { MultisigList } from "./components";
 
 import ProposeModal from './modals/propose';
 import IdentityCardModal from './modals/identityCard';
+import Layout from './components/Layout';
+import { ThemeProvider } from './providers/themeProvider';
 
 const Assets = lazy(async () => import('./pages/Assets'));
 const Queue = lazy(async () => import('./pages/Queue'));
@@ -385,7 +387,7 @@ const MainPage: Component = () => {
         <div class='py-2.5'>
           <Button
             onClick={() => setWcModalOpen(true)}
-            class='gap-1 bg-green-500 hover:bg-saturn-50'
+            class='gap-1 bg-green-500 hover:bg-saturn-red'
           >
             <img
               src='https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/White/Icon.svg'
@@ -408,7 +410,7 @@ const MainPage: Component = () => {
                       }}
                     />
                     <Button
-                      class='bg-green-500 hover:bg-saturn-50'
+                      class='bg-green-500 hover:bg-saturn-red'
                       onClick={() => tryWcConnectDapp()}
                     >
                       Connect to dApp
@@ -448,7 +450,7 @@ const MainPage: Component = () => {
                 </ModalBody>
                 <ModalFooter>
                   <Button
-                    class='bg-green-500 hover:bg-saturn-50'
+                    class='bg-green-500 hover:bg-saturn-red'
                     onClick={() => setWcModalOpen(false)}
                   >
                     Close
@@ -497,7 +499,7 @@ const MainPage: Component = () => {
             <div class='grow' />
             <Button
               onClick={() => setWalletModalOpen(true)}
-              class='gap-1 rounded-tr-3xl self-start bg-green-500 hover:bg-saturn-50'
+              class='gap-1 rounded-tr-3xl self-start bg-green-500 hover:bg-saturn-red'
             >
               {selectedAccountContext.state.account?.name || 'Log In'}
             </Button>
@@ -518,7 +520,7 @@ const MainPage: Component = () => {
                           <For each={availableWallets()}>
                             {wallet => (
                               <Button
-                                class='gap-1 bg-green-500 hover:bg-saturn-50 capitalize'
+                                class='gap-1 bg-green-500 hover:bg-saturn-red capitalize'
                                 onClick={() => connectUserWallet(wallet)}
                               >
                                 {wallet.type === "WALLET_CONNECT" ? "Wallet Connect" : wallet.metadata.title}
@@ -530,7 +532,7 @@ const MainPage: Component = () => {
                         <For each={availableAccounts()?.accounts}>
                           {acc => (
                             <Button
-                              class='bg-green-500 hover:bg-saturn-50'
+                              class='bg-green-500 hover:bg-saturn-red'
                               onClick={() => connectUserAccount(acc, availableAccounts()?.wallet)}
                             >
                               {acc.name}
@@ -542,7 +544,7 @@ const MainPage: Component = () => {
                   </ModalBody>
                   <ModalFooter>
                     <Button
-                      class='bg-green-500 hover:bg-saturn-50'
+                      class='bg-green-500 hover:bg-saturn-red'
                       onClick={() => setWalletModalOpen(false)}
                     >
                       Close
@@ -615,10 +617,12 @@ const Outer: Component = () => {
   });
 
   return (
-    <Routes>
-      <Route path="/create" component={Create} />
-      <Route path='/:idOrAddress/*' component={MainPage} />
-    </Routes>
+    <Layout>
+      <Routes>
+        <Route path="/create" component={Create} />
+        <Route path='/:idOrAddress/*' component={MainPage} />
+      </Routes>
+    </Layout>
   );
 };
 
@@ -629,7 +633,9 @@ const App: Component = () => (
         <WalletConnectProvider>
           <SelectedAccountProvider>
             <IdentityProvider>
-              <Outer />
+              <ThemeProvider>
+                <Outer />
+              </ThemeProvider>
             </IdentityProvider>
           </SelectedAccountProvider>
         </WalletConnectProvider>

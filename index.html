@@ -7,10 +7,18 @@
   <meta name="theme-color" content="#000000" />
   <link rel="shortcut icon" type="image/ico" href="/src/assets/favicon.ico" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">
-  <title>Solid App</title>
+  <script>
+    // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <title>Saturn Gateway | Invarch Network</title>
 </head>
 
-<body>
+<body class="bg-offwhite dark:bg-black">
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
 

@@ -66,8 +66,8 @@ export default function Members() {
                 </td>
                 <td class='py-3 px-4 h-full'>
                   <div class="flex flex-row gap-2.5">
-                    <Button onClick={() => { }} class='bg-green-500 hover:bg-saturn-50'>Give More Votes</Button>
-                    <Button onClick={() => { }} class='bg-green-500 hover:bg-saturn-50'>Remove Votes</Button>
+                    <Button onClick={() => { }} class='bg-green-500 hover:bg-saturn-red'>Give More Votes</Button>
+                    <Button onClick={() => { }} class='bg-green-500 hover:bg-saturn-red'>Remove Votes</Button>
                   </div>
                 </td>
               </tr>

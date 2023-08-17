@@ -202,8 +202,8 @@ export default function Queue() {
                     </div>
                   </div>
                   <div class='flex gap-2'>
-                    <Button class='bg-green-500 hover:bg-saturn-50' onClick={() => vote(pc.callHash.toString(), true)}>Aye</Button>
-                    <Button class='bg-green-500 hover:bg-saturn-50' onClick={() => vote(pc.callHash.toString(), false)}>Nay</Button>
+                    <Button class='bg-green-500 hover:bg-saturn-red' onClick={() => vote(pc.callHash.toString(), true)}>Aye</Button>
+                    <Button class='bg-green-500 hover:bg-saturn-red' onClick={() => vote(pc.callHash.toString(), false)}>Nay</Button>
                   </div>
                 </div>
               </div>

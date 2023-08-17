@@ -158,7 +158,7 @@ export default function Create() {
         />
 
         <button
-          class="bg-green-500 hover:bg-saturn-50"
+          class="bg-green-500 hover:bg-saturn-red"
           onClick={() => createMultisig()}
         >
           Submit

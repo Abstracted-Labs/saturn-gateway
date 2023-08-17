@@ -133,11 +133,11 @@ export default function Assets() {
                           ).decimalPlaces(2, 1).toString()
                         } {asset}</td>
                         <td class='flex gap-2.5 w-[40%] py-2'>
-                          <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-green-500 hover:bg-saturn-50'>Transfer</Button>
+                          <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-green-500 hover:bg-saturn-red'>Transfer</Button>
 
                           <Show when={StakePage[`${ network }_${ asset }` as keyof typeof StakePage]}>
                             <form action={StakePage[`${ network }_${ asset }` as keyof typeof StakePage]} target='_blank'>
-                              <Button type='submit' class='bg-green-500 hover:bg-saturn-50'>Stake</Button>
+                              <Button type='submit' class='bg-green-500 hover:bg-saturn-red'>Stake</Button>
                             </form>
                           </Show>
                         </td>
