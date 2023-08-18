@@ -37,36 +37,20 @@ export function ThemeProvider(props: any) {
 
   function getColorMode(): string | null {
     try {
-      const ls = localStorage.getItem('colorMode');
-      console.log({ ls });
-      console.log('getColorMode', storageState['colorMode']);
       const data = JSON.parse(storageState['colorMode']);
       return data.colorMode;
     } catch (e) {
-      console.log('error', e);
+      console.log('getColorMode error: ', e);
       return null;
     }
   };
 
   function setMode(colorMode: ColorModeEnum): void {
-    console.log({ colorMode });
-    if (!!colorMode) {
+    if (colorMode !== null) {
       setState('colorMode', colorMode);
       setStorageState("colorMode", JSON.stringify({ colorMode }));
-    } else {
-      console.log('colorMode is undefined', colorMode);
     }
   }
-
-  // onMount(() => {
-  //   console.log('mounted');
-  //   const current = getColorMode();
-  //   if (current === null) {
-  //     setMode(ColorModeEnum.DARK);
-  //   } else {
-  //     setMode(current as ColorModeEnum);
-  //   }
-  // });
 
   const contextValue = createMemo(() => ({
     ...state,

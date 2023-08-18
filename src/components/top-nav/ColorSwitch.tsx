@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal } from "solid-js";
+import { createEffect, createMemo, createSignal, onMount } from "solid-js";
 import { useThemeContext } from "../../providers/themeProvider";
 
 export enum ColorModeEnum {
@@ -10,12 +10,12 @@ const ColorSwitch = () => {
   const [colorTheme, setColorTheme] = createSignal<ColorModeEnum>(ColorModeEnum.DARK);
   const modeText = createMemo(() => colorTheme() === ColorModeEnum.LIGHT ? 'Light' : 'Dark');
   const theme = useThemeContext();
-  const colorMode = theme.getColorMode();
+  const lsColorMode = theme.getColorMode();
 
   const toggle = () => {
     // if set via local storage previously
-    if (colorMode && colorMode !== null) {
-      if (colorMode === ColorModeEnum.LIGHT) {
+    if (colorTheme()) {
+      if (colorTheme() === ColorModeEnum.LIGHT) {
         document.documentElement.classList.add(ColorModeEnum.DARK);
         theme.setMode(ColorModeEnum.DARK);
         setColorTheme(ColorModeEnum.DARK);
@@ -23,21 +23,27 @@ const ColorSwitch = () => {
         document.documentElement.classList.remove(ColorModeEnum.DARK);
         theme.setMode(ColorModeEnum.LIGHT);
         setColorTheme(ColorModeEnum.LIGHT);
-      }
-    } else {
-      console.log('colorMode is null', colorMode);
-      // if NOT set via local storage previously
-      if (document.documentElement.classList.contains(ColorModeEnum.DARK)) {
-        document.documentElement.classList.remove(ColorModeEnum.DARK);
-        theme.setMode(ColorModeEnum.LIGHT);
-        setColorTheme(ColorModeEnum.LIGHT);
-      } else {
-        document.documentElement.classList.add(ColorModeEnum.DARK);
-        theme.setMode(ColorModeEnum.DARK);
-        setColorTheme(ColorModeEnum.DARK);
       }
     }
   };
+
+  onMount(() => {
+    if (lsColorMode !== null) {
+      // if mode set via local storage previously
+      if (lsColorMode === ColorModeEnum.LIGHT) {
+        document.documentElement.classList.remove(ColorModeEnum.DARK);
+      } else {
+        document.documentElement.classList.add(ColorModeEnum.DARK);
+      }
+      theme.setMode(lsColorMode as ColorModeEnum);
+      setColorTheme(lsColorMode as ColorModeEnum);
+    } else {
+      // default to dark mode if no local storage mode set
+      document.documentElement.classList.add(ColorModeEnum.DARK);
+      theme.setMode(ColorModeEnum.DARK);
+      setColorTheme(ColorModeEnum.DARK);
+    }
+  });
 
   return <>
     <label class="relative inline-flex items-center mr-5 cursor-pointer">
