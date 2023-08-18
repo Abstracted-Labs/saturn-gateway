@@ -7,15 +7,15 @@ const SaturnLogo = () => {
   const darkString = "/src/assets/icons/saturn-logo-dark-beta.svg";
   const lightString = "/src/assets/icons/saturn-logo-light-beta.svg";
   const theme = useThemeContext();
-  const lightTheme = createMemo(() => theme.getColorMode() === ColorModeEnum.LIGHT);
+  const lightTheme = theme.getColorMode() === ColorModeEnum.LIGHT;
 
-  createEffect(on(lightTheme, () => {
-    if (lightTheme()) {
+  createEffect(() => {
+    if (lightTheme) {
       setLightMode(true);
     } else {
       setLightMode(false);
     }
-  }));
+  });
 
   return <a href="/" class="flex ml-2 md:mr-24">
     <Show when={lightMode()}>

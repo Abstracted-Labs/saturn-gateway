@@ -1,21 +1,21 @@
-import { batch, createContext, createEffect, createMemo, createRenderEffect, useContext } from "solid-js";
+import { batch, createContext, createEffect, createMemo, createRenderEffect, onMount, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { createLocalStorage } from "@solid-primitives/storage";
 import { ColorModeEnum } from "../components/top-nav/ColorSwitch";
 
 type ThemeContextType = {
-  colorMode: ColorModeEnum | undefined,
+  colorMode: ColorModeEnum | null,
   setMode: (colorMode: ColorModeEnum) => void,
-  getColorMode: () => string | undefined,
+  getColorMode: () => string | null,
 };
 
 const defaultThemeState = (): ThemeContextType => ({
-  colorMode: 'dark' as ColorModeEnum, // default to dark mode
+  colorMode: null, // default to dark mode
   setMode: () => {
     return;
   },
   getColorMode: () => {
-    return undefined;
+    return null;
   }
 });
 
@@ -35,19 +35,38 @@ export function ThemeProvider(props: any) {
   const [state, setState] = createStore<ThemeContextType>(defaultThemeState());
   const [storageState, setStorageState] = createLocalStorage();
 
-  function getColorMode(): string | undefined {
-    const data = JSON.parse(storageState['colorMode']);
-    return data.colorMode;
+  function getColorMode(): string | null {
+    try {
+      const ls = localStorage.getItem('colorMode');
+      console.log({ ls });
+      console.log('getColorMode', storageState['colorMode']);
+      const data = JSON.parse(storageState['colorMode']);
+      return data.colorMode;
+    } catch (e) {
+      console.log('error', e);
+      return null;
+    }
   };
 
   function setMode(colorMode: ColorModeEnum): void {
-    batch(() => {
-      if (!!colorMode) {
-        setState('colorMode', colorMode);
-        setStorageState("colorMode", JSON.stringify({ colorMode }));
-      }
-    });
+    console.log({ colorMode });
+    if (!!colorMode) {
+      setState('colorMode', colorMode);
+      setStorageState("colorMode", JSON.stringify({ colorMode }));
+    } else {
+      console.log('colorMode is undefined', colorMode);
+    }
   }
+
+  // onMount(() => {
+  //   console.log('mounted');
+  //   const current = getColorMode();
+  //   if (current === null) {
+  //     setMode(ColorModeEnum.DARK);
+  //   } else {
+  //     setMode(current as ColorModeEnum);
+  //   }
+  // });
 
   const contextValue = createMemo(() => ({
     ...state,

@@ -10,12 +10,12 @@ const ColorSwitch = () => {
   const [colorTheme, setColorTheme] = createSignal<ColorModeEnum>(ColorModeEnum.DARK);
   const modeText = createMemo(() => colorTheme() === ColorModeEnum.LIGHT ? 'Light' : 'Dark');
   const theme = useThemeContext();
-  const colorMode = createMemo(() => theme.getColorMode());
+  const colorMode = theme.getColorMode();
 
   const toggle = () => {
     // if set via local storage previously
-    if (colorMode()) {
-      if (colorMode() === ColorModeEnum.LIGHT) {
+    if (colorMode && colorMode !== null) {
+      if (colorMode === ColorModeEnum.LIGHT) {
         document.documentElement.classList.add(ColorModeEnum.DARK);
         theme.setMode(ColorModeEnum.DARK);
         setColorTheme(ColorModeEnum.DARK);
@@ -25,7 +25,7 @@ const ColorSwitch = () => {
         setColorTheme(ColorModeEnum.LIGHT);
       }
     } else {
-      console.log('colorMode is undefined', colorMode());
+      console.log('colorMode is null', colorMode);
       // if NOT set via local storage previously
       if (document.documentElement.classList.contains(ColorModeEnum.DARK)) {
         document.documentElement.classList.remove(ColorModeEnum.DARK);

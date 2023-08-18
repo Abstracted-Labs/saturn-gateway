@@ -102,21 +102,21 @@ const HomePlanet: Component = () => {
 };
 
 const App = () => (
-  <ProposeProvider>
-    <SaturnProvider>
-      <RingApisProvider>
-        <WalletConnectProvider>
-          <SelectedAccountProvider>
-            <IdentityProvider>
-              <ThemeProvider>
+  <ThemeProvider>
+    <ProposeProvider>
+      <SaturnProvider>
+        <RingApisProvider>
+          <WalletConnectProvider>
+            <SelectedAccountProvider>
+              <IdentityProvider>
                 <HomePlanet />
-              </ThemeProvider>
-            </IdentityProvider>
-          </SelectedAccountProvider>
-        </WalletConnectProvider>
-      </RingApisProvider>
-    </SaturnProvider>
-  </ProposeProvider>
+              </IdentityProvider>
+            </SelectedAccountProvider>
+          </WalletConnectProvider>
+        </RingApisProvider>
+      </SaturnProvider>
+    </ProposeProvider>
+  </ThemeProvider>
 );
 
 export default App;
