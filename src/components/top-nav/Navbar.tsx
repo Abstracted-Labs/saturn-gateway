@@ -1,4 +1,3 @@
-import ColorSwitch from "./ColorSwitch";
 import SaturnLogo from "./SaturnLogo";
 
 const Navbar = ({ ...props }) => {
@@ -14,13 +13,6 @@ const Navbar = ({ ...props }) => {
           </svg>
         </button> */}
           <SaturnLogo />
-        </div>
-
-        {/* right side */}
-        <div class="flex items-center">
-          <div class="flex items-center ml-3">
-            <ColorSwitch />
-          </div>
         </div>
       </div>
     </div>

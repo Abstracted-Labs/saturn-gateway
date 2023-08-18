@@ -13,8 +13,8 @@ module.exports = {
           'white': '#FFFFFF', // white
           'offwhite': '#F9F9FB', // off white
           'black': '#010101', // black
-          'dgrey': '#0E0D11', // dark grey
-          'lgrey': '#888893', // light grey
+          'darkgrey': '#0E0D11', // dark grey
+          'lightgrey': '#888893', // light grey
           'green': '#6FE388', // green success
           'red': '#E36F6F', // red error
           'yellow': '#ECC265', // yellow

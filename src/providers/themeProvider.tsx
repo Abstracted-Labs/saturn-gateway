@@ -1,7 +1,7 @@
 import { batch, createContext, createEffect, createMemo, createRenderEffect, onMount, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { createLocalStorage } from "@solid-primitives/storage";
-import { ColorModeEnum } from "../components/top-nav/ColorSwitch";
+import { ColorModeEnum } from "../components/left-side/ColorSwitch";
 
 type ThemeContextType = {
   colorMode: ColorModeEnum | null,

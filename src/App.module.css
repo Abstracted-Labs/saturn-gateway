@@ -65,7 +65,7 @@
     height: 100%;
     position: absolute;
     left: 0px;
-    background: linear-gradient(61.97deg, rgb(213, 94, 138) -2.84%, rgb(228, 12, 91) 86.13%);
+    background: rgb(105, 46, 255);
     opacity: 0%;
 }
 
@@ -75,7 +75,7 @@
     inset: 0px;
     opacity: 0;
     transition: opacity 0.2s ease-in 0s;
-    background: linear-gradient(93.96deg, rgba(213, 94, 138, 0.24) -1.01%, rgba(213, 94, 138, 0) 94.52%);
+    background: linear-gradient(93.96deg, rgba(105, 46, 255, 0.24) -1.01%, rgba(213, 94, 138, 0) 94.52%);
 }
 
 .selectedItemGradient:hover {
