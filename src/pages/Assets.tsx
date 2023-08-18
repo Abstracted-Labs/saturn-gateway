@@ -7,7 +7,7 @@ import { BigNumber } from 'bignumber.js';
 import { type ApiPromise } from '@polkadot/api';
 import { type Saturn } from '@invarch/saturn-sdk';
 
-import TransferModal from '../modals/transfer';
+import TransferModal from '../components/modals/transfer';
 import { useSaturnContext } from "../providers/saturnProvider";
 import type { AssetsBalances, Balances } from "../utils/getBalances";
 
@@ -62,7 +62,7 @@ export default function Assets() {
         setOpen={setTransferModalOpen}
       />
 
-      <div class='ml-64 flex flex-col gap-4'>
+      <div class='flex flex-col gap-4'>
         {balances() ? (
 
           <For each={balances()}>{([network, assets]) =>

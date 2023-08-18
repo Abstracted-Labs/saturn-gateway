@@ -1,5 +1,5 @@
-import { batch, createContext, createMemo, useContext } from "solid-js";
-import { SetStoreFunction, createStore } from "solid-js/store";
+import { batch, createContext, createEffect, createMemo, createRenderEffect, useContext } from "solid-js";
+import { createStore } from "solid-js/store";
 import { createLocalStorage } from "@solid-primitives/storage";
 import { ColorModeEnum } from "../components/top-nav/ColorSwitch";
 
@@ -10,7 +10,7 @@ type ThemeContextType = {
 };
 
 const defaultThemeState = (): ThemeContextType => ({
-  colorMode: undefined,
+  colorMode: 'dark' as ColorModeEnum, // default to dark mode
   setMode: () => {
     return;
   },
@@ -25,7 +25,7 @@ export function useThemeContext() {
   const context = useContext(ThemeContext);
 
   if (!context) {
-    throw new Error("useThemeProvider: cannot find a ThemeContext");
+    throw new Error("useThemeContext: cannot find a ThemeContext");
   }
 
   return context;
@@ -42,8 +42,10 @@ export function ThemeProvider(props: any) {
 
   function setMode(colorMode: ColorModeEnum): void {
     batch(() => {
-      setState('colorMode', colorMode);
-      setStorageState("colorMode", JSON.stringify({ colorMode }));
+      if (!!colorMode) {
+        setState('colorMode', colorMode);
+        setStorageState("colorMode", JSON.stringify({ colorMode }));
+      }
     });
   }
 

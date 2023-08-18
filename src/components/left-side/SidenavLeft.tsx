@@ -9,7 +9,7 @@ const pages = [
 ];
 
 const SidenavLeft = () => {
-  return <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen mt-24 transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
+  return <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-72 h-screen mt-24 transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
     <div class="h-full px-3 py-4 overflow-y-auto bg-saturn-offwhite dark:bg-saturn-black">
       {/* <img class={styles.logo} src={logo} /> */}
       <div class={styles.pageListContainer}>

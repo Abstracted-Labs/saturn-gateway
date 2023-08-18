@@ -145,7 +145,7 @@ export default function Queue() {
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
   return (
-    <div class="ml-64">
+    <div>
       <Accordion
         index={pendingProposals().findIndex((p) => p.callHash.toString() == searchParams.prop)}
         onChange={(index) => (index as number) >= 0 ? setSearchParams({ prop: pendingProposals()[index as number].callHash.toString() }) : setSearchParams({ prop: null })}

@@ -39,7 +39,7 @@ export default function Members() {
   });
 
   return (
-    <div class='ml-64 border border-green-500 shadow-sm rounded-lg overflow-hidden mx-auto w-fit'>
+    <div class='border border-green-500 shadow-sm rounded-lg overflow-hidden mx-auto w-fit'>
       <table class='w-full text-sm leading-5'>
         <thead class='bg-green-500'>
           <tr>

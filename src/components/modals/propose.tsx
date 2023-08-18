@@ -22,12 +22,12 @@ import type { Call } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
 
-import { useProposeContext, ProposalType } from "../providers/proposeProvider";
-import { useSaturnContext } from "../providers/saturnProvider";
-import { useRingApisContext } from "../providers/ringApisProvider";
-import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
-import FormattedCall from '../components/legos/FormattedCall';
-import { RingAssets } from "../data/rings";
+import { useProposeContext, ProposalType } from "../../providers/proposeProvider";
+import { useSaturnContext } from "../../providers/saturnProvider";
+import { useRingApisContext } from "../../providers/ringApisProvider";
+import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import FormattedCall from '../legos/FormattedCall';
+import { RingAssets } from "../../data/rings";
 
 type TransferProposalProps = {
   amount: BN | BigNumber | string;

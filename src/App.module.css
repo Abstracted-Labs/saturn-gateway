@@ -7,13 +7,12 @@
     flex-direction: row;
     align-items: stretch;
     justify-content: flex-start;
-    height: 100vh;
-    width: 100vw;
+    height: calc(100vh - 96px);
+    /* width: 100vw; */
     -moz-box-pack: start;
     -moz-box-align: stretch;
     overflow: hidden;
-
-    background-color: rgb(22, 22, 22);
+    /* background-color: rgb(22, 22, 22); */
 }
 
 .leftPanel {
@@ -95,15 +94,13 @@ a.enabled div.selectedItemIndicator {
 /*     opacity: 100% !important; */
 /* } */
 
-.rightPanel {
+/* .rightPanel {
     flex-direction: column;
-
     flex: 1 1 0%;
     height: 100vh;
     padding: 0px 44px 64px;
     overflow-y: hidden;
-
-}
+} */
 
 .topContainer {
     display:flex;

@@ -86,7 +86,7 @@ export default function Create() {
   };
 
   return (
-    <div class='ml-64 flex justify-center items-center'>
+    <div class='flex justify-center items-center'>
       <div
         class="flex flex-col gap-4"
       >
