@@ -21,7 +21,7 @@ import FormattedCall from '../components/legos/FormattedCall';
 export type QueuePageProps = {
 };
 
-export default function Queue() {
+export default function Transactions() {
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
 
   const [searchParams, setSearchParams] = useSearchParams();

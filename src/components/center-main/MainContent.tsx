@@ -1,6 +1,6 @@
 import { Routes, Route } from "@solidjs/router";
 import Members from "../../pages/Members";
-import Queue from "../../pages/Queue";
+import Transactions from "../../pages/Transactions";
 import Assets from "../../pages/Assets";
 
 const MainContent = () => {
@@ -13,9 +13,9 @@ const MainContent = () => {
         }
       />
       <Route
-        path='queue'
+        path='Transactions'
         element={
-          <Queue />
+          <Transactions />
         }
       />
       <Route
