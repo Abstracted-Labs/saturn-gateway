@@ -69,6 +69,10 @@
     opacity: 0%;
 }
 
+a.enabled div.selectedItemIndicator + svg {
+    fill: #692EFF !important;
+}
+
 .selectedItemGradient {
     z-index: 1;
     position: absolute;
@@ -89,6 +93,7 @@ a.enabled div.selectedItemGradient {
 a.enabled div.selectedItemIndicator {
     opacity: 100% !important;
 }
+
 
 /* .enabled { */
 /*     opacity: 100% !important; */
