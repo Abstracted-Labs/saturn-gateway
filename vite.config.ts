@@ -9,4 +9,9 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
+  resolve: {
+  	alias: {
+  		events: 'rollup-plugin-node-polyfills/polyfills/events',
+  	}
+  }
 });
