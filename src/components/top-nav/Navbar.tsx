@@ -13,7 +13,6 @@ const Navbar = ({ ...props }) => {
       </div>
       <SubNavbar />
     </nav>
-
   </>;
 };
 Navbar.displayName = 'Navbar';

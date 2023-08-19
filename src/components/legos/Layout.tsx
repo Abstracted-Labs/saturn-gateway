@@ -1,22 +1,25 @@
 import Navbar from "../top-nav/Navbar";
 import SidenavLeft from "../left-side/SidenavLeft";
-import SidenavRight from "../right-side/SideNavRight";
+import SidenavRight from "../right-side/SidenavRight";
 
 const Layout = ({ children }: { children: any; }) => {
   return <div>
     {/* Top nav */}
     <Navbar />
-    <div class="grid md:grid-cols-5">
+
+    <div class="grid lg:grid-cols-5">
       {/* Left side */}
-      <div class="md:col-span-1">
+      <div class="lg:col-span-1 hidden lg:block">
         <SidenavLeft />
       </div>
+
       {/* Main content */}
-      <div class="md:col-span-3 mt-18">
+      <div class="lg:col-span-3 mt-18">
         {children}
       </div>
+
       {/* Right side */}
-      <div class="md:col-span-1">
+      <div class="lg:col-span-1 hidden lg:block">
         <SidenavRight />
       </div>
     </div>
