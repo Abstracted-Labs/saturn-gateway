@@ -38,6 +38,7 @@
     "@polkadot-onboard/injected-wallets": "0.1.0",
     "@polkadot-onboard/wallet-connect": "0.1.0",
     "@polkadot/api": "^10.7.2",
+    "@polkadot/api-base": "^10.9.1",
     "@polkadot/types": "^10.8.1",
     "@polkadot/util": "^12.2.1",
     "@polkadot/util-crypto": "^12.2.1",
