@@ -54,5 +54,6 @@
     "solid-js": "^1.6.10",
     "solid-transition-group": "^0.2.2",
     "yaml": "^2.3.0"
-  }
+  },
+  "packageManager": "yarn@3.6.2"
 }
