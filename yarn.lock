@@ -852,14 +852,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@invarch/saturn-sdk@npm:^1.0.8":
-  version: 1.0.8
-  resolution: "@invarch/saturn-sdk@npm:1.0.8"
+"@invarch/saturn-sdk@npm:^1.0.9":
+  version: 1.0.9
+  resolution: "@invarch/saturn-sdk@npm:1.0.9"
   dependencies:
     "@polkadot/api": ^10.3.4
     "@polkadot/api-augment": ^10.3.4
-    "@polkadot/types": ^10.3.4
-  checksum: 8a09532772071306966aed9bce71218b2b1f9d77d5b5dc7aee59ec48f9ffb8bebe60cad2eb2e0c9d316a748b90febac33a4c42a4e023babd97e598af9a016de4
+    "@polkadot/api-base": ^10.9.1
+    "@polkadot/rpc-core": ^10.9.1
+    "@polkadot/types": ^10.9.1
+    "@polkadot/types-codec": ^10.9.1
+  checksum: d7e84039b18f3c7b1f0eaa862e6dd5cb04a91c9ab7f227e7a84e7b410ce7eb7ef9e9e803ce67a37756d2235d57c39d2ea11e2077f45141bc8095dc44b139bfd8
   languageName: node
   linkType: hard
 
@@ -1286,7 +1289,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/rpc-core@npm:10.9.1":
+"@polkadot/rpc-core@npm:10.9.1, @polkadot/rpc-core@npm:^10.9.1":
   version: 10.9.1
   resolution: "@polkadot/rpc-core@npm:10.9.1"
   dependencies:
@@ -1336,7 +1339,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types-codec@npm:10.9.1, @polkadot/types-codec@npm:^10.4.0":
+"@polkadot/types-codec@npm:10.9.1, @polkadot/types-codec@npm:^10.4.0, @polkadot/types-codec@npm:^10.9.1":
   version: 10.9.1
   resolution: "@polkadot/types-codec@npm:10.9.1"
   dependencies:
@@ -1382,7 +1385,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types@npm:10.9.1, @polkadot/types@npm:^10.3.4, @polkadot/types@npm:^10.4.0, @polkadot/types@npm:^10.8.1, @polkadot/types@npm:^10.9.1":
+"@polkadot/types@npm:10.9.1, @polkadot/types@npm:^10.4.0, @polkadot/types@npm:^10.8.1, @polkadot/types@npm:^10.9.1":
   version: 10.9.1
   resolution: "@polkadot/types@npm:10.9.1"
   dependencies:
@@ -6705,13 +6708,12 @@ __metadata:
   resolution: "vite-template-solid@workspace:."
   dependencies:
     "@hope-ui/solid": ^0.6.7
-    "@invarch/saturn-sdk": ^1.0.8
+    "@invarch/saturn-sdk": ^1.0.9
     "@kiltprotocol/sdk-js": ^0.33.0
     "@polkadot-onboard/core": ^0.2.0
     "@polkadot-onboard/injected-wallets": 0.1.0
     "@polkadot-onboard/wallet-connect": 0.1.0
     "@polkadot/api": ^10.7.2
-    "@polkadot/api-base": ^10.9.1
     "@polkadot/types": ^10.8.1
     "@polkadot/util": ^12.2.1
     "@polkadot/util-crypto": ^12.2.1
