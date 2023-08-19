@@ -2149,7 +2149,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@walletconnect/core@npm:2.10.0, @walletconnect/core@npm:^2.9.0":
+"@walletconnect/core@npm:2.10.0, @walletconnect/core@npm:^2.10.0, @walletconnect/core@npm:^2.9.0":
   version: 2.10.0
   resolution: "@walletconnect/core@npm:2.10.0"
   dependencies:
@@ -6720,6 +6720,7 @@ __metadata:
     "@types/md5": ^2.3.2
     "@typescript-eslint/eslint-plugin": ">=5.57.0"
     "@typescript-eslint/parser": ">=5.57.0"
+    "@walletconnect/core": ^2.10.0
     "@walletconnect/sign-client": ^2.7.5
     "@walletconnect/web3wallet": ^1.7.3
     autoprefixer: ^10.4.14
