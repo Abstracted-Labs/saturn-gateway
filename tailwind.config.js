@@ -25,10 +25,10 @@ module.exports = {
       },
     },
     screens: {
-      xs: '320px',
-      sm: '480px',
+      xs: '414px',
+      sm: '576px',
       md: '768px',
-      lg: '1024px',
+      lg: '992px',
       xl: '1440px',
     },
   },
