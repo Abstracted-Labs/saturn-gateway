@@ -1,9 +1,12 @@
+// TODO: when there is right sidebar content, revive commented out code below
 const removeDrawers = () => {
   // Select the button element
-  const button = document.querySelectorAll('button[data-drawer-target="rightSidebar"], button[data-drawer-target="leftSidebar"]');
+  // const button = document.querySelectorAll('button[data-drawer-target="rightSidebar"], button[data-drawer-target="leftSidebar"]');
+  const button = document.querySelectorAll('button[data-drawer-target="leftSidebar"]');
 
   // Select all matching elements
-  const elements = document.querySelectorAll('#leftSidebar[aria-hidden="true"], #rightSidebar[aria-hidden="true"]');
+  // const elements = document.querySelectorAll('#leftSidebar[aria-hidden="true"], #rightSidebar[aria-hidden="true"]');
+  const elements = document.querySelectorAll('#leftSidebar[aria-hidden="true"]');
 
   if (elements.length > 0) {
     // Loop through the elements and remove the display: none style

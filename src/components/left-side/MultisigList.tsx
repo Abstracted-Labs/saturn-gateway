@@ -115,7 +115,7 @@ const MultisigList = () => {
   return (
     <>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Multisigs</h5>
-      <div class="h-60 relative mb-6">
+      <div class="h-80 relative mb-6">
         <div
           ref={scrollContainerRef!}
           style={{
