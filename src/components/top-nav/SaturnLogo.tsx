@@ -26,5 +26,6 @@ const SaturnLogo = () => {
     </Show>
   </a>;
 };
+
 SaturnLogo.displayName = "SaturnLogo";
 export default SaturnLogo;

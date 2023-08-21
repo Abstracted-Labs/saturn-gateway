@@ -273,7 +273,7 @@ const MainContainer = () => {
   };
 
   return (
-    <div class={`${ styles.pageContainer } bg-saturn-black p-4`}>
+    <div class={`${ styles.pageContainer } p-4`}>
       <MainContent />
       <Portal>
         <ProposeModal />
@@ -471,5 +471,6 @@ const MainContainer = () => {
     </div>
   );
 };
+
 MainContainer.displayName = 'MainContainer';
 export default MainContainer;

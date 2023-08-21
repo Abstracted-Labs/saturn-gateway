@@ -25,5 +25,6 @@ const MainContent = () => {
     </Routes>
   </div>;
 };
+
 MainContent.displayName = 'MainContent';
 export default MainContent;

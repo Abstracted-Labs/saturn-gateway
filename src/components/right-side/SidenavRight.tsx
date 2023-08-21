@@ -5,5 +5,6 @@ const SidenavRight = () => {
     <RightContent />
   </aside>;
 };
+
 SidenavRight.displayName = 'SidenavRight';
 export default SidenavRight;

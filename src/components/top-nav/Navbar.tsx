@@ -15,5 +15,6 @@ const Navbar = ({ ...props }) => {
     </nav>
   </>;
 };
+
 Navbar.displayName = 'Navbar';
 export default Navbar;

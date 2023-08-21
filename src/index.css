@@ -1,12 +1,3 @@
-/* body {
-  margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-} */
-
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -15,3 +6,28 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  /* utilities to style multisig scrollbar */
+  .multisig-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .multisig-scrollbar::-webkit-scrollbar-track {
+    border-radius: 100vh;
+    height: 100vh;
+  }
+
+  .multisig-scrollbar.isdark::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .multisig-scrollbar.islight::-webkit-scrollbar-track {
+    background: #FFFFFF;
+  }
+
+  .multisig-scrollbar::-webkit-scrollbar-thumb {
+    background: #692EFF;
+    border-radius: 100vh;
+  }
+}

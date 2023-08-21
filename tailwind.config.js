@@ -2,14 +2,15 @@
 module.exports = {
   darkMode: 'class',
   content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx,css}",
     "./node_modules/flowbite/**/*.js" // Flowbite JS source template path
   ],
   theme: {
     extend: {
       colors: {
         saturn: {
-          'purple': '#692EFF', // purple
+          'purple': '#692EFF', // purple 
+          'darkpurple': 'rgba(105, 46, 255, .3)', // dark purple
           'white': '#FFFFFF', // white
           'offwhite': '#F9F9FB', // off white
           'black': '#010101', // black

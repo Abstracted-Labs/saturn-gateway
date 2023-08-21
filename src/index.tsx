@@ -2,7 +2,6 @@
 import { render } from 'solid-js/web';
 import { Router, hashIntegration } from '@solidjs/router';
 import { HopeProvider, type HopeThemeConfig } from '@hope-ui/solid';
-
 import './index.css';
 import App from './App';
 

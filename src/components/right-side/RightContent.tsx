@@ -5,5 +5,6 @@ const RightContent = () => {
     </div>
   </div>;
 };
+
 RightContent.displayName = "RightContent";
 export default RightContent;

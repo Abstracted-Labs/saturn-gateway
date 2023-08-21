@@ -14,7 +14,7 @@ const Layout = ({ children }: { children: any; }) => {
       </div>
 
       {/* Main content */}
-      <div class="lg:col-span-3 mt-18">
+      <div class="lg:col-start-2 lg:col-end-5 mt-18 rounded-md">
         {children}
       </div>
 
@@ -25,5 +25,6 @@ const Layout = ({ children }: { children: any; }) => {
     </div>
   </div>;
 };
+
 Layout.displayName = "Layout";
 export default Layout;

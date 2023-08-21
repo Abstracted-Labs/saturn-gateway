@@ -11,5 +11,6 @@ const DrawerRight = () => {
     </div>
   </div>;
 };
+
 DrawerRight.displayName = 'DrawerRight';
 export default DrawerRight;

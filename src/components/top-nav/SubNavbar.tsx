@@ -4,6 +4,7 @@ import DrawerRight from "../right-side/DrawerRight";
 const SubNavbar = ({ ...props }) => {
   return <div>
     <nav {...props} class="bg-saturn-purple sticky w-full h-12 z-48 top-0 left-0 flex justify-around p-3 lg:hidden">
+
       {/* Pops up the left sidenav */}
       <button
         aria-controls="leftSidebar"
@@ -34,5 +35,6 @@ const SubNavbar = ({ ...props }) => {
     <DrawerRight />
   </div>;
 };
+
 SubNavbar.displayName = 'SubNavbar';
 export default SubNavbar;
