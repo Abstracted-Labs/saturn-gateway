@@ -16,6 +16,7 @@ type MultisigItem = {
   address: string,
   capitalizedFirstName: string;
   image?: string;
+  activeTransactions: number;
 };
 
 
@@ -32,7 +33,6 @@ function capitalizeFirstName(name: string): string {
 
 const MultisigList = () => {
   let scrollContainerRef: HTMLDivElement | null = null;
-  const activeTransactions = 3;
   const theme = useThemeContext();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const [activeButton, setActiveButton] = createSignal<number | null>(null);
@@ -132,14 +132,15 @@ const MultisigList = () => {
                 // Defensive code to handle empty or undefined name
                 const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
-                // TODO: Fetch number of open proposals for number badge.
+                const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
 
                 return {
                     id: m.multisigId,
                     image,
                     address,
                     capitalizedFirstName,
-                    copyIcon
+                    copyIcon,
+                    activeTransactions,
                 };
             }));
 
@@ -247,16 +248,9 @@ const MultisigList = () => {
                       <span class={`text-xs text-saturn-lightgrey hover:opacity-50 hover:cursor-copy ${ copiedIndex() === index() ? 'text-saturn-darkgrey' : '' }`} onClick={(e) => copyAddressToClipboard(e, item.address, index())}>
                         {copiedIndex() === index() ? <span class="text-[10px] text-">Copied!</span> : <span>{item.copyIcon}</span>}
                       </span>
-
-                      {/* external user link for X */}
-                      {/* <span>
-                      <A href="#" target="_blank" rel="noopener" class="text-saturn-lightgrey hover:text-saturn-yellow">
-                        <span>𝕏</span>
-                      </A>
-                    </span> */}
                     </span>
                   </div>
-                  {activeButton() === item.id ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{activeTransactions}</div> : null}
+                  {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
                 </div>
               </>
             )}
