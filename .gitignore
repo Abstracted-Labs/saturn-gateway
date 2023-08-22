@@ -1,5 +1,8 @@
 node_modules
 dist
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
 
 extension/addon/**/*.js
 
