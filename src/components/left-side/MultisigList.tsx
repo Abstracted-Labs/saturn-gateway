@@ -2,9 +2,13 @@ import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
 import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo } from 'solid-js';
+import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
+
 import { useThemeContext } from '../../providers/themeProvider';
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import { Rings } from "../../data/rings";
+import { useRingApisContext } from "../../providers/ringApisProvider";
 
 type MultisigItem = {
     id: number;
@@ -38,9 +42,10 @@ const MultisigList = () => {
 
     const saturnContext = useSaturnContext();
     const selectedAccountContext = useSelectedAccountContext();
+    const ringApisContext = useRingApisContext();
 
-  function handleClick(index: number) {
-      const multisig = multisigItems()[index];
+    function handleClick(index: number) {
+        const multisig = multisigItems()[index];
       const selectedAddress = multisig.address;
       const id = multisig.id;
 
@@ -95,7 +100,8 @@ const MultisigList = () => {
     createEffect(() => {
         const sat = saturnContext.state.saturn;
         const acc = selectedAccountContext.state.account?.address;
-        if (!sat || !acc) return;
+        const api = ringApisContext.state.tinkernet;
+        if (!sat || !acc || !api) return;
 
         const runAsync = async () => {
             const multisigs = await sat.getMultisigsForAccount(acc);
@@ -103,9 +109,16 @@ const MultisigList = () => {
             const processedList = multisigs.map((m) => {
                 // TODO: Fetch actual name and use this as fallback.
                 const name = `Multisig ${ m.multisigId }`;
-                // TODO: Calculate address.
-                const address = randomAsHex(32);
+
+                // We calculate the address locally instead of wasting time fetching from the chain.
+                // The v2 of the Saturn SDK should have a function to calculate the address.
+                const address = encodeAddress(
+                    blake2AsU8a(
+                        api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
+                    ), 117);
+
                 const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
+
 
                 // Defensive code to handle empty or undefined name
                 const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
