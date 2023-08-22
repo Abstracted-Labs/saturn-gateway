@@ -49,7 +49,7 @@ export const walletConnectParams: WalletConnectConfiguration = {
       'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
     ],
   },
-  // chainIds: ["polkadot:d42e9606a995dfe433dc7955dc2a70f4"], // ts error
+  chainIds: ["polkadot:d42e9606a995dfe433dc7955dc2a70f4"],
 };
 
 export const walletAggregator = new WalletAggregator([
