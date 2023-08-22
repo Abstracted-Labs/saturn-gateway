@@ -2,12 +2,22 @@ import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
 import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo } from 'solid-js';
+import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
+import { A, useNavigate } from '@solidjs/router'
+
 import { useThemeContext } from '../../providers/themeProvider';
+import { useSaturnContext } from "../../providers/saturnProvider";
+import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import { Rings } from "../../data/rings";
+import { useRingApisContext } from "../../providers/ringApisProvider";
 
 type MultisigItem = {
+  id: number;
   copyIcon: JSXElement;
   address: string,
   capitalizedFirstName: string;
+  image?: string;
+  activeTransactions: number;
 };
 
 
@@ -24,31 +34,50 @@ function capitalizeFirstName(name: string): string {
 
 const MultisigList = () => {
   let scrollContainerRef: HTMLDivElement | null = null;
-  const activeTransactions = 3;
   const theme = useThemeContext();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
-  const [activeButton, setActiveButton] = createSignal<string | null>(null);
+  const [activeButton, setActiveButton] = createSignal<number | null>(null);
   const [multisigItems, setMultisigItems] = createSignal<Array<any>>([]);
   const [originalOrder, setOriginalOrder] = createSignal([...multisigItems()]);
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
   // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>
 
+    const saturnContext = useSaturnContext();
+    const selectedAccountContext = useSelectedAccountContext();
+    const ringApisContext = useRingApisContext();
+    const navigate = useNavigate();
 
-  function handleClick(index: number) {
-    const selectedAddress = multisigItems()[index].address;
+    function handleClick(index: number) {
+        const sat = saturnContext.state.saturn;
+        if (!sat) return;
 
-    if (activeButton() === selectedAddress) {
+        const multisig = multisigItems()[index];
+      const selectedAddress = multisig.address;
+      const id = multisig.id;
+
+    if (activeButton() === id) {
       // If the clicked item is already active, restore the original order
       // setMultisigItems(originalOrder);
       // setActiveButton(null);
       // setSelectedItem(null); // Clear the selected item
       return; // Do nothing if the clicked item is already active
     } else {
-      setActiveButton(selectedAddress);
+      setActiveButton(id);
 
-      // Remove the selected item from the list and update the selected item
-      const selectedItem = originalOrder()[index];
-      setMultisigItems(originalOrder());
+        saturnContext.setters.setMultisigId(id);
+
+        sat.getDetails(id).then((maybeDetails) => {
+            if (maybeDetails) {
+                saturnContext.setters.setMultisigDetails(maybeDetails);
+                saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+            }
+        });
+
+        navigate(`/${ id }`);
+
+        // Remove the selected item from the list and update the selected item
+        const selectedItem = originalOrder()[index];
+        setMultisigItems(originalOrder());
       // setSelectedItem(selectedItem); // Update the selected item
     }
 
@@ -83,29 +112,86 @@ const MultisigList = () => {
     setOriginalOrder([...multisigItems()]);
   });
 
-  createEffect(() => {
-    const updatedItems = Array(10).fill(null).map((item, index) => {
-      const name = `John Doe ${ index + 1 }`; // Example name for testing
-      const address = randomAsHex(32); // Example address for testing
-      const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
+    createEffect(() => {
+        const sat = saturnContext.state.saturn;
+        const acc = selectedAccountContext.state.account?.address;
+        const api = ringApisContext.state.tinkernet;
+        if (!sat || !acc || !api) return;
 
-      // Defensive code to handle empty or undefined name
-      const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
+        const runAsync = async () => {
+            const multisigs = await sat.getMultisigsForAccount(acc);
 
-      return {
-        address,
-        capitalizedFirstName,
-        copyIcon
-      };
+            const processedList = await Promise.all(multisigs.map(async (m) => {
+                // We calculate the address locally instead of wasting time fetching from the chain.
+                // The v2 of the Saturn SDK should have a function to calculate the address.
+                const address = encodeAddress(
+                    blake2AsU8a(
+                        api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
+                    ), 117);
+
+                const iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+                        info: {
+                            display: { Raw: string };
+                            image: { Raw: string };
+                        };
+                    }).info);
+
+                const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
+
+                const image = iden?.image?.Raw;
+
+                const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
+
+
+                // Defensive code to handle empty or undefined name
+                const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
+
+                const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
+
+                return {
+                    id: m.multisigId,
+                    image,
+                    address,
+                    capitalizedFirstName,
+                    copyIcon,
+                    activeTransactions,
+                };
+            }));
+
+            setMultisigItems(processedList);
+
+            // Set the activeButton to the address of the first item
+            if (processedList.length > 0) {
+                setActiveButton(processedList[0].id);
+            }
+        };
+
+        runAsync();
     });
 
-    setMultisigItems(updatedItems);
+    /* createEffect(() => {
+     *   const updatedItems = Array(10).fill(null).map((item, index) => {
+     *     const name = `John Doe ${ index + 1 }`; // Example name for testing
+     *     const address = randomAsHex(32); // Example address for testing
+     *     const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
 
-    // Set the activeButton to the address of the first item
-    if (updatedItems.length > 0) {
-      setActiveButton(updatedItems[0].address);
-    }
-  });
+     *     // Defensive code to handle empty or undefined name
+     *     const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
+
+     *     return {
+     *       address,
+     *       capitalizedFirstName,
+     *       copyIcon
+     *     };
+     *   });
+
+     *   setMultisigItems(updatedItems);
+
+     *   // Set the activeButton to the address of the first item
+     *   if (updatedItems.length > 0) {
+     *     setActiveButton(updatedItems[0].address);
+     *   }
+     * }); */
 
   onCleanup(() => {
     // Clean up the scrollContainerRef when the component is unmounted
@@ -160,28 +246,25 @@ const MultisigList = () => {
           <For each={multisigItems()} fallback={<div>Loading...</div>}>
             {(item: MultisigItem, index) => (
               <>
-                <div
+                  <div
                   onClick={() => handleClick(index())}
-                  class={`relative p-4 mr-4 rounded-lg flex flex-row  items-center hover:cursor-pointer ${ activeButton() === item.address ? 'border-2 border-saturn-purple bg-gray-50 dark:bg-saturn-darkgrey' : '' }`}
+                  class={`relative p-4 mr-4 rounded-lg flex flex-row  items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-2 border-saturn-purple bg-gray-50 dark:bg-saturn-darkgrey' : '' }`}
                 >
-                  <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.address ? 'bg-saturn-purple' : '' }`} />
-                  <div class="basis-1/2 grid grid-rows-2 ml-3">
-                    <span class={`text-sm ${ activeButton() === item.address ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
+                    <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                        <Show when={item.image}>
+                            <img class="rounded-full" src={item.image} />
+                        </Show>
+                    </div>
+                  <div class="grid grid-rows-2 ml-3">
+                    <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
                     <span class="text-xs flex items-center gap-x-2">
                       <span class="text-saturn-lightgrey whitespace-nowrap">{stringShorten(item.address, 4)}</span>
                       <span class={`text-xs text-saturn-lightgrey hover:opacity-50 hover:cursor-copy ${ copiedIndex() === index() ? 'text-saturn-darkgrey' : '' }`} onClick={(e) => copyAddressToClipboard(e, item.address, index())}>
                         {copiedIndex() === index() ? <span class="text-[10px] text-">Copied!</span> : <span>{item.copyIcon}</span>}
                       </span>
-
-                      {/* external user link for X */}
-                      {/* <span>
-                      <A href="#" target="_blank" rel="noopener" class="text-saturn-lightgrey hover:text-saturn-yellow">
-                        <span>𝕏</span>
-                      </A>
-                    </span> */}
                     </span>
                   </div>
-                  {activeButton() === item.address ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{activeTransactions}</div> : null}
+                  {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
                 </div>
               </>
             )}

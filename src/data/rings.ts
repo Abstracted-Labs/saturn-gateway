@@ -32,7 +32,7 @@ export const Rings: RingsType = {
         polkaholicId: 'basilisk',
         decimals: 12,
         icon: basiliskIcon,
-        websocket: 'wss://rpc.basilisk.cloud',
+        websocket: 'wss://basilisk-rpc.dwellir.com',
         genesisHash: "0xa85cfb9b9fd4d622a5b28289a02347af987d8f73fa3108450e2b4a11c1ce5755",
     },
     picasso: {

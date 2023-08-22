@@ -15,7 +15,6 @@ import { setupSaturnConnect, setSaturnConnectAccount } from "../../utils/setupSa
 import IdentityCardModal from "../modals/identityCard";
 import ProposeModal from "../modals/propose";
 import defaultMultisigImage from '../../assets/images/default-multisig-image.png';
-import { walletAggregator } from "../../App";
 import { Core } from '@walletconnect/core';
 import type { SessionTypes } from '@walletconnect/types';
 import styles from '../../App.module.css';
@@ -28,10 +27,6 @@ const MainContainer = () => {
   const [wcActiveSessions, setWcActiveSessions] = createSignal<
     Array<[string, SessionTypes.Struct]>
   >([]);
-  const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
-    [],
-  );
-  const [availableAccounts, setAvailableAccounts] = createSignal<{ wallet: BaseWallet, accounts: Account[]; }>();
   const [multisigIdentity, setMultisigIdentity] = createSignal<{
     name: string;
     imageUrl: string;
@@ -51,8 +46,6 @@ const MainContainer = () => {
   const selectedAccountContext = useSelectedAccountContext();
 
   setupSaturnConnect(saturnContext, proposeContext);
-
-  setAvailableWallets(walletAggregator.getWallets());
 
   const params = useParams();
 
@@ -257,18 +250,6 @@ const MainContainer = () => {
       console.log('session disconnected');
 
       setWcActiveSessions(Object.entries(wcContext.state.w3w.getActiveSessions()));
-    }
-  };
-
-  const connectUserWallet = async (wallet: BaseWallet) => {
-    await wallet.connect();
-    setAvailableAccounts({ wallet, accounts: await wallet.getAccounts() });
-  };
-
-  const connectUserAccount = async (acc: Account, wallet?: BaseWallet,) => {
-    if (wallet) {
-      selectedAccountContext.setters.setSelected(acc, wallet);
-      setWalletModalOpen(false);
     }
   };
 
