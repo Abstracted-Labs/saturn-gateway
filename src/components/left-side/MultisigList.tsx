@@ -3,13 +3,13 @@ import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
 import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
-import { A, useNavigate } from '@solidjs/router'
-
+import { A, useNavigate } from '@solidjs/router';
 import { useThemeContext } from '../../providers/themeProvider';
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { Rings } from "../../data/rings";
 import { useRingApisContext } from "../../providers/ringApisProvider";
+import PageLinks from './PageLinks';
 
 type MultisigItem = {
   id: number;
@@ -40,20 +40,21 @@ const MultisigList = () => {
   const [multisigItems, setMultisigItems] = createSignal<Array<any>>([]);
   const [originalOrder, setOriginalOrder] = createSignal([...multisigItems()]);
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
+  const multisigItemsLength = createMemo(() => multisigItems().length);
   // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>
 
-    const saturnContext = useSaturnContext();
-    const selectedAccountContext = useSelectedAccountContext();
-    const ringApisContext = useRingApisContext();
-    const navigate = useNavigate();
+  const saturnContext = useSaturnContext();
+  const selectedAccountContext = useSelectedAccountContext();
+  const ringApisContext = useRingApisContext();
+  const navigate = useNavigate();
 
-    function handleClick(index: number) {
-        const sat = saturnContext.state.saturn;
-        if (!sat) return;
+  function handleClick(index: number) {
+    const sat = saturnContext.state.saturn;
+    if (!sat) return;
 
-        const multisig = multisigItems()[index];
-      const selectedAddress = multisig.address;
-      const id = multisig.id;
+    const multisig = multisigItems()[index];
+    const selectedAddress = multisig.address;
+    const id = multisig.id;
 
     if (activeButton() === id) {
       // If the clicked item is already active, restore the original order
@@ -64,20 +65,20 @@ const MultisigList = () => {
     } else {
       setActiveButton(id);
 
-        saturnContext.setters.setMultisigId(id);
+      saturnContext.setters.setMultisigId(id);
 
-        sat.getDetails(id).then((maybeDetails) => {
-            if (maybeDetails) {
-                saturnContext.setters.setMultisigDetails(maybeDetails);
-                saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
-            }
-        });
+      sat.getDetails(id).then((maybeDetails) => {
+        if (maybeDetails) {
+          saturnContext.setters.setMultisigDetails(maybeDetails);
+          saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+        }
+      });
 
-        navigate(`/${ id }`);
+      navigate(`/${ id }`);
 
-        // Remove the selected item from the list and update the selected item
-        const selectedItem = originalOrder()[index];
-        setMultisigItems(originalOrder());
+      // Remove the selected item from the list and update the selected item
+      const selectedItem = originalOrder()[index];
+      setMultisigItems(originalOrder());
       // setSelectedItem(selectedItem); // Update the selected item
     }
 
@@ -112,86 +113,87 @@ const MultisigList = () => {
     setOriginalOrder([...multisigItems()]);
   });
 
-    createEffect(() => {
-        const sat = saturnContext.state.saturn;
-        const acc = selectedAccountContext.state.account?.address;
-        const api = ringApisContext.state.tinkernet;
-        if (!sat || !acc || !api) return;
+  createEffect(() => {
+    const sat = saturnContext.state.saturn;
+    const acc = selectedAccountContext.state.account?.address;
+    const api = ringApisContext.state.tinkernet;
 
-        const runAsync = async () => {
-            const multisigs = await sat.getMultisigsForAccount(acc);
+    if (!sat || !acc || !api) return;
 
-            const processedList = await Promise.all(multisigs.map(async (m) => {
-                // We calculate the address locally instead of wasting time fetching from the chain.
-                // The v2 of the Saturn SDK should have a function to calculate the address.
-                const address = encodeAddress(
-                    blake2AsU8a(
-                        api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
-                    ), 117);
+    const runAsync = async () => {
+      const multisigs = await sat.getMultisigsForAccount(acc);
 
-                const iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
-                        info: {
-                            display: { Raw: string };
-                            image: { Raw: string };
-                        };
-                    }).info);
+      const processedList = await Promise.all(multisigs.map(async (m) => {
+        // We calculate the address locally instead of wasting time fetching from the chain.
+        // The v2 of the Saturn SDK should have a function to calculate the address.
+        const address = encodeAddress(
+          blake2AsU8a(
+            api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
+          ), 117);
 
-                const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
+        const iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+          info: {
+            display: { Raw: string; };
+            image: { Raw: string; };
+          };
+        }).info);
 
-                const image = iden?.image?.Raw;
+        const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
 
-                const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
+        const image = iden?.image?.Raw;
+
+        const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
 
 
-                // Defensive code to handle empty or undefined name
-                const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
+        // Defensive code to handle empty or undefined name
+        const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
-                const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
+        const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
 
-                return {
-                    id: m.multisigId,
-                    image,
-                    address,
-                    capitalizedFirstName,
-                    copyIcon,
-                    activeTransactions,
-                };
-            }));
-
-            setMultisigItems(processedList);
-
-            // Set the activeButton to the address of the first item
-            if (processedList.length > 0) {
-                setActiveButton(processedList[0].id);
-            }
+        return {
+          id: m.multisigId,
+          image,
+          address,
+          capitalizedFirstName,
+          copyIcon,
+          activeTransactions,
         };
+      }));
 
-        runAsync();
-    });
+      setMultisigItems(processedList);
 
-    /* createEffect(() => {
-     *   const updatedItems = Array(10).fill(null).map((item, index) => {
-     *     const name = `John Doe ${ index + 1 }`; // Example name for testing
-     *     const address = randomAsHex(32); // Example address for testing
-     *     const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
+      // Set the activeButton to the address of the first item
+      if (processedList.length > 0) {
+        setActiveButton(processedList[0].id);
+      }
+    };
 
-     *     // Defensive code to handle empty or undefined name
-     *     const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
+    runAsync();
+  });
 
-     *     return {
-     *       address,
-     *       capitalizedFirstName,
-     *       copyIcon
-     *     };
-     *   });
+  /* createEffect(() => {
+   *   const updatedItems = Array(10).fill(null).map((item, index) => {
+   *     const name = `John Doe ${ index + 1 }`; // Example name for testing
+   *     const address = randomAsHex(32); // Example address for testing
+   *     const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
 
-     *   setMultisigItems(updatedItems);
+   *     // Defensive code to handle empty or undefined name
+   *     const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
-     *   // Set the activeButton to the address of the first item
-     *   if (updatedItems.length > 0) {
-     *     setActiveButton(updatedItems[0].address);
-     *   }
-     * }); */
+   *     return {
+   *       address,
+   *       capitalizedFirstName,
+   *       copyIcon
+   *     };
+   *   });
+
+   *   setMultisigItems(updatedItems);
+
+   *   // Set the activeButton to the address of the first item
+   *   if (updatedItems.length > 0) {
+   *     setActiveButton(updatedItems[0].address);
+   *   }
+   * }); */
 
   onCleanup(() => {
     // Clean up the scrollContainerRef when the component is unmounted
@@ -201,7 +203,7 @@ const MultisigList = () => {
   return (
     <>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Multisigs</h5>
-      <div class="h-80 relative mb-6">
+      <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-40' : 'h-80' } relative mb-6`}>
         <div
           ref={scrollContainerRef!}
           style={{
@@ -243,18 +245,18 @@ const MultisigList = () => {
           )} */}
 
           {/* Multisig list */}
-          <For each={multisigItems()} fallback={<div>Loading...</div>}>
+          <For each={multisigItems()} fallback={<div class="text-xs text-center text-black dark:text-white">{multisigItemsLength() === 0 ? `You don't have any multisigs yet.` : 'Loading...'}</div>}>
             {(item: MultisigItem, index) => (
               <>
-                  <div
+                <div
                   onClick={() => handleClick(index())}
                   class={`relative p-4 mr-4 rounded-lg flex flex-row  items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-2 border-saturn-purple bg-gray-50 dark:bg-saturn-darkgrey' : '' }`}
                 >
-                    <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
-                        <Show when={item.image}>
-                            <img class="rounded-full" src={item.image} />
-                        </Show>
-                    </div>
+                  <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                    <Show when={item.image}>
+                      <img class="rounded-full" src={item.image} />
+                    </Show>
+                  </div>
                   <div class="grid grid-rows-2 ml-3">
                     <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
                     <span class="text-xs flex items-center gap-x-2">
@@ -271,6 +273,11 @@ const MultisigList = () => {
           </For>
         </div>
       </div>
+
+      {/* Page nav links should not show when logged out or when multisigItems.length === 0 */}
+      <Show when={multisigItemsLength() > 0}>
+        <PageLinks />
+      </Show>
     </>
   );
 };
