@@ -11,10 +11,11 @@ import { Rings } from "../../data/rings";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 
 type MultisigItem = {
-    id: number;
-    copyIcon: JSXElement;
+  id: number;
+  copyIcon: JSXElement;
   address: string,
   capitalizedFirstName: string;
+  image?: string;
 };
 
 
@@ -106,16 +107,24 @@ const MultisigList = () => {
         const runAsync = async () => {
             const multisigs = await sat.getMultisigsForAccount(acc);
 
-            const processedList = multisigs.map((m) => {
-                // TODO: Fetch actual name and use this as fallback.
-                const name = `Multisig ${ m.multisigId }`;
-
+            const processedList = await Promise.all(multisigs.map(async (m) => {
                 // We calculate the address locally instead of wasting time fetching from the chain.
                 // The v2 of the Saturn SDK should have a function to calculate the address.
                 const address = encodeAddress(
                     blake2AsU8a(
                         api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
                     ), 117);
+
+                const iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+                        info: {
+                            display: { Raw: string };
+                            image: { Raw: string };
+                        };
+                    }).info);
+
+                const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
+
+                const image = iden?.image?.Raw;
 
                 const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
 
@@ -127,11 +136,12 @@ const MultisigList = () => {
 
                 return {
                     id: m.multisigId,
+                    image,
                     address,
                     capitalizedFirstName,
                     copyIcon
                 };
-            });
+            }));
 
             setMultisigItems(processedList);
 
@@ -225,8 +235,12 @@ const MultisigList = () => {
                   onClick={() => handleClick(index())}
                   class={`relative p-4 mr-4 rounded-lg flex flex-row  items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-2 border-saturn-purple bg-gray-50 dark:bg-saturn-darkgrey' : '' }`}
                 >
-                  <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`} />
-                  <div class="basis-1/2 grid grid-rows-2 ml-3">
+                    <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                        <Show when={item.image}>
+                            <img class="rounded-full" src={item.image} />
+                        </Show>
+                    </div>
+                  <div class="grid grid-rows-2 ml-3">
                     <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
                     <span class="text-xs flex items-center gap-x-2">
                       <span class="text-saturn-lightgrey whitespace-nowrap">{stringShorten(item.address, 4)}</span>
