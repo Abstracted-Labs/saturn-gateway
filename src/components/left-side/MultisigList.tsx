@@ -3,6 +3,7 @@ import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
 import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
+import { A, useNavigate } from '@solidjs/router'
 
 import { useThemeContext } from '../../providers/themeProvider';
 import { useSaturnContext } from "../../providers/saturnProvider";
@@ -44,8 +45,12 @@ const MultisigList = () => {
     const saturnContext = useSaturnContext();
     const selectedAccountContext = useSelectedAccountContext();
     const ringApisContext = useRingApisContext();
+    const navigate = useNavigate();
 
     function handleClick(index: number) {
+        const sat = saturnContext.state.saturn;
+        if (!sat) return;
+
         const multisig = multisigItems()[index];
       const selectedAddress = multisig.address;
       const id = multisig.id;
@@ -59,11 +64,20 @@ const MultisigList = () => {
     } else {
       setActiveButton(id);
 
-        // TODO: Set multisig in saturn provider and set the URL to /#/id
+        saturnContext.setters.setMultisigId(id);
 
-      // Remove the selected item from the list and update the selected item
-      const selectedItem = originalOrder()[index];
-      setMultisigItems(originalOrder());
+        sat.getDetails(id).then((maybeDetails) => {
+            if (maybeDetails) {
+                saturnContext.setters.setMultisigDetails(maybeDetails);
+                saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+            }
+        });
+
+        navigate(`/${ id }`);
+
+        // Remove the selected item from the list and update the selected item
+        const selectedItem = originalOrder()[index];
+        setMultisigItems(originalOrder());
       // setSelectedItem(selectedItem); // Update the selected item
     }
 
@@ -232,7 +246,7 @@ const MultisigList = () => {
           <For each={multisigItems()} fallback={<div>Loading...</div>}>
             {(item: MultisigItem, index) => (
               <>
-                <div
+                  <div
                   onClick={() => handleClick(index())}
                   class={`relative p-4 mr-4 rounded-lg flex flex-row  items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-2 border-saturn-purple bg-gray-50 dark:bg-saturn-darkgrey' : '' }`}
                 >
