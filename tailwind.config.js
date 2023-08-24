@@ -10,7 +10,7 @@ module.exports = {
       colors: {
         saturn: {
           'purple': '#692EFF', // purple 
-          'darkpurple': 'rgba(105, 46, 255, .3)', // dark purple
+          'darkpurple': 'rgba(105, 46, 255, .18)', // dark purple
           'white': '#FFFFFF', // white
           'offwhite': '#F9F9FB', // off white
           'black': '#010101', // black

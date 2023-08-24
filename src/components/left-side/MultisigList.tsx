@@ -275,9 +275,9 @@ const MultisigList = () => {
       </div>
 
       {/* Page nav links should not show when logged out or when multisigItems.length === 0 */}
-      <Show when={multisigItemsLength() > 0}>
-        <PageLinks />
-      </Show>
+      {/* <Show when={multisigItemsLength() > 0}> */}
+      <PageLinks />
+      {/* </Show> */}
     </>
   );
 };

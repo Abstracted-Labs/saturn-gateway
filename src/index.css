@@ -30,4 +30,25 @@ code {
     background: #692EFF;
     border-radius: 100vh;
   }
+
+  /* adding a backdrop blur to drawers/modals */
+  div[drawer-backdrop] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(7px);
+  }
+  
+  /* apply style to div[drawer-backdrop] for both :active and :hover */
+  div[drawer-backdrop]:active, div[drawer-backdrop]:hover {
+    box-shadow: none;
+  }
+
+  /* div[drawer-backdrop]:active,:hover {
+    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.2);
+  } */
 }

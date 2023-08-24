@@ -1,0 +1,1 @@
+export const BUTTON_COMMON_STYLE = 'rounded-lg border-2 border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple inline-flex items-center';
