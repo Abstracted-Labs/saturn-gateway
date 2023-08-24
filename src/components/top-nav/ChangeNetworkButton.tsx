@@ -50,18 +50,17 @@ const ChangeNetworkButton = () => {
     if ($dropdown?.classList.contains('hidden')) {
       $dropdown?.classList.remove('hidden');
       $dropdown?.classList.add('block');
-      $dropdown?.style.setProperty('transform', 'translate3d(423.5px, 61px, 0px');
+      $dropdown?.style.setProperty('transform', 'translate3d(0px, 33px, 0px)');
     }
-
   }
 
-  return <div>
+  return <div class="relative flex flex-col">
     <button
       onClick={openDropdown}
       data-dropdown-offset-distance="-7"
       id="dropdownToggle"
       data-dropdown-toggle="dropdown"
-      class={`${ BUTTON_COMMON_STYLE } text-sm text-saturn-black dark:text-saturn-offwhite h-full justify-between pl-4 w-48 z-30 focus:outline-none`}
+      class={`${ BUTTON_COMMON_STYLE } text-sm text-saturn-black dark:text-saturn-offwhite h-full justify-between pl-4 w-48 z-30 focus:outline-none self-stretch`}
       type="button">
       <span class="mr-10 inline-flex items-center gap-1">{updateDropdownLabel()}</span>
       <svg data-accordion-icon class={`w-3 h-3 ${ isDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
