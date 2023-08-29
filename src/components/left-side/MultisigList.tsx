@@ -1,7 +1,7 @@
 import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
-import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo } from 'solid-js';
+import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import { A, useNavigate } from '@solidjs/router';
 import { useThemeContext } from '../../providers/themeProvider';
@@ -10,6 +10,8 @@ import { useSelectedAccountContext } from "../../providers/selectedAccountProvid
 import { Rings } from "../../data/rings";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
+
+const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
 type MultisigItem = {
   id: number;
@@ -106,7 +108,7 @@ const MultisigList = () => {
     // Revert the isCopied state back to false after 5 seconds
     setTimeout(() => {
       setCopiedIndex(null);
-    }, 5000);
+    }, 3000);
   }
 
   createEffect(() => {
@@ -217,7 +219,7 @@ const MultisigList = () => {
             // '-webkit-scrollbar-color': '#692EFF #ffffff',
             '-webkit-overflow-scrolling': 'touch',
           }}
-          class={`h-full multisig-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
+          class={`h-full saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
           {/* <div class="w-62 absolute bottom-0 inset-0 pointer-events-none">
             <div class="h-full bg-gradient-to-b from-transparent to-saturn-offwhite dark:to-saturn-black"></div>
@@ -259,12 +261,9 @@ const MultisigList = () => {
                   </div>
                   <div class="grid grid-rows-2 ml-3">
                     <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
-                    <span class="text-xs flex items-center gap-x-2">
-                      <span class="text-saturn-lightgrey whitespace-nowrap">{stringShorten(item.address, 4)}</span>
-                      <span class={`text-xs text-saturn-lightgrey hover:opacity-50 hover:cursor-copy ${ copiedIndex() === index() ? 'text-saturn-darkgrey' : '' }`} onClick={(e) => copyAddressToClipboard(e, item.address, index())}>
-                        {copiedIndex() === index() ? <span class="text-[10px] text-">Copied!</span> : <span>{item.copyIcon}</span>}
-                      </span>
-                    </span>
+                    <Show when={item.address}>
+                      <CopyAddress address={item.address} length={4} />
+                    </Show>
                   </div>
                   {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
                 </div>

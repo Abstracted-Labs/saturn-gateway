@@ -6,41 +6,41 @@ import { Web3Wallet } from '@walletconnect/web3wallet';
 import { ApiPromise } from '@polkadot/api';
 
 export const RingApisContext = createContext<{
-    state: { [ring: string]: ApiPromise },
-    setters: any,
+  state: { [ring: string]: ApiPromise; },
+  setters: any,
 }>({ state: {}, setters: {} });
 
 export function RingApisProvider(props: any) {
-    const [state, setState] = createStore<{ [ring: string]: ApiPromise }>({});
+  const [state, setState] = createStore<{ [ring: string]: ApiPromise; }>({});
 
-    const value = {
-      state,
-       setters: {
-           setRingApi(ring: string, api: ApiPromise) {
-               setState(ring, api);
-           },
+  const value = {
+    state,
+    setters: {
+      setRingApi(ring: string, api: ApiPromise) {
+        setState(ring, api);
+      },
 
-           setRingApisBatch(ringApis: Record<string, ApiPromise>) {
-               for (const [r, a] of Object.entries(ringApis)) {
-                   setState(r, a);
-               }
-           }
-       }
-    };
+      setRingApisBatch(ringApis: Record<string, ApiPromise>) {
+        for (const [r, a] of Object.entries(ringApis)) {
+          setState(r, a);
+        }
+      }
+    }
+  };
 
-    return (
-        <RingApisContext.Provider value={value}>
-            {props.children}
-        </RingApisContext.Provider>
-    );
+  return (
+    <RingApisContext.Provider value={value}>
+      {props.children}
+    </RingApisContext.Provider>
+  );
 }
 
 export function useRingApisContext() {
-    const context = useContext(RingApisContext);
+  const context = useContext(RingApisContext);
 
-    if (!context) {
-        throw new Error("useProposeContext: cannot find a ProposeContext")
-    }
+  if (!context) {
+    throw new Error("useRingApisContext: cannot find a RingApisContext");
+  }
 
-    return context;
+  return context;
 }

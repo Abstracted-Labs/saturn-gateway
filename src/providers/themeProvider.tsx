@@ -38,6 +38,7 @@ export function ThemeProvider(props: any) {
   function getColorMode(): string | null {
     try {
       const data = JSON.parse(storageState['colorMode']);
+      if (!data) return null;
       return data.colorMode;
     } catch (e) {
       console.log('getColorMode error: ', e);

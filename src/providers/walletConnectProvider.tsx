@@ -4,42 +4,42 @@ import { MultisigCall } from "@invarch/saturn-sdk";
 import type Web3WalletType from '@walletconnect/web3wallet';
 import { Web3Wallet } from '@walletconnect/web3wallet';
 
-export const WalletConnectContext = createContext<{ state: { w3w?: Web3WalletType }, setters: any}>({ state: {}, setters: {} });
+export const WalletConnectContext = createContext<{ state: { w3w?: Web3WalletType; }, setters: any; }>({ state: {}, setters: {} });
 
 export type WalletConnectProviderProps = {
-    children: any
+  children: any;
 };
 
 export function WalletConnectProvider(props: WalletConnectProviderProps) {
-    const [state, setState] = createStore<{ w3w?: Web3WalletType }>({});
+  const [state, setState] = createStore<{ w3w?: Web3WalletType; }>({});
 
-    const value = {
-      state,
-       setters: {
-           setWalletConnect(walletConnect: Web3WalletType, sessionProposalCallback: (proposal: any) => Promise<void>, sessionRequestCallback: (event: any) => Promise<void>) {
-               const w3w = walletConnect;
+  const value = {
+    state,
+    setters: {
+      setWalletConnect(walletConnect: Web3WalletType, sessionProposalCallback: (proposal: any) => Promise<void>, sessionRequestCallback: (event: any) => Promise<void>) {
+        const w3w = walletConnect;
 
-               w3w.on('session_proposal', sessionProposalCallback);
-               w3w.on('session_request', sessionRequestCallback);
+        w3w.on('session_proposal', sessionProposalCallback);
+        w3w.on('session_request', sessionRequestCallback);
 
-                setState({ w3w })
-            }
-        }
-    };
+        setState({ w3w });
+      }
+    }
+  };
 
-    return (
-        <WalletConnectContext.Provider value={value}>
-            {props.children}
-        </WalletConnectContext.Provider>
-    );
+  return (
+    <WalletConnectContext.Provider value={value}>
+      {props.children}
+    </WalletConnectContext.Provider>
+  );
 }
 
 export function useWalletConnectContext() {
-    const context = useContext(WalletConnectContext);
+  const context = useContext(WalletConnectContext);
 
-    if (!context) {
-        throw new Error("useProposeContext: cannot find a ProposeContext")
-    }
+  if (!context) {
+    throw new Error("useWalletConnectContext: cannot find a WalletConnectContext");
+  }
 
-    return context;
+  return context;
 }

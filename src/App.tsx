@@ -60,7 +60,6 @@ export const walletAggregator = new WalletAggregator([
 const HomePlanet: Component = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
-
   const selectedAccountContext = useSelectedAccountContext();
 
   onMount(async () => {
@@ -68,7 +67,6 @@ const HomePlanet: Component = () => {
 
     if (current) {
       const { address, wallet } = current;
-
       const w = walletAggregator.getWallets().find((w) => w.metadata.title == wallet);
 
       if (w) {
@@ -102,21 +100,21 @@ const HomePlanet: Component = () => {
 };
 
 const App = () => (
-  <ThemeProvider>
-    <ProposeProvider>
-      <SaturnProvider>
-        <RingApisProvider>
-          <WalletConnectProvider>
-            <SelectedAccountProvider>
-              <IdentityProvider>
+  <ProposeProvider>
+    <SaturnProvider>
+      <RingApisProvider>
+        <WalletConnectProvider>
+          <SelectedAccountProvider>
+            <IdentityProvider>
+              <ThemeProvider>
                 <HomePlanet />
-              </IdentityProvider>
-            </SelectedAccountProvider>
-          </WalletConnectProvider>
-        </RingApisProvider>
-      </SaturnProvider>
-    </ProposeProvider>
-  </ThemeProvider>
+              </ThemeProvider>
+            </IdentityProvider>
+          </SelectedAccountProvider>
+        </WalletConnectProvider>
+      </RingApisProvider>
+    </SaturnProvider>
+  </ProposeProvider>
 );
 
 export default App;

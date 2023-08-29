@@ -3,6 +3,7 @@ import SidenavLeft from "../left-side/SidenavLeft";
 import SidenavRight from "../right-side/SidenavRight";
 import { useLocation } from "@solidjs/router";
 import { Show, createMemo } from "solid-js";
+import CryptoAccounts from "../modals/cryptoAccounts";
 
 const Layout = ({ children }: { children: any; }) => {
   const location = useLocation();
@@ -11,6 +12,9 @@ const Layout = ({ children }: { children: any; }) => {
   });
 
   return <div>
+    {/* Portal elements */}
+    <CryptoAccounts />
+
     {/* Top nav */}
     <Navbar />
 
@@ -28,7 +32,7 @@ const Layout = ({ children }: { children: any; }) => {
       {/* Right side */}
       <Show when={showRightSide()}>
         <div class="lg:col-span-1 hidden lg:block">
-          <SidenavRight />
+          {/* <SidenavRight /> */}
         </div>
       </Show>
     </div>

@@ -39,7 +39,8 @@ const ChangeNetworkButton = () => {
     } else if (currentNetwork() === NetworkNameEnum.KUSAMA) {
       return networkKusama();
     } else {
-      return networkPolkadot();
+      // Default network
+      return networkKusama();
     }
   }
 
@@ -63,7 +64,7 @@ const ChangeNetworkButton = () => {
       class={`${ BUTTON_COMMON_STYLE } text-sm text-saturn-black dark:text-saturn-offwhite h-full justify-between pl-4 w-48 z-30 focus:outline-none self-stretch`}
       type="button">
       <span class="mr-10 inline-flex items-center gap-1">{updateDropdownLabel()}</span>
-      <svg data-accordion-icon class={`w-3 h-3 ${ isDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+      <svg data-accordion-icon class={`transition-all w-3 h-3 ${ isDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5 5 1 1 5" />
       </svg>
     </button>
