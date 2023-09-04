@@ -1,10 +1,11 @@
 import DrawerLeft from "../left-side/DrawerLeft";
 import DrawerRight from "../right-side/DrawerRight";
-import RectListIcon from "../../assets/icons/rect-list-icon.svg";
+import CaretLeftIcon from "../../assets/icons/caret-left-icon.svg";
+import CaretRightIcon from "../../assets/icons/caret-right-icon.svg";
 
 const SubNavbar = ({ ...props }) => {
   return <div>
-    <nav {...props} class="bg-saturn-purple py-1.5 sticky w-full h-10 z-48 top-0 left-0 flex justify-start lg:hidden">
+    <nav {...props} class="bg-saturn-purple py-1.5 sticky w-full h-10 z-40 top-0 left-0 flex justify-between lg:hidden">
 
       {/* Pops up the left sidenav */}
       <button
@@ -12,30 +13,29 @@ const SubNavbar = ({ ...props }) => {
         type="button"
         data-drawer-target="leftSidebar"
         data-drawer-placement="left"
-        data-drawer-show="leftSidebar"
-        // data-drawer-hide="rightSidebar"
+        data-drawer-toggle="leftSidebar"
         class="inline-flex items-center px-3 mx-3 text-sm text-gray-500 rounded-lg hover:bg-purple-800 focus:outline-none">
-        {/* <span class="text-white">Left side</span> */}
-        <img src={RectListIcon} alt="left-sidebar-menu-icon" width={20} height={20} />
+        <img src={CaretLeftIcon} alt="left-sidebar-menu-icon" width={20} height={20} class="w-2 h-2" />
+        <span>{' '}</span>
+        <span class="text-white ml-3">Main Menu</span>
       </button>
 
-      {/* TODO: when there is right sidebar content, revive commented out code below */}
-      {/* Pops up the right sidenav */}
-      {/* <button
+      <button
         aria-controls="rightSidebar"
         type="button"
         data-drawer-target="rightSidebar"
         data-drawer-placement="right"
-        data-drawer-show="rightSidebar"
-        data-drawer-hide="leftSidebar"
-        class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-purple-800 focus:outline-none">
-        <span class="text-white">Right side</span>
-      </button> */}
+        data-drawer-toggle="rightSidebar"
+        class="inline-flex items-center px-3 mx-3 text-sm text-gray-500 rounded-lg hover:bg-purple-800 focus:outline-none">
+        <span class="text-white mr-3">Context Menu</span>
+        <span>{' '}</span>
+        <img src={CaretRightIcon} alt="right-sidebar-menu-icon" width={20} height={20} class="w-2 h-2" />
+      </button>
     </nav>
 
     {/* Left/Right drawers placed here to avoid z-index issues */}
     <DrawerLeft />
-    {/* <DrawerRight /> */}
+    <DrawerRight />
   </div>;
 };
 

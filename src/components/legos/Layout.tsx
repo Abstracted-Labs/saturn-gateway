@@ -32,7 +32,7 @@ const Layout = ({ children }: { children: any; }) => {
       {/* Right side */}
       <Show when={showRightSide()}>
         <div class="lg:col-span-1 hidden lg:block">
-          {/* <SidenavRight /> */}
+          <SidenavRight />
         </div>
       </Show>
     </div>

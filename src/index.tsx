@@ -19,7 +19,7 @@ const config: HopeThemeConfig = {
 
 render(() => (
   <Router source={hashIntegration()}>
-    <HopeProvider config={config}>
+    <HopeProvider>
       <App />
     </HopeProvider>
   </Router>

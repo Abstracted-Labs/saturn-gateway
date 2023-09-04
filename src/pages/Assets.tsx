@@ -1,15 +1,12 @@
-import type { Setter } from 'solid-js';
 import { createSignal, For, createEffect, Show } from 'solid-js';
-import { Button } from '@hope-ui/solid';
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
 import { Rings } from '../data/rings';
-import { BigNumber } from 'bignumber.js';
-import { type ApiPromise } from '@polkadot/api';
-import { type Saturn } from '@invarch/saturn-sdk';
-
 import TransferModal from '../components/modals/transfer';
 import { useSaturnContext } from "../providers/saturnProvider";
-import type { AssetsBalances, Balances } from "../utils/getBalances";
+import type { Balances } from "../utils/getBalances";
+import { formatAsset } from '../utils/formatAsset';
+import { getAssetIcon } from '../utils/getAssetIcon';
+import { getNetworkIcon } from '../utils/getNetworkIcon';
 
 export type AssetsPageProps = {
 };
@@ -20,8 +17,6 @@ const StakePage = {
 
 export default function Assets() {
   const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>();
-  const [transferModalOpen, setTransferModalOpen] = createSignal<{ network: string; asset: string; } | undefined>();
-
   const saturnContext = useSaturnContext();
 
   createEffect(() => {
@@ -57,83 +52,73 @@ export default function Assets() {
 
   return (
     <>
-      <TransferModal
-        open={transferModalOpen()}
-        setOpen={setTransferModalOpen}
-      />
-
-      <div class='flex flex-col gap-4'>
-        {balances() ? (
-
-          <For each={balances()}>{([network, assets]) =>
-            <Show when={assets.length}>
-              <div class='border border-green-500 shadow-sm rounded-lg overflow-hidden w-[60%] mx-auto'>
-                <table class='w-full text-sm leading-5'>
-                  <thead class='bg-green-500'>
-                    <tr>
-                      <th>
-                        <div class='flex flex-row gap-1 items-center px-2.5 py-2'>
-                          <div class='h-7 w-7 rounded-full border border-white'>
-                            <img src={Rings[network as keyof typeof Rings].icon} class='h-full w-full p-px rounded-full' />
-                          </div>
-                          <span class='capitalize text-lg'>
-                            {network}
+      <Show when={balances()} fallback={<span class="text-saturn-black dark:text-saturn-offwhite text-center text-sm">Contacting Uranus...</span>}>
+        <div class="relative overflow-x-auto">
+          <table class="w-full text-sm text-left text-saturn-lightgrey">
+            <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
+              <tr>
+                <th scope="col" class='py-3 px-4 text-left w-[20%]'>Asset</th>
+                <th scope="col" class='py-3 px-4 text-left w-[30%]'>Transferable</th>
+                <th scope="col" class='py-3 px-4 text-left w-[30%]'>Total</th>
+                <th scope="col" class='w-[20%]'>Chains</th>
+              </tr>
+            </thead>
+            <For each={balances()}>{([network, assets]) =>
+              <Show when={assets.length}>
+                <tbody class="dark:text-saturn-offwhite text-saturn-black">
+                  <For each={assets}>{([asset, b]) =>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                      <td class='py-3 px-4 text-left w-[20%]'>
+                        <span class="flex flex-row items-center gap-1">
+                          <span class='h-5 w-5 flex rounded-full bg-black'>
+                            <img src={getAssetIcon(asset)} class="p-1" alt={asset} />
                           </span>
-                        </div>
-                      </th>
-                      <th />
-                      <th />
-                      <th />
+                          <span>
+                            {asset}
+                          </span>
+                        </span>
+                      </td>
+                      <td class='py-3 px-4 text-left w-[30%]'>
+                        <span class="flex flex-row items-baseline gap-1">
+                          <span>
+                            {formatAsset(b.freeBalance, Rings[network as keyof typeof Rings].decimals)}
+                          </span>
+                          <span class="text-[9px]">{asset}</span>
+                          <span class="text-saturn-lightgrey text-[8px]">
+                            ($ )
+                          </span>
+                        </span>
+                      </td>
+                      <td class='py-3 px-4 text-left w-[30%]'>
+                        <span class="flex flex-row items-baseline gap-1">
+                          <span>
+                            {formatAsset((+b.freeBalance + +b.reservedBalance + +b.frozenBalance).toString(), Rings[network as keyof typeof Rings].decimals)}
+                          </span>
+                          <span class="text-[9px]">{asset}</span>
+                          <span class="text-saturn-lightgrey text-[8px]">
+                            ($ )
+                          </span>
+                        </span>
+                      </td>
+                      <td>
+                        <span class="flex flex-row items-center gap-1">
+                          <For each={getNetworkIcon(asset)}>
+                            {icon =>
+                              <span class='h-5 w-5 flex rounded-full bg-black'>
+                                <img src={icon} class="p-1" alt="asset-icon" />
+                              </span>
+                            }
+                          </For>
+                        </span>
+                      </td>
                     </tr>
-                    <tr>
-                      <th class='py-3 px-4 text-left font-medium text-white w-[20%]'>Asset</th>
-                      <th class='py-3 px-4 text-left font-medium text-white w-[20%]'>Transferable</th>
-                      <th class='py-3 px-4 text-left font-medium text-white w-[20%]'>Total</th>
-                      <th class='w-[40%]' />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <For each={assets}>{([asset, b]) =>
-                      <tr>
-                        <td class='py-3 px-4 text-left font-medium text-white w-[20%]'>{asset}</td>
-                        <td class='py-3 px-4 text-left w-[20%]'>{
-                          BigNumber(b.freeBalance)
-                            .div(
-                              BigNumber('10').pow(
-                                BigNumber(Rings[network as keyof typeof Rings].decimals),
-                              ),
-                            ).decimalPlaces(2, 1).toString()
-                        } {asset}</td>
-                        <td class='w-[20%]'>{
-                          BigNumber(b.freeBalance)
-                            .plus(
-                              BigNumber(b.reservedBalance).plus(BigNumber(b.frozenBalance))
-                            )
-                            .div(
-                              BigNumber('10').pow(
-                                BigNumber(Rings[network as keyof typeof Rings].decimals),
-                              ),
-                            ).decimalPlaces(2, 1).toString()
-                        } {asset}</td>
-                        <td class='flex gap-2.5 w-[40%] py-2'>
-                          <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-green-500 hover:bg-saturn-red'>Transfer</Button>
-
-                          <Show when={StakePage[`${ network }_${ asset }` as keyof typeof StakePage]}>
-                            <form action={StakePage[`${ network }_${ asset }` as keyof typeof StakePage]} target='_blank'>
-                              <Button type='submit' class='bg-green-500 hover:bg-saturn-red'>Stake</Button>
-                            </form>
-                          </Show>
-                        </td>
-                      </tr>
-                    }</For>
-                  </tbody>
-                </table>
-              </div>
-            </Show>
-          }</For>
-
-        ) : null}
-      </div>
+                  }</For>
+                </tbody>
+              </Show>
+            }</For>
+          </table>
+        </div>
+      </Show>
     </>
   );
 }

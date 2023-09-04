@@ -3,7 +3,6 @@ import { useRingApisContext } from "../../providers/ringApisProvider";
 import BigNumber from "bignumber.js";
 import WalletIcon from "../../assets/icons/wallet-icon.svg";
 import { formatAsset } from "../../utils/formatAsset";
-import { RingAssets } from "../../data/rings";
 
 type BalancePrimitiveType = {
   nonce: string;
@@ -57,6 +56,7 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
 
       setKsmBalance(formattedBalance);
     } catch (error) {
+
       console.error(error);
     }
   }

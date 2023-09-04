@@ -254,7 +254,7 @@ const MainContainer = () => {
   };
 
   return (
-    <div class={`${ styles.pageContainer } p-4`}>
+    <div class="m-2">
       <MainContent />
       <Portal>
         <ProposeModal />

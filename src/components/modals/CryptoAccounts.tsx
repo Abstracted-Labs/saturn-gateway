@@ -79,7 +79,7 @@ const CryptoAccounts = () => {
   });
 
   return (
-    <div id="accounts-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-[500px] mx-auto p-4 overflow-x-hidden mt-10 overflow-y-auto" style={{ 'z-index': 60 }}>
+    <div id="accounts-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-[500px] mx-auto p-4 overflow-x-hidden mt-10 overflow-y-auto z-[60]">
       <div class="relative h-[660px] bg-saturn-offwhite dark:bg-black rounded-md">
         <div class="flex items-start justify-between p-4">
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">

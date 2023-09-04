@@ -28,7 +28,8 @@ import { BigNumber } from 'bignumber.js';
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
-import { NetworksByAsset, Rings } from '../../data/rings';
+import { AssetEnum, NetworksByAsset, Rings } from '../../data/rings';
+import { NetworkEnum } from '../../utils/consts';
 
 export type TransferModalProps = {
   open: { network: string; asset: string; } | undefined;
@@ -48,8 +49,8 @@ export default function TransferModal(props: TransferModalProps) {
   const saturnContext = useSaturnContext();
 
   createEffect(() => {
-    const a = props.open?.asset;
-    const n = props.open?.network;
+    const a: AssetEnum = props.open?.asset as AssetEnum;
+    const n: NetworkEnum = props.open?.network as NetworkEnum;
 
     if (a && n && NetworksByAsset[a]) {
       setPossibleNetworks(NetworksByAsset[a]);

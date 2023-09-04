@@ -1,84 +1,78 @@
-import { createEffect, createMemo, createSignal, onMount } from 'solid-js';
-import { BUTTON_COMMON_STYLE } from '../../utils/consts';
-import KusamaIcon from '../../assets/icons/kusama-icon-15x9.png';
-import PolkadotIcon from '../../assets/icons/polkadot-icon-25x25.png';
-import { Dropdown } from "flowbite";
-import type { DropdownOptions, DropdownInterface } from "flowbite";
-
-enum NetworkNameEnum {
-  KUSAMA = 'kusama',
-  POLKADOT = 'polkadot'
-}
+import { For, JSXElement, createSignal } from 'solid-js';
+import { NetworkEnum } from '../../utils/consts';
+import { useProposeContext } from '../../providers/proposeProvider';
+import OptionItem from '../legos/OptionItem';
+import { getNetworkBlock } from '../../utils/getNetworkBlock';
+import SaturnSelect from '../legos/SaturnSelect';
+import { Dropdown, DropdownInterface, type DropdownOptions } from 'flowbite';
 
 const ChangeNetworkButton = () => {
   const [isDropdownActive, setIsDropdownActive] = createSignal(false);
-  const [activeNetwork, setActiveNetwork] = createSignal<NetworkNameEnum>(NetworkNameEnum.POLKADOT);
-  const currentNetwork = createMemo(() => activeNetwork());
+  const proposeContext = useProposeContext();
+  const [activeNetwork, setActiveNetwork] = createSignal<NetworkEnum>(NetworkEnum.TINKERNET);
+  const options2: Record<string, JSXElement> = {
+    [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
+    [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+    [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
+    // [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
+    // [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
+  };
+  const TOGGLE_ID = 'networkToggle';
+  const DROPDOWN_ID = 'networkDropdown';
+  const $toggle = () => document.getElementById(TOGGLE_ID);
+  const $dropdown = () => document.getElementById(DROPDOWN_ID);
+  const options: DropdownOptions = {
+    placement: 'bottom',
+    triggerType: 'click',
+    offsetSkidding: 0,
+    offsetDistance: 10,
+    delay: 300,
+    onHide: () => {
+      console.log('dropdown has been hidden');
+    },
+    onShow: () => {
+      console.log('dropdown has been shown');
+    },
+    onToggle: () => {
+      console.log('dropdown has been toggled');
+    }
+  };
+  const dropdown: DropdownInterface = new Dropdown($dropdown(), $toggle(), options);
 
-  // network blocks
-  const networkKusama = () => <>
-    <img src={KusamaIcon} alt="Kusama logo" width={20} height={13} class="mr-2 block" />
-    <span>Kusama</span>
-  </>;
-  const networkPolkadot = () => <>
-    <img src={PolkadotIcon} alt="Polkadot logo" width={25} height={25} class="mr-1 block" />
-    <span>Polkadot</span>
-  </>;
+  function selectedNetwork() {
+    return getNetworkBlock(activeNetwork());
+  };
 
-  function updateNetworkMode(name: NetworkNameEnum) {
+  function updateNetworkMode(name: NetworkEnum) {
     setActiveNetwork(name);
-    const $dropdown = document.getElementById('dropdown');
-    $dropdown?.classList.add('hidden');
-    $dropdown?.classList.remove('block');
+    console.log('updateNetworkMode', name);
+    proposeContext.setters.setCurrentNetwork(name);
     setIsDropdownActive(false);
+    dropdown.hide();
   }
 
-  function updateDropdownLabel() {
-    if (currentNetwork() === NetworkNameEnum.POLKADOT) {
-      return networkPolkadot();
-    } else if (currentNetwork() === NetworkNameEnum.KUSAMA) {
-      return networkKusama();
-    } else {
-      // Default network
-      return networkKusama();
-    }
-  }
-
-  function openDropdown() {
+  function openDropdown(e: Event) {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDropdownActive(true);
-    const $dropdown = document.getElementById('dropdown');
-
-    if ($dropdown?.classList.contains('hidden')) {
-      $dropdown?.classList.remove('hidden');
-      $dropdown?.classList.add('block');
-      $dropdown?.style.setProperty('transform', 'translate3d(0px, 33px, 0px)');
-    }
+    dropdown.show();
+    // if ($toggle()?.classList.contains('hidden')) {
+    //   $toggle()?.classList.remove('hidden');
+    //   $toggle()?.classList.add('block');
+    //   $toggle()?.style.setProperty('transform', 'translate3d(0px, 33px, 0px)');
+    // }
   }
 
-  return <div class="relative flex flex-col">
-    <button
-      onClick={openDropdown}
-      data-dropdown-offset-distance="-7"
-      id="dropdownToggle"
-      data-dropdown-toggle="dropdown"
-      class={`${ BUTTON_COMMON_STYLE } text-sm text-saturn-black dark:text-saturn-offwhite h-full justify-between pl-4 w-48 z-30 focus:outline-none self-stretch`}
-      type="button">
-      <span class="mr-10 inline-flex items-center gap-1">{updateDropdownLabel()}</span>
-      <svg data-accordion-icon class={`transition-all w-3 h-3 ${ isDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5 5 1 1 5" />
-      </svg>
-    </button>
-    <div id="dropdown" class={`${ BUTTON_COMMON_STYLE } hidden divide-y rounded-t-none border-t-0 dark:border-t-saturn-black focus:outline-none w-48 pt-1.5 z-50`}>
-      <ul class="text-sm text-gray-700 dark:text-gray-2000 w-48" aria-labelledby="dropdownToggle">
-        <li class="pl-4 py-2 hover:bg-saturn-darkpurple dark:text-white inline-flex items-center gap-1 w-full hover:cursor-pointer" onClick={() => updateNetworkMode(NetworkNameEnum.KUSAMA)}>
-          {networkKusama()}
-        </li>
-        <li class="pl-4 py-2 hover:bg-saturn-darkpurple dark:text-white inline-flex items-center gap-1 w-full hover:cursor-pointer" onClick={() => updateNetworkMode(NetworkNameEnum.POLKADOT)}>
-          {networkPolkadot()}
-        </li>
-      </ul>
-    </div>
-  </div>;
+  return <>
+    <SaturnSelect isOpen={isDropdownActive()} currentSelection={selectedNetwork()} toggleId={TOGGLE_ID} dropdownId={DROPDOWN_ID} initialOption={getNetworkBlock(NetworkEnum.TINKERNET)} onClick={(e) => openDropdown(e)}>
+      <For each={Object.entries(options2)}>
+        {([name, element]) => <OptionItem onClick={() => updateNetworkMode(name as NetworkEnum)}>
+          {element}
+        </OptionItem>}
+      </For>
+    </SaturnSelect>
+  </>;
 };
+
 ChangeNetworkButton.displayName = 'ChangeNetworkButton';
 export default ChangeNetworkButton;

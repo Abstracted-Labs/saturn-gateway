@@ -18,6 +18,7 @@ import { IdentityProvider } from "./providers/identityProvider";
 import Layout from './components/legos/Layout';
 import { ThemeProvider } from './providers/themeProvider';
 import MainContainer from './components/center-main/MainContainer';
+import 'flowbite';
 
 const Create = lazy(async () => import('./pages/Create'));
 
