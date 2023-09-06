@@ -2,8 +2,9 @@
 module.exports = {
   darkMode: 'class',
   content: [
-    "./node_modules/flowbite/**/*.js", // Flowbite JS source template path
-    "./src/**/*.{js,jsx,ts,tsx}"
+    "./src/**/*.{js,jsx,ts,tsx}",
+    './src/**/*.html',
+    "./node_modules/flowbite/**/*.js" // Flowbite JS source template path
   ],
   theme: {
     extend: {
@@ -24,6 +25,9 @@ module.exports = {
       fontFamily: {
         'sans': [ 'Inter', 'ui-sans-serif', 'system-ui' ],
       },
+      fontSize: {
+        [ 'xxs' ]: '0.625rem',
+      }
     },
     screens: {
       xs: '414px',

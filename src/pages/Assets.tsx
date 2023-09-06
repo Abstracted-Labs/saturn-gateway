@@ -53,7 +53,7 @@ export default function Assets() {
   return (
     <>
       <Show when={balances()} fallback={<span class="text-saturn-black dark:text-saturn-offwhite text-center text-sm">Contacting Uranus...</span>}>
-        <div class="relative overflow-x-auto">
+        <div class="relative overflow-x-scroll overscroll-contain">
           <table class="w-full text-sm text-left text-saturn-lightgrey">
             <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
               <tr>

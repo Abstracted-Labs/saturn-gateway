@@ -3,8 +3,12 @@ import TinkernetIcon from '../assets/icons/tinkernet-icon.svg';
 import PicassoIcon from '../assets/icons/picasso-icon.svg';
 import KusamaIcon from '../assets/icons/kusama-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
+import { JSXElement } from 'solid-js';
+import { getNetworkBlock } from './getNetworkBlock';
 
-export const BUTTON_COMMON_STYLE = 'rounded-lg border-2 border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple inline-flex items-center';
+export const BUTTON_COMMON_STYLE = 'rounded-lg border-2 border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center';
+
+export const INPUT_COMMON_STYLE = "text-sm text-saturn-darkgrey dark:text-saturn-offwhite";
 
 export enum WalletTypeEnum {
   SUBWALLET = "sub", // ?

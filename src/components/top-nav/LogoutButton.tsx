@@ -2,6 +2,7 @@ import { useSelectedAccountContext } from "../../providers/selectedAccountProvid
 import LogoutIcon from "../../assets/icons/logout-icon-15x15.svg";
 import { Show, createMemo } from "solid-js";
 import { removeAccountsModal } from "../../utils/removeAccountsModal";
+import { WALLET_ACCOUNTS_MODAL_ID } from "./ConnectWallet";
 
 const LogoutButton = (props: { onClick: () => any; }) => {
   const selectedAccount = useSelectedAccountContext();
@@ -22,7 +23,7 @@ const LogoutButton = (props: { onClick: () => any; }) => {
 
   return <>
     <Show when={!!selectedAccount.state.account}>
-      <button type="button" data-modal-target="accounts-modal" data-modal-toggle="accounts-modal" onClick={(e) => onLogout(e, selectedAccount)} class="p-4 bg-transparent text-sm rounded-md dark:hover:bg-gray-900 hover:bg-gray-200 focus:outline-none text-saturn-lightgrey flex gap-2 items-center flex-row"><span>Logout</span> <img src={LogoutIcon} alt="logout" /></button>
+      <button type="button" data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-toggle={WALLET_ACCOUNTS_MODAL_ID} onClick={(e) => onLogout(e, selectedAccount)} class="p-4 bg-transparent text-sm rounded-md dark:hover:bg-gray-900 hover:bg-gray-200 focus:outline-none text-saturn-lightgrey flex gap-2 items-center flex-row"><span>Logout</span> <img src={LogoutIcon} alt="logout" /></button>
     </Show>
   </>;
 };

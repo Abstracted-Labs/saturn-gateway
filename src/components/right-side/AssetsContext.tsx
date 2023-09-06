@@ -1,20 +1,19 @@
 import BigNumber from "bignumber.js";
-import { createSignal, createEffect, For, Show, createMemo, lazy } from "solid-js";
+import { createSignal, createEffect, For, Show, createMemo, lazy, onMount, JSXElement, onCleanup } from "solid-js";
 import { AssetEnum, NetworksByAsset, Rings } from "../../data/rings";
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import RoundedCard from "../legos/RoundedCard";
-import { Select, SelectTrigger, SelectValue, SelectIcon, SelectContent, SelectListbox, SelectOption, SelectOptionText, SelectOptionIndicator, Input, Switch } from "@hope-ui/solid";
-import ChangeNetworkButton from "../top-nav/ChangeNetworkButton";
+import { INPUT_COMMON_STYLE, NetworkEnum } from "../../utils/consts";
+import OptionItem from "../legos/OptionItem";
 import SaturnSelect from "../legos/SaturnSelect";
-import { NetworkEnum } from "../../utils/consts";
-
-const FromSelect = lazy(() => import('../legos/SaturnSelect'));
-
-const ToSelect = lazy(() => import('../legos/SaturnSelect'));
+import { initDropdowns, Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
+import { getNetworkBlock } from "../../utils/getNetworkBlock";
 
 const AssetsContext = () => {
+  let dropdownFrom: DropdownInterface;
+  let dropdownTo: DropdownInterface;
   const [amount, setAmount] = createSignal<BigNumber>(new BigNumber(0));
   const [asset, setAsset] = createSignal<AssetEnum>(AssetEnum.TNKR);
   const [possibleNetworks, setPossibleNetworks] = createSignal<NetworkEnum[]>([]);
@@ -22,25 +21,59 @@ const AssetsContext = () => {
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
   const [targetAddress, setTargetAddress] = createSignal<string>('');
   const [bridgeToSelf, setBridgeToSelf] = createSignal<boolean>(false);
-  let leftSelectRef: Element;
-  let rightSelectRef: Element;
+  const [isFromDropdownActive, setIsFromDropdownActive] = createSignal(false);
+  const [isToDropdownActive, setIsToDropdownActive] = createSignal(false);
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
 
-  createEffect(() => {
-    const a = asset();
-    const n = initialNetwork();
+  // From dropdown
+  const FROM_TOGGLE_ID = 'networkToggleFrom';
+  const FROM_DROPDOWN_ID = 'networkDropdownFrom';
+  const $toggleFrom = () => document.getElementById(FROM_TOGGLE_ID);
+  const $dropdownFrom = () => document.getElementById(FROM_DROPDOWN_ID);
 
-    if (a && n && NetworksByAsset[a]) {
-      setPossibleNetworks(NetworksByAsset[a]);
-      setInitialNetwork(n);
-      setFinalNetworkPair({ from: n, to: n });
-    }
+  // To dropdown
+  const TO_TOGGLE_ID = 'networkToggleTo';
+  const TO_DROPDOWN_ID = 'networkDropdownTo';
+  const $toggleTo = () => document.getElementById(TO_TOGGLE_ID);
+  const $dropdownTo = () => document.getElementById(TO_DROPDOWN_ID);
+
+  // Dropdown options
+  const options: DropdownOptions = {
+    placement: 'bottom',
+    triggerType: 'click',
+    offsetSkidding: 0,
+    offsetDistance: -6,
+    delay: 300,
+  };
+
+  const AllNetworks = (): Record<string, JSXElement> => ({
+    [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
+    [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+    [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
+    // [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
+    // [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
   });
 
-  const proposeTransfer = async () => {
+  // get all networks for For but filter out the current active To network
+  const forNetworks = createMemo(() => {
+    const pair = finalNetworkPair();
+    const allNetworks = Object.entries(AllNetworks());
+    // const filteredNetworks = allNetworks.filter(([name, element]) => name != pair.to);
+    return allNetworks;
+  });
+
+  // get all networks for To but filter out the current active For network
+  const toNetworks = createMemo(() => {
+    const pair = finalNetworkPair();
+    const allNetworks = Object.entries(AllNetworks());
+    // const filteredNetworks = allNetworks.filter(([name, element]) => name != pair.from);
+    return allNetworks;
+  });
+
+  async function proposeTransfer() {
     const pair = finalNetworkPair();
 
     if (
@@ -88,6 +121,106 @@ const AssetsContext = () => {
     }
   };
 
+  function openFrom() {
+    if (dropdownFrom) {
+      if (!isFromDropdownActive()) {
+        dropdownFrom.show();
+        setIsFromDropdownActive(true);
+      } else {
+        closeFromDropdown();
+      }
+    }
+  }
+
+  function openTo() {
+    if (dropdownTo) {
+      if (!isToDropdownActive()) {
+        dropdownTo.show();
+        setIsToDropdownActive(true);
+      } else {
+        closeToDropdown();
+      }
+    }
+  }
+
+  function closeFromDropdown() {
+    if (dropdownFrom) {
+      dropdownFrom.hide();
+      setIsFromDropdownActive(false);
+    }
+  }
+
+  function closeToDropdown() {
+    if (dropdownTo) {
+      dropdownTo.hide();
+      setIsToDropdownActive(false);
+    }
+  }
+
+  function handleFromOptionClick(from: NetworkEnum) {
+    setFinalNetworkPair({ from, to: finalNetworkPair().to });
+    proposeContext.setters.setCurrentNetwork(from);
+    closeFromDropdown();
+  }
+
+  function handleToOptionClick(to: NetworkEnum) {
+    setFinalNetworkPair({ from: finalNetworkPair().from, to });
+    closeToDropdown();
+  }
+
+  function renderSelectedOption(network: NetworkEnum) {
+    return getNetworkBlock(network);
+  }
+
+  onMount(() => {
+    // This effect is for initializing the dropdowns
+    initDropdowns();
+    dropdownFrom = new Dropdown($dropdownFrom(), $toggleFrom(), options);
+    dropdownTo = new Dropdown($dropdownTo(), $toggleTo(), options);
+  });
+
+  createEffect(() => {
+    // This effect is for updating the dropdowns when the asset or network changes
+    const a = asset();
+    const n = initialNetwork();
+
+    if (a && n && NetworksByAsset[a]) {
+      setPossibleNetworks(NetworksByAsset[a]);
+      setInitialNetwork(n);
+      if (proposeContext.state.currentNetwork) {
+        setFinalNetworkPair({ from: proposeContext.state.currentNetwork, to: n });
+      }
+    }
+  });
+
+  createEffect(() => {
+    // This effect is for closing the dropdowns when clicking outside of them
+    const handleClickOutside = (event: any) => {
+      const toggleToEl = $toggleTo();
+      const dropdownToEl = $dropdownTo();
+      const toggleFromEl = $toggleFrom();
+      const dropdownFromEl = $dropdownFrom();
+
+      if (toggleToEl && dropdownToEl && !toggleToEl.contains(event.target) && !dropdownToEl.contains(event.target)) {
+        dropdownTo.hide();
+        setIsToDropdownActive(false);
+      }
+
+      if (toggleFromEl && dropdownFromEl && !toggleFromEl.contains(event.target) && !dropdownFromEl.contains(event.target)) {
+        dropdownFrom.hide();
+        setIsFromDropdownActive(false);
+      }
+    };
+
+    if (isToDropdownActive() || isFromDropdownActive()) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    onCleanup(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
+  });
+
   const MyBalance = () => {
     return <dl class="mt-2 text-xs w-full">
       <div class="flex place-items-stretch pb-4 text-saturn-lightgrey">
@@ -102,86 +235,68 @@ const AssetsContext = () => {
         <dt class="grow pb-4 border-b border-gray-200 dark:border-gray-700">Non-Transferable</dt>
         <dd class="pb-4 border-b border-saturn-purple text-saturn-black dark:text-saturn-offwhite">$ 999,999.99</dd>
       </div>
-      <div class="flex place-items-stretch pb-4 text-saturn-lightgrey">
+      {/* <div class="flex place-items-stretch pb-4 text-saturn-lightgrey">
         <dt class="grow pb-4 border-b border-gray-200 dark:border-gray-700">NFTs</dt>
         <dd class="pb-4 border-b border-saturn-purple text-saturn-black dark:text-saturn-offwhite">69</dd>
-      </div>
+      </div> */}
     </dl>;
   };
-
-  // map new array of possibleNetworks() such that they are wrapped in <span>
-  const networks = createMemo(() => {
-    return possibleNetworks().map((network) => {
-      return <span>{network}</span>;
-    });
-  });
 
   const SendCrypto = () => {
     return <div class="flex flex-col w-full">
       <div class='flex flex-col gap-1'>
-        <div class='flex flex-row'>
-          {/* <FromSelect isMini={true} toggleId="fromToggle" dropdownId="fromDropdown" options={possibleNetworks()} initialOption={finalNetworkPair().from} onOptionClick={(from: NetworkEnum) => setFinalNetworkPair({ from, to: finalNetworkPair().to })} />
-          <ToSelect isMini={true} toggleId="toToggle" dropdownId="toDropdown" options={possibleNetworks()} initialOption={finalNetworkPair().to} onOptionClick={(to: NetworkEnum) => setFinalNetworkPair({ from: finalNetworkPair().from, to })} /> */}
-          {/* <Select value={finalNetworkPair().from} onChange={v => setFinalNetworkPair({ from: v, to: finalNetworkPair().to })}>
-            <SelectTrigger>
-              <SelectValue class='capitalize' />
-              <SelectIcon />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectListbox>
-                <For each={possibleNetworks()}>
-                  {item => (
-                    <SelectOption value={item}>
-                      <SelectOptionText class='capitalize'>{item}</SelectOptionText>
-                      <SelectOptionIndicator />
-                    </SelectOption>
-                  )}
-                </For>
-              </SelectListbox>
-            </SelectContent>
-          </Select>
-          <Select value={finalNetworkPair().to} onChange={v => setFinalNetworkPair({ from: finalNetworkPair().from, to: v })}>
-            <SelectTrigger>
-              <SelectValue class='capitalize' />
-              <SelectIcon />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectListbox>
-                <For each={possibleNetworks()}>
-                  {item => (
-                    <SelectOption value={item}>
-                      <SelectOptionText class='capitalize'>{item}</SelectOptionText>
-                      <SelectOptionIndicator />
-                    </SelectOption>
-                  )}
-                </For>
-              </SelectListbox>
-            </SelectContent>
-          </Select> */}
+        <div class='flex flex-row items-center gap-1'>
+          <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
+          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
+            <For each={forNetworks()}>
+              {([name, element]) => <OptionItem onClick={() => handleFromOptionClick(name as NetworkEnum)}>
+                {element}
+              </OptionItem>}
+            </For>
+          </SaturnSelect>
+          <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
+          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
+            <For each={toNetworks()}>
+              {([name, element]) => <OptionItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
+                {element}
+              </OptionItem>}
+            </For>
+          </SaturnSelect>
         </div>
         {/* <Show when={finalNetworkPair().from != finalNetworkPair().to}>
           <Switch defaultChecked={false} onChange={e => setBridgeToSelf(!bridgeToSelf())}>Bridge To Self</Switch>
-        </Show>
+        </Show> */}
+        <label for="recipient-address" class="text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">Recipient</label>
         <input
-          placeholder='Address'
+          type="text"
+          id="recipient-address"
+          name="recipient-address"
+          placeholder="Destination address"
           value={bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()}
+          class={INPUT_COMMON_STYLE}
           disabled={bridgeToSelf()}
           onInput={e => setTargetAddress(e.currentTarget.value)}
         />
+        <label for="send-amount" class="sr-only text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">Amount</label>
         <input
-          placeholder='Amount'
+          type="number"
+          id="send-amount"
+          name="send-amount"
+          placeholder='0'
           value={amount().toString()}
+          class={INPUT_COMMON_STYLE}
           onInput={e => {
             const a = parseInt(e.currentTarget.value);
             if (typeof a === 'number') {
               setAmount(new BigNumber(a));
             }
           }}
-        /> */}
+        />
       </div>
-      {/* <button type="button" class="text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800" onClick={proposeTransfer}>Perform Transaction</button> */}
+      <button type="button" class="mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800" onClick={proposeTransfer}>Perform Transaction</button>
     </div>;
   };
+
   return <div class="mb-5">
     <RoundedCard header="My Balance">
       <MyBalance />

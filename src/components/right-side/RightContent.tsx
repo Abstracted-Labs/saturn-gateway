@@ -3,6 +3,7 @@ import { createMemo } from "solid-js";
 import AssetsContext from "./AssetsContext";
 import TransactionsContext from "./TransactionsContext";
 import MembersContext from "./MembersContext";
+import { initDropdowns } from 'flowbite';
 
 const RightContent = () => {
   const location = useLocation();

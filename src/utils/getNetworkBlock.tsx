@@ -1,22 +1,7 @@
-import { createMemo } from "solid-js";
 import { NetworkEnum } from "./consts";
 import { getAssetIcon } from "./getAssetIcon";
 
 export function getNetworkBlock(network: NetworkEnum) {
-  // network blocks
-  const NetworkKusama = createMemo(() => <>
-    <img src={getAssetIcon('KSM')} alt={NetworkEnum.KUSAMA} width={20} height={13} class="mr-2 block bg-saturn" />
-    <span>Kusama</span>
-  </>);
-  const NetworkPolkadot = createMemo(() => <>
-    <img src={getAssetIcon('DOT')} alt={NetworkEnum.POLKADOT} width={25} height={25} class="mr-1 block" />
-    <span>Polkadot</span>
-  </>);
-  const NetworkTinkernet = createMemo(() => <>
-    <img src={getAssetIcon('TNKR')} alt={NetworkEnum.TINKERNET} width={20} height={20} class="mr-2 block bg-saturn" />
-    <span>Tinkernet</span>
-  </>);
-
   try {
     if (!network) {
       throw new Error('Network is not defined.');
@@ -24,11 +9,20 @@ export function getNetworkBlock(network: NetworkEnum) {
 
     switch (network) {
       case NetworkEnum.KUSAMA:
-        return <NetworkKusama />;
+        return <>
+          <img src={getAssetIcon('KSM')} alt={NetworkEnum.KUSAMA} width={20} height={13} class="mr-2 block bg-saturn" />
+          <span>Kusama</span>
+        </>;
       case NetworkEnum.POLKADOT:
-        return <NetworkPolkadot />;
+        return <>
+          <img src={getAssetIcon('DOT')} alt={NetworkEnum.POLKADOT} width={25} height={25} class="mr-1 block" />
+          <span>Polkadot</span>
+        </>;
       case NetworkEnum.TINKERNET:
-        return <NetworkTinkernet />;
+        return <>
+          <img src={getAssetIcon('TNKR')} alt={NetworkEnum.TINKERNET} width={20} height={20} class="mr-2 block bg-saturn" />
+          <span>Tinkernet</span>
+        </>;
       default:
         return null;
     }

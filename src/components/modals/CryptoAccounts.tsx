@@ -1,5 +1,5 @@
 import { Account, BaseWallet } from "@polkadot-onboard/core";
-import { For, onMount, createMemo, createSignal, } from "solid-js";
+import { For, onMount, createMemo, createSignal, createEffect, onCleanup, } from "solid-js";
 import { walletAggregator } from "../../App";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import WalletLabel from "../top-nav/WalletLabel";
@@ -9,10 +9,12 @@ import NetworkBalance from "../top-nav/NetworkBalance";
 import AvatarAndName from "../legos/AvatarAndName";
 import WalletConnectButton from "../top-nav/WalletConnectButton";
 import LogoutButton from "../top-nav/LogoutButton";
-// import Keyhole from "../../assets/icons/connect-wallet-keyhole.svg";
-// import WalletIcon from "../../assets/icons/wallet-icon.svg";
+import { WALLET_ACCOUNTS_MODAL_ID } from "../top-nav/ConnectWallet";
+import { Modal, initModals } from 'flowbite';
+import type { ModalOptions, ModalInterface } from 'flowbite';
 
 const CryptoAccounts = () => {
+  let modal: ModalInterface;
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
@@ -20,6 +22,7 @@ const CryptoAccounts = () => {
   const selectedAccountContext = useSelectedAccountContext();
   const theme = useThemeContext();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
+  const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
 
   async function getAllAccounts() {
     try {
@@ -66,26 +69,49 @@ const CryptoAccounts = () => {
   }
 
   function removeModal() {
-    const $modal = document.getElementById('accounts-modal');
-    const $backdrop = document.querySelector('[modal-backdrop]');
-    $modal?.classList.add('hidden');
-    $backdrop?.classList.add('hidden');
-    console.log('removing modal...');
+    if (modal) {
+      modal.hide();
+    }
   }
+
+  onMount(() => {
+    initModals();
+    const instance = $modalElement();
+    modal = new Modal(instance);
+  });
 
   onMount(() => {
     setAvailableWallets(walletAggregator.getWallets());
     getAllAccounts();
   });
 
+  // createEffect(() => {
+  //   // This effect is for closing the modal when clicking outside of it
+  //   const handleClickOutside = (event: any) => {
+  //     const instance = document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
+  //     console.log('click outside Event', event);
+  //     if (event && instance && !instance.contains(event.target)) {
+  //       removeModal();
+  //     }
+  //   };
+
+  //   if (modal.isVisible()) {
+  //     document.addEventListener('click', handleClickOutside);
+  //   }
+
+  //   onCleanup(() => {
+  //     document.removeEventListener('click', handleClickOutside);
+  //   });
+  // });
+
   return (
-    <div id="accounts-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-[500px] mx-auto p-4 overflow-x-hidden mt-10 overflow-y-auto z-[60]">
+    <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-[500px] mx-auto p-4 overflow-x-hidden mt-10 overflow-y-auto z-[60]">
       <div class="relative h-[660px] bg-saturn-offwhite dark:bg-black rounded-md">
         <div class="flex items-start justify-between p-4">
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">
             Connect Wallet
           </h4>
-          <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" data-modal-hide="accounts-modal">
+          <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={removeModal}>
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
             </svg>
@@ -102,7 +128,7 @@ const CryptoAccounts = () => {
             <For each={availableAccounts()}>
               {account => {
                 return (
-                  <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-2 border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]}>
+                  <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-2 border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]} data-modal-hide={WALLET_ACCOUNTS_MODAL_ID} data-modal-target={WALLET_ACCOUNTS_MODAL_ID}>
                     <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
                     <div class="flex flex-row justify-between items-start my-3
                     ">
