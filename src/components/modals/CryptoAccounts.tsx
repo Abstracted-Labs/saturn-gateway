@@ -128,7 +128,7 @@ const CryptoAccounts = () => {
             <For each={availableAccounts()}>
               {account => {
                 return (
-                  <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-2 border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]} data-modal-hide={WALLET_ACCOUNTS_MODAL_ID} data-modal-target={WALLET_ACCOUNTS_MODAL_ID}>
+                  <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]}>
                     <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
                     <div class="flex flex-row justify-between items-start my-3
                     ">

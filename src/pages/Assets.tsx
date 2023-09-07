@@ -1,23 +1,51 @@
 import { createSignal, For, createEffect, Show } from 'solid-js';
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
 import { Rings } from '../data/rings';
-import TransferModal from '../components/modals/transfer';
 import { useSaturnContext } from "../providers/saturnProvider";
 import type { Balances } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
 import { getAssetIcon } from '../utils/getAssetIcon';
 import { getNetworkIcon } from '../utils/getNetworkIcon';
-
-export type AssetsPageProps = {
-};
+import { NetworkEnum } from '../utils/consts';
+import BigNumber from 'bignumber.js';
+import { getCurrentUsdPrice } from '../utils/getCurrentUsdPrice';
+import { createStore } from 'solid-js/store';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
 };
 
 export default function Assets() {
-  const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>();
+  const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
+  const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
+  const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
   const saturnContext = useSaturnContext();
+
+  async function convertAssetTotalToUsd(network: NetworkEnum, total: string) {
+    let currentMarketPrice = null;
+
+    // Get current market price for token
+    const assetInUsd = await getCurrentUsdPrice(network);
+    if (assetInUsd) {
+      currentMarketPrice = new BigNumber(assetInUsd.market_data.current_price.usd);
+    } else {
+      // If token doesn't exist, use as default conversion
+      currentMarketPrice = null;
+    }
+
+    if (total) {
+      let totalInUsd = '0.00';
+      if (currentMarketPrice !== null) {
+        totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), Rings[network as keyof typeof Rings].decimals) })`;
+      } else {
+        totalInUsd = '';
+      }
+      console.log('totalInUsd', totalInUsd);
+      return totalInUsd;
+    }
+
+    return '';
+  }
 
   createEffect(() => {
     const id = saturnContext.state.multisigId;
@@ -50,10 +78,30 @@ export default function Assets() {
     runAsync();
   });
 
+  createEffect(async () => {
+    // Convert transferable balances to USD
+    for (const [network, assets] of balances()) {
+      for (const [asset, b] of assets) {
+        const value = await convertAssetTotalToUsd(network as NetworkEnum, b.freeBalance);
+        setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+      }
+    }
+  });
+
+  createEffect(async () => {
+    // Convert total balances to USD
+    for (const [network, assets] of balances()) {
+      for (const [asset, b] of assets) {
+        const value = await convertAssetTotalToUsd(network as NetworkEnum, (new BigNumber(b.freeBalance).plus(b.reservedBalance).plus(b.frozenBalance)).toString());
+        setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
+      }
+    }
+  });
+
   return (
     <>
       <Show when={balances()} fallback={<span class="text-saturn-black dark:text-saturn-offwhite text-center text-sm">Contacting Uranus...</span>}>
-        <div class="relative overflow-x-scroll overscroll-contain">
+        <div class="relative overflow-x-scroll overscroll-contain h-full flex flex-col content-stretch">
           <table class="w-full text-sm text-left text-saturn-lightgrey">
             <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
               <tr>
@@ -66,8 +114,9 @@ export default function Assets() {
             <For each={balances()}>{([network, assets]) =>
               <Show when={assets.length}>
                 <tbody class="dark:text-saturn-offwhite text-saturn-black">
-                  <For each={assets}>{([asset, b]) =>
-                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <For each={assets}>{([asset, b]) => {
+                    return <tr class="border-b border-gray-200 dark:border-gray-700">
+                      {/* Asset */}
                       <td class='py-3 px-4 text-left w-[20%]'>
                         <span class="flex flex-row items-center gap-1">
                           <span class='h-5 w-5 flex rounded-full bg-black'>
@@ -78,6 +127,8 @@ export default function Assets() {
                           </span>
                         </span>
                       </td>
+
+                      {/* Transferable */}
                       <td class='py-3 px-4 text-left w-[30%]'>
                         <span class="flex flex-row items-baseline gap-1">
                           <span>
@@ -85,10 +136,12 @@ export default function Assets() {
                           </span>
                           <span class="text-[9px]">{asset}</span>
                           <span class="text-saturn-lightgrey text-[8px]">
-                            ($ )
+                            {usdValues[`${ network }-${ asset }`]}
                           </span>
                         </span>
                       </td>
+
+                      {/* Total */}
                       <td class='py-3 px-4 text-left w-[30%]'>
                         <span class="flex flex-row items-baseline gap-1">
                           <span>
@@ -96,10 +149,12 @@ export default function Assets() {
                           </span>
                           <span class="text-[9px]">{asset}</span>
                           <span class="text-saturn-lightgrey text-[8px]">
-                            ($ )
+                            {totalValues[`${ network }-${ asset }`]}
                           </span>
                         </span>
                       </td>
+
+                      {/* Chains */}
                       <td>
                         <span class="flex flex-row items-center gap-1">
                           <For each={getNetworkIcon(asset)}>
@@ -111,7 +166,9 @@ export default function Assets() {
                           </For>
                         </span>
                       </td>
-                    </tr>
+
+                    </tr>;
+                  }
                   }</For>
                 </tbody>
               </Show>
