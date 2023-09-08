@@ -587,7 +587,7 @@ const AssetsContext = () => {
           </span>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={!!maxAssetAmount()} fallback="Calculating...">
+              <Show when={!!maxAssetAmount()} fallback="--">
                 <span class="ml-2">{networkFee()} {asset()}</span>
               </Show>
             </span>
