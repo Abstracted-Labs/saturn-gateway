@@ -40,7 +40,7 @@ export default function Assets() {
       } else {
         totalInUsd = '';
       }
-      console.log('totalInUsd', totalInUsd);
+
       return totalInUsd;
     }
 

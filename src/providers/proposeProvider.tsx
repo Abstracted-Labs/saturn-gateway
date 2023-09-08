@@ -48,7 +48,7 @@ export type ProposeContextType = {
 
 const defaultState = (): ProposeContextType => ({
   state: {
-    currentNetwork: NetworkEnum.TINKERNET,
+    currentNetwork: NetworkEnum.KUSAMA,
   },
   setters: {
     openProposeModal: (proposal: Proposal) => { },

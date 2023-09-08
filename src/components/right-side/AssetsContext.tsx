@@ -115,8 +115,9 @@ const AssetsContext = () => {
   };
 
   const forNetworks = createMemo(() => {
-    const allNetworks = Object.entries(filteredNetworks());
-    return allNetworks;
+    // const allNetworks = Object.entries(filteredNetworks());
+    // return allNetworks;
+    return filteredNetworks();
   });
 
   const toNetworks = createMemo(() => {
@@ -254,7 +255,7 @@ const AssetsContext = () => {
 
   function handleFromOptionClick(from: NetworkEnum) {
     setFinalNetworkPair({ from, to: finalNetworkPair().to });
-    proposeContext.setters.setCurrentNetwork(from);
+    // proposeContext.setters.setCurrentNetwork(from);
     closeFromDropdown();
   }
 
@@ -288,6 +289,7 @@ const AssetsContext = () => {
     // Setting all balances whenever multisigAddress changes
     const id = saturnContext.state.multisigId;
     const address = saturnContext.state.multisigAddress;
+
     if (typeof id !== 'number' || !address) {
       console.log('no multisig id or address');
       return;
@@ -316,19 +318,38 @@ const AssetsContext = () => {
     runAsync();
   }));
 
-  createEffect(on(() => proposeContext.state.currentNetwork, () => {
+  // createEffect(on(() => proposeContext.state.currentNetwork, () => {
+  //   // Updating the From/To dropdowns when the current network changes
+  //   const a = asset();
+  //   const n = initialNetwork();
+  //   const currentNetwork = proposeContext.state.currentNetwork;
+
+  //   if (a && n && NetworksByAsset[a]) {
+  //     setInitialNetwork(n);
+  //     if (currentNetwork) {
+  //       setFinalNetworkPair({ from: currentNetwork, to: n });
+  //       const filterNetworksFromBalances = balances().find(([network, assets]) => network == currentNetwork);
+  //       const filterAssetsFromNetwork = filterNetworksFromBalances?.[1].map(([asset, balances]) => asset);
+
+  //       if (filterAssetsFromNetwork && filterAssetsFromNetwork.length > 0) {
+  //         const asset = filterAssetsFromNetwork[0];
+  //         setAsset(asset as AssetEnum);
+  //       }
+  //     }
+  //   }
+  // }));
+
+  createEffect(on(() => finalNetworkPair().from, () => {
     // Updating the From/To dropdowns when the current network changes
     const a = asset();
-    const n = initialNetwork();
-    const currentNetwork = proposeContext.state.currentNetwork;
+    const currentNetwork = finalNetworkPair().from;
 
-    if (a && n && NetworksByAsset[a]) {
-      setInitialNetwork(n);
+    if (a && NetworksByAsset[a]) {
       if (currentNetwork) {
-        setFinalNetworkPair({ from: currentNetwork, to: n });
+        // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
         const filterNetworksFromBalances = balances().find(([network, assets]) => network == currentNetwork);
         const filterAssetsFromNetwork = filterNetworksFromBalances?.[1].map(([asset, balances]) => asset);
-
+        console.log('filterAssetsFromNetwork', filterAssetsFromNetwork);
         if (filterAssetsFromNetwork && filterAssetsFromNetwork.length > 0) {
           const asset = filterAssetsFromNetwork[0];
           setAsset(asset as AssetEnum);
@@ -487,7 +508,7 @@ const AssetsContext = () => {
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
-          <SaturnSelect disabled isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
+          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
             <For each={forNetworks()}>
               {([name, element]) => <OptionItem onClick={() => handleFromOptionClick(name as NetworkEnum)}>
                 {element}
@@ -564,6 +585,7 @@ const AssetsContext = () => {
 
   return <div class="mb-5">
     <RoundedCard header={`My Balance (${ finalNetworkPair().from.charAt(0).toUpperCase() + finalNetworkPair().from.slice(1) })`}>
+      {/* <RoundedCard header="My Balance"> */}
       <MyBalance />
     </RoundedCard>
     <RoundedCard header="Send Crypto">

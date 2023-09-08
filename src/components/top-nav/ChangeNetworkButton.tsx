@@ -12,7 +12,7 @@ import { useSaturnContext } from '../../providers/saturnProvider';
 const ChangeNetworkButton = () => {
   let dropdown: DropdownInterface;
   const [isDropdownActive, setIsDropdownActive] = createSignal(false);
-  const [activeNetwork, setActiveNetwork] = createSignal<NetworkEnum>(NetworkEnum.TINKERNET);
+  const [activeNetwork, setActiveNetwork] = createSignal<NetworkEnum>(NetworkEnum.KUSAMA);
   const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
 
   const TOGGLE_ID = 'networkToggle';
@@ -33,9 +33,6 @@ const ChangeNetworkButton = () => {
   const allTheNetworks = (): Record<string, JSXElement> => ({
     [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
     [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
-    [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
-    [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
-    // [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
   });
 
   const filteredNetworks = createMemo(() => {
@@ -127,7 +124,7 @@ const ChangeNetworkButton = () => {
   });
 
   return <>
-    <SaturnSelect isOpen={isDropdownActive()} isMini={false} currentSelection={selectedNetwork()} toggleId={TOGGLE_ID} dropdownId={DROPDOWN_ID} initialOption={getNetworkBlock(NetworkEnum.TINKERNET)} onClick={openDropdown}>
+    <SaturnSelect disabled={true} isOpen={isDropdownActive()} isMini={false} currentSelection={selectedNetwork()} toggleId={TOGGLE_ID} dropdownId={DROPDOWN_ID} initialOption={getNetworkBlock(activeNetwork())} onClick={openDropdown}>
       <For each={filteredNetworks()}>
         {([name, element]) => <OptionItem onClick={() => updateNetworkMode(name as NetworkEnum)}>
           {element}
