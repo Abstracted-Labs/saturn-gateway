@@ -34,6 +34,7 @@ const AssetsContext = () => {
   const [transferableAmount, setTransferableAmount] = createSignal<string>('0.00');
   const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
   const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
+  const [networkFee, setNetworkFee] = createSignal<number>(0.0005);
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
@@ -560,8 +561,10 @@ const AssetsContext = () => {
           </div>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount}>max</span>
-              <span class="ml-2">{maxAssetAmount()} {asset()}</span>
+              <Show when={!!maxAssetAmount()} fallback="Calculating...">
+                <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount}>max</span>
+                <span class="ml-2">{maxAssetAmount()} {asset()}</span>
+              </Show>
             </span>
             <label for="send-amount" class="sr-only text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">Amount</label>
             <input
@@ -575,6 +578,19 @@ const AssetsContext = () => {
               max={Number(maxAssetAmount())}
               min={0}
             />
+          </div>
+        </div>
+
+        <div class="flex flex-row justify-between items-start mt-1">
+          <span class="align-top mb-1 text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
+            Network Fee
+          </span>
+          <div class="flex flex-col justify-end">
+            <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
+              <Show when={!!maxAssetAmount()} fallback="Calculating...">
+                <span class="ml-2">{networkFee()} {asset()}</span>
+              </Show>
+            </span>
           </div>
         </div>
       </div>
