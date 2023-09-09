@@ -29,8 +29,6 @@ export default function TalismanIdenticon(props: TalismanIdenticonProps) {
   const memo = createMemo(() => {
     const address = encodeAddress(props.value);
 
-    console.log("address: ", address);
-
     const hash1 = md5(address);
     const hash2 = rotateText(hash1, 1);
     const hash3 = rotateText(hash1, 2);

@@ -3,13 +3,16 @@ import { Button } from '@hope-ui/solid';
 import { BigNumber } from 'bignumber.js';
 import { useSaturnContext } from "../providers/saturnProvider";
 import Identity from '../components/identity/Identity';
+import { getAllMembers } from '../utils/getAllMembers';
+
+export type MembersType = { address: string, votes: BigNumber; };
 
 export default function Members() {
-  const [members, setMembers] = createSignal<{ address: string, votes: BigNumber; }[]>([]);
+  const [members, setMembers] = createSignal<MembersType[]>([]);
 
   const saturnContext = useSaturnContext();
 
-  createEffect(() => {
+  createEffect(async () => {
     const saturn = saturnContext.state.saturn;
     const multisigId = saturnContext.state.multisigId;
 
@@ -17,22 +20,9 @@ export default function Members() {
 
     if (!saturn || typeof multisigId != "number") return;
 
-    console.log("1");
-
     const runAsync = async () => {
-      const mems = await saturn.getMultisigMembers(multisigId);
-
-      const memsProcessedPromise = mems.map(async (m) => {
-        const votes = BigNumber((await saturn.getMultisigMemberBalance({ id: multisigId, address: m })).toString());
-        return {
-          address: m.toHuman(),
-          votes,
-        };
-      });
-
-      const memsProcessed = await Promise.all(memsProcessedPromise);
-
-      setMembers(memsProcessed);
+      const members = await getAllMembers(multisigId, saturn);
+      setMembers(members);
     };
 
     runAsync();

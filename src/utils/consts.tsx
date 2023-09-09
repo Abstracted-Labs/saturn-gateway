@@ -27,8 +27,8 @@ export enum NetworkEnum {
   POLKADOT = "polkadot",
 }
 
-// export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
-export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
+export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
+// export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
 
 export const AssetIconByCurrency: Record<string, string> = {
   TNKR: TinkernetIcon,

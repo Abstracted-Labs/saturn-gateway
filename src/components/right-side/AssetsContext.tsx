@@ -350,7 +350,7 @@ const AssetsContext = () => {
         // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
         const filterNetworksFromBalances = balances().find(([network, assets]) => network == currentNetwork);
         const filterAssetsFromNetwork = filterNetworksFromBalances?.[1].map(([asset, balances]) => asset);
-        console.log('filterAssetsFromNetwork', filterAssetsFromNetwork);
+
         if (filterAssetsFromNetwork && filterAssetsFromNetwork.length > 0) {
           const asset = filterAssetsFromNetwork[0];
           setAsset(asset as AssetEnum);

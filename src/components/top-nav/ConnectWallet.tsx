@@ -50,7 +50,6 @@ const ConnectWallet = () => {
   function openModal() {
     if (modal) {
       if (modal.isHidden()) {
-        console.log('showing modal');
         modal.show();
       }
     }

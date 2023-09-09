@@ -17,8 +17,8 @@ module.exports = {
           'black': '#010101', // black
           'darkgrey': '#0E0D11', // dark grey
           'lightgrey': '#888893', // light grey
-          'green': '#6FE388', // green success
-          'red': '#E36F6F', // red error
+          'green': '#2EFFA7', // green success
+          'red': '#FF2E79', // red error
           'yellow': '#ECC265', // yellow
         },
       },

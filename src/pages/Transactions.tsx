@@ -17,13 +17,15 @@ import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { Rings } from '../data/rings';
 import FormattedCall from '../components/legos/FormattedCall';
+import { getAllMembers } from '../utils/getAllMembers';
+import { MembersType } from './Members';
 
 export type QueuePageProps = {
 };
 
 export default function Transactions() {
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
-
+  const [members, setMembers] = createSignal<MembersType[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const ringApisContext = useRingApisContext();
@@ -31,14 +33,20 @@ export default function Transactions() {
   const selectedAccountContext = useSelectedAccountContext();
 
   createEffect(() => {
+    const saturn = saturnContext.state.saturn;
+    const multisigId = saturnContext.state.multisigId;
+
     const runAsync = async () => {
-      if (!saturnContext.state.saturn || typeof saturnContext.state.multisigId !== 'number') {
+      if (!saturn || typeof multisigId !== 'number') {
         return;
       }
 
-      const pendingCalls = await saturnContext.state.saturn.getPendingCalls(saturnContext.state.multisigId);
-
+      const pendingCalls = await saturn.getPendingCalls(multisigId);
+      console.log({ pendingCalls });
       setPendingProposals(pendingCalls);
+
+      const members = await getAllMembers(multisigId, saturn);
+      setMembers(members);
     };
 
     runAsync();
