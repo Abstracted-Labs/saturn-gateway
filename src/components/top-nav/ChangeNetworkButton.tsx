@@ -1,7 +1,7 @@
 import { For, JSXElement, createEffect, createMemo, createSignal, on, onCleanup, onMount } from 'solid-js';
 import { NetworkEnum } from '../../utils/consts';
 import { useProposeContext } from '../../providers/proposeProvider';
-import OptionItem from '../legos/OptionItem';
+import SaturnSelectItem from '../legos/SaturnSelectItem';
 import { getNetworkBlock } from '../../utils/getNetworkBlock';
 import SaturnSelect from '../legos/SaturnSelect';
 import { Dropdown, type DropdownInterface, type DropdownOptions, initDropdowns } from 'flowbite';
@@ -126,9 +126,9 @@ const ChangeNetworkButton = () => {
   return <>
     <SaturnSelect disabled={true} isOpen={isDropdownActive()} isMini={false} currentSelection={selectedNetwork()} toggleId={TOGGLE_ID} dropdownId={DROPDOWN_ID} initialOption={getNetworkBlock(activeNetwork())} onClick={openDropdown}>
       <For each={filteredNetworks()}>
-        {([name, element]) => <OptionItem onClick={() => updateNetworkMode(name as NetworkEnum)}>
+        {([name, element]) => <SaturnSelectItem onClick={() => updateNetworkMode(name as NetworkEnum)}>
           {element}
-        </OptionItem>}
+        </SaturnSelectItem>}
       </For>
     </SaturnSelect>
   </>;

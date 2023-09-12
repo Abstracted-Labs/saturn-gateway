@@ -11,6 +11,8 @@ export const INPUT_COMMON_STYLE = "rounded-md border-0 outline-0 focus:ring-0 bg
 
 export const MINI_TEXT_LINK_STYLE = "text-saturn-purple text-xxs font-bold hover:cursor-pointer hover:text-purple-500 inline-flex shrink";
 
+export const FALLBACK_TEXT_STYLE = "text-saturn-black dark:text-saturn-offwhite text-center text-xs";
+
 export enum WalletTypeEnum {
   SUBWALLET = "sub", // ?
   TALISMAN = "talisman",

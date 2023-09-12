@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSignal } from "solid-js";
-import RoundedCard from "../legos/RoundedCard";
+import SaturnCard from "../legos/SaturnCard";
 import { CallDetailsWithHash } from "@invarch/saturn-sdk";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import ActivityRow from "./ActivityRow";
@@ -35,17 +35,17 @@ const TransactionsContext = () => {
   });
 
   createEffect(() => {
-    console.log('activity', activity());
+    // console.log('activity', activity());
   });
 
 
-  return <RoundedCard header="Multisig Activity">
+  return <SaturnCard header="Multisig Activity">
     <div class="mt-1">
       <ActivityRow activity="router.sell" timestamp="1 day ago" aye={true} />
       <ActivityRow activity="router.sell" timestamp="1 week ago" aye={false} />
       <ActivityRow activity="ocifStaking.stake" timestamp="2 weeks ago" aye={false} />
     </div>
-  </RoundedCard>;
+  </SaturnCard>;
 };
 
 TransactionsContext.displayName = 'TransactionsContext';

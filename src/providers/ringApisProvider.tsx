@@ -5,13 +5,17 @@ import type Web3WalletType from '@walletconnect/web3wallet';
 import { Web3Wallet } from '@walletconnect/web3wallet';
 import { ApiPromise } from '@polkadot/api';
 
-export const RingApisContext = createContext<{
-  state: { [ring: string]: ApiPromise; },
+export interface IRingsContext {
+  state: RingStoreType,
   setters: any,
-}>({ state: {}, setters: {} });
+}
+
+export const RingApisContext = createContext<IRingsContext>({ state: {}, setters: {} });
+
+type RingStoreType = { [ring: string]: ApiPromise; };
 
 export function RingApisProvider(props: any) {
-  const [state, setState] = createStore<{ [ring: string]: ApiPromise; }>({});
+  const [state, setState] = createStore<RingStoreType>({});
 
   const value = {
     state,

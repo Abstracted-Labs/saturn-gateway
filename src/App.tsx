@@ -82,11 +82,12 @@ const HomePlanet: Component = () => {
 
     const apis = await createApis();
 
-    ringApisContext.setters.setRingApisBatch(apis);
+    if (apis.tinkernet) {
+      ringApisContext.setters.setRingApisBatch(apis);
 
-    const sat = new Saturn({ api: apis.tinkernet });
-
-    saturnContext.setters.setSaturn(sat);
+      const sat = new Saturn({ api: apis.tinkernet });
+      saturnContext.setters.setSaturn(sat);
+    }
   });
 
   return (

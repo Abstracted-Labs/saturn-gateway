@@ -4,9 +4,9 @@ import { AssetEnum, NetworksByAsset, Rings } from "../../data/rings";
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
-import RoundedCard from "../legos/RoundedCard";
-import { INPUT_COMMON_STYLE, MINI_TEXT_LINK_STYLE, NetworkEnum } from "../../utils/consts";
-import OptionItem from "../legos/OptionItem";
+import SaturnCard from "../legos/SaturnCard";
+import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, MINI_TEXT_LINK_STYLE, NetworkEnum } from "../../utils/consts";
+import SaturnSelectItem from "../legos/SaturnSelectItem";
 import SaturnSelect from "../legos/SaturnSelect";
 import { initDropdowns, Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
 import { getNetworkBlock } from "../../utils/getNetworkBlock";
@@ -511,17 +511,17 @@ const AssetsContext = () => {
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
           <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
             <For each={forNetworks()}>
-              {([name, element]) => <OptionItem onClick={() => handleFromOptionClick(name as NetworkEnum)}>
+              {([name, element]) => <SaturnSelectItem onClick={() => handleFromOptionClick(name as NetworkEnum)}>
                 {element}
-              </OptionItem>}
+              </SaturnSelectItem>}
             </For>
           </SaturnSelect>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
           <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
             <For each={toNetworks()}>
-              {([name, element]) => <OptionItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
+              {([name, element]) => <SaturnSelectItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
                 {element}
-              </OptionItem>}
+              </SaturnSelectItem>}
             </For>
           </SaturnSelect>
         </div>
@@ -553,15 +553,15 @@ const AssetsContext = () => {
             </span>
             <SaturnSelect disabled={filteredAssetCount() <= 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssets}>
               <For each={filteredAssets()}>
-                {([name, element]) => <OptionItem onClick={() => handleAssetOptionClick(name as AssetEnum)}>
+                {([name, element]) => <SaturnSelectItem onClick={() => handleAssetOptionClick(name as AssetEnum)}>
                   {element}
-                </OptionItem>}
+                </SaturnSelectItem>}
               </For>
             </SaturnSelect>
           </div>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={!!maxAssetAmount()} fallback="Calculating...">
+              <Show when={!!maxAssetAmount()} fallback={<div class={FALLBACK_TEXT_STYLE}>Calculating...</div>}>
                 <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount}>max</span>
                 <span class="ml-2">{maxAssetAmount()} {asset()}</span>
               </Show>
@@ -581,13 +581,13 @@ const AssetsContext = () => {
           </div>
         </div>
 
-        <div class="flex flex-row justify-between items-start mt-1">
-          <span class="align-top mb-1 text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
+        <div class="flex flex-row justify-between mt-1">
+          <span class="text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
             Network Fee
           </span>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={!!maxAssetAmount()} fallback="--">
+              <Show when={!!maxAssetAmount()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
                 <span class="ml-2">{networkFee()} {asset()}</span>
               </Show>
             </span>
@@ -600,13 +600,13 @@ const AssetsContext = () => {
   };
 
   return <div class="mb-5">
-    <RoundedCard header={`My Balance (${ finalNetworkPair().from.charAt(0).toUpperCase() + finalNetworkPair().from.slice(1) })`}>
+    <SaturnCard header={`My Balance (${ finalNetworkPair().from.charAt(0).toUpperCase() + finalNetworkPair().from.slice(1) })`}>
       {/* <RoundedCard header="My Balance"> */}
       <MyBalance />
-    </RoundedCard>
-    <RoundedCard header="Send Crypto">
+    </SaturnCard>
+    <SaturnCard header="Send Crypto">
       <SendCrypto />
-    </RoundedCard>
+    </SaturnCard>
   </div>;
 };
 

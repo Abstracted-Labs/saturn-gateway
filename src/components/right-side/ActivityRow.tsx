@@ -5,7 +5,7 @@ type ActivityRowProps = {
 };
 
 const ActivityRow = (props: ActivityRowProps) => {
-  return <div class="flex flex-col w-[313.65px] border-b border-px dark:border-gray-800 border-gray-100 pb-3 mb-3">
+  return <div class="flex flex-col lg:w-[273.65px] border-b border-px dark:border-gray-700 border-gray-200 pb-3 mb-3">
     <div class="flex flex-row mb-1">
       <div class="text-saturn-lightgrey text-xxs flex flex-row justify-between w-full">
         <span>{props.timestamp}</span>

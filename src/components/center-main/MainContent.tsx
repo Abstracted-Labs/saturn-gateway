@@ -3,7 +3,7 @@ import Members from "../../pages/Members";
 import Transactions from "../../pages/Transactions";
 import Assets from "../../pages/Assets";
 import { createMemo } from "solid-js";
-import RoundedCard from "../legos/RoundedCard";
+import SaturnCard from "../legos/SaturnCard";
 
 const MainContent = () => {
   const location = useLocation();
@@ -20,7 +20,7 @@ const MainContent = () => {
     }
   };
 
-  return <RoundedCard header={pageTitle()}>
+  return <SaturnCard header={pageTitle()}>
     <Routes>
       <Route
         path="assets"
@@ -39,7 +39,7 @@ const MainContent = () => {
         element={<Members />}
       />
     </Routes>
-  </RoundedCard>;
+  </SaturnCard>;
 };
 
 MainContent.displayName = 'MainContent';

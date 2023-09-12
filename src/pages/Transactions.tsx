@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect } from 'solid-js';
+import { createSignal, For, createEffect, Show, onMount, on, createMemo } from 'solid-js';
 import {
   Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel,
   Text,
@@ -19,11 +19,16 @@ import { Rings } from '../data/rings';
 import FormattedCall from '../components/legos/FormattedCall';
 import { getAllMembers } from '../utils/getAllMembers';
 import { MembersType } from './Members';
+import SaturnAccordionItem from '../components/legos/SaturnAccordionItem';
+import { initAccordions, AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
+import { FALLBACK_TEXT_STYLE } from '../utils/consts';
+import { processCallData } from '../utils/processCallData';
 
 export type QueuePageProps = {
 };
 
 export default function Transactions() {
+  let accordion: AccordionInterface;
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,7 +47,6 @@ export default function Transactions() {
       }
 
       const pendingCalls = await saturn.getPendingCalls(multisigId);
-      console.log({ pendingCalls });
       setPendingProposals(pendingCalls);
 
       const members = await getAllMembers(multisigId, saturn);
@@ -85,21 +89,6 @@ export default function Transactions() {
 
       default:
         return `Execute ${ call.section }.${ call.method } call`;
-    }
-  };
-
-  const processCallData = (call: Call): Call => {
-    if (call.method === "sendCall") {
-      const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
-      const innerCall = (call.toHuman().args as Record<string, AnyJson>).call?.toString();
-
-      if (!chain || !innerCall || !ringApisContext.state[chain]) {
-        return call;
-      }
-
-      return ringApisContext.state[chain].createType('Call', innerCall) as unknown as Call;
-    } else {
-      return call;
     }
   };
 
@@ -152,8 +141,57 @@ export default function Transactions() {
 
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
+  function handleAccordionClick(index: number) {
+    try {
+      if (document.querySelector(`#content${ index }`)) {
+        accordion.toggle(`#content${ (index) }`);
+      } else {
+        console.error('Accordion is not initialized');
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
+  createEffect(() => {
+    initAccordions();
+    const pc = pendingProposals();
+
+    if (document && pc) {
+      const accordionItems = () => pc.map((p, index) => {
+        const triggerEl = () => document.querySelector(`#heading${ index }`) as HTMLElement;
+        const targetEl = () => document.querySelector(`#content${ index }`) as HTMLElement;
+
+        if (triggerEl() && targetEl()) {
+          return {
+            id: `heading${ index }`,
+            triggerEl: triggerEl(),
+            targetEl: targetEl(),
+            active: false,
+          };
+        }
+      });
+
+      const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
+      accordion = new FlowAccordion(items, undefined);
+    }
+  });
+
   return (
     <div>
+      <div id="accordion-collapse" data-accordion="collapse">
+        <Show when={pendingProposals().length != 0} fallback={<span class={FALLBACK_TEXT_STYLE}>Loading transaction history...</span>}>
+          <For each={pendingProposals()}>
+            {(pc: CallDetailsWithHash, index) => <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())}>
+              <div class="max-h-[300px] overflow-scroll">
+                <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+              </div>
+            </SaturnAccordionItem>
+            }
+          </For>
+        </Show>
+      </div>
+
       <Accordion
         index={pendingProposals().findIndex((p) => p.callHash.toString() == searchParams.prop)}
         onChange={(index) => (index as number) >= 0 ? setSearchParams({ prop: pendingProposals()[index as number].callHash.toString() }) : setSearchParams({ prop: null })}
@@ -182,7 +220,7 @@ export default function Transactions() {
 
                   <div class="flex flex-col">
                     <div class="max-h-[300px] overflow-scroll">
-                      <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call)} />
+                      <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
                     </div>
 
                     <div class='flex flex-row pt-2.5'>

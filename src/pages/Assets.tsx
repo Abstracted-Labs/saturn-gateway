@@ -6,7 +6,7 @@ import type { Balances } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
 import { getAssetIcon } from '../utils/getAssetIcon';
 import { getNetworkIcon } from '../utils/getNetworkIcon';
-import { NetworkEnum } from '../utils/consts';
+import { FALLBACK_TEXT_STYLE, NetworkEnum } from '../utils/consts';
 import BigNumber from 'bignumber.js';
 import { getCurrentUsdPrice } from '../utils/getCurrentUsdPrice';
 import { createStore } from 'solid-js/store';
@@ -100,7 +100,7 @@ export default function Assets() {
 
   return (
     <>
-      <Show when={balances()} fallback={<span class="text-saturn-black dark:text-saturn-offwhite text-center text-sm">Contacting Uranus...</span>}>
+      <Show when={balances()} fallback={<span class={FALLBACK_TEXT_STYLE}>Contacting Uranus...</span>}>
         <div class="relative overflow-x-scroll overscroll-contain h-full flex flex-col content-stretch">
           <table class="w-full text-sm text-left text-saturn-lightgrey">
             <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">

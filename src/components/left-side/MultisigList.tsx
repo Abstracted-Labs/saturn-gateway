@@ -10,6 +10,7 @@ import { useSelectedAccountContext } from "../../providers/selectedAccountProvid
 import { Rings } from "../../data/rings";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
+import { FALLBACK_TEXT_STYLE } from '../../utils/consts';
 
 const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
@@ -247,7 +248,7 @@ const MultisigList = () => {
           )} */}
 
           {/* Multisig list */}
-          <For each={multisigItems()} fallback={<div class="text-xs text-center text-black dark:text-white">{multisigItemsLength() === 0 ? `You don't have any multisigs yet.` : 'Loading...'}</div>}>
+          <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>{multisigItemsLength() === 0 ? `You don't have any multisigs yet.` : 'Loading...'}</div>}>
             {(item: MultisigItem, index) => (
               <>
                 <div
