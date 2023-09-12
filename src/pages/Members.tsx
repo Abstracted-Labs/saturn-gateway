@@ -16,8 +16,6 @@ export default function Members() {
     const saturn = saturnContext.state.saturn;
     const multisigId = saturnContext.state.multisigId;
 
-    console.log(saturn, multisigId);
-
     if (!saturn || typeof multisigId != "number") return;
 
     const runAsync = async () => {

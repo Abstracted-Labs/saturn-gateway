@@ -14,6 +14,6 @@ export async function getAllMembers(multisigId: number, saturn: Saturn) {
   });
 
   const memsProcessed: MembersType[] = await Promise.all(memsProcessedPromise);
-  console.log({ memsProcessed });
+
   return Promise.resolve(memsProcessed);
 };

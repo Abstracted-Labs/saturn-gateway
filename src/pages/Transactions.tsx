@@ -7,7 +7,7 @@ import {
   CircularProgress, CircularProgressIndicator, CircularProgressLabel,
 } from '@hope-ui/solid';
 import { type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
-import { BN } from '@polkadot/util';
+import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call } from '@polkadot/types/interfaces';
 import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
@@ -23,6 +23,8 @@ import SaturnAccordionItem from '../components/legos/SaturnAccordionItem';
 import { initAccordions, AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
 import { FALLBACK_TEXT_STYLE } from '../utils/consts';
 import { processCallData } from '../utils/processCallData';
+import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
+import NayIcon from '../assets/icons/nay-icon-17x17.svg';
 
 export type QueuePageProps = {
 };
@@ -162,7 +164,7 @@ export default function Transactions() {
         const triggerEl = () => document.querySelector(`#heading${ index }`) as HTMLElement;
         const targetEl = () => document.querySelector(`#content${ index }`) as HTMLElement;
 
-        if (triggerEl() && targetEl()) {
+        if (p && triggerEl() && targetEl()) {
           return {
             id: `heading${ index }`,
             triggerEl: triggerEl(),
@@ -179,12 +181,41 @@ export default function Transactions() {
 
   return (
     <div>
-      <div id="accordion-collapse" data-accordion="collapse">
+      <div id="accordion-collapse" data-accordion="collapse" class="flex flex-col">
         <Show when={pendingProposals().length != 0} fallback={<span class={FALLBACK_TEXT_STYLE}>Loading transaction history...</span>}>
           <For each={pendingProposals()}>
-            {(pc: CallDetailsWithHash, index) => <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())}>
-              <div class="max-h-[300px] overflow-scroll">
-                <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+            {(pc: CallDetailsWithHash, index) => <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())}>
+              <div class="flex flex-row">
+                {/* Call data */}
+                <div class="max-h-[300px] w-full overflow-scroll my-2 grow">
+                  <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+                </div>
+
+                {/* Votes history */}
+                <For each={Object.entries(pc.details.tally.records)}>
+                  {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
+                    const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
+                    return <div class='relative items-start flex shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12'>
+                      <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
+                        {vote.aye
+                          ? <img src={AyeIcon} />
+                          : <img src={NayIcon} />
+                        }
+                      </div>
+                      <div class='flex flex-col pt-2'>
+                        <div
+                          class='text-xs font-bold text-black dark:text-white'
+                        >
+                          {stringShorten(voter, 4)}
+                        </div>
+                        <div class="text-xxs text-saturn-lightgrey leading-none">
+                          {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                        </div>
+                      </div>
+                    </div>;
+                  }
+                  }
+                </For>
               </div>
             </SaturnAccordionItem>
             }
@@ -266,8 +297,8 @@ export default function Transactions() {
                                 <div class='relative flex space-x-3'>
                                   <div class='flex h-8 w-8 items-center justify-center rounded-full'>
                                     {vote.aye
-                                      ? <FaSolidCircleCheck size={24} color='#8fb9a8' />
-                                      : <FaSolidCircleXmark size={24} color='#f2828d' />
+                                      ? <img src={AyeIcon} />
+                                      : <img src={NayIcon} />
                                     }
                                   </div>
                                   <div class='flex min-w-0 flex-1 justify-between space-x-4 pt-1.5'>
@@ -276,7 +307,7 @@ export default function Transactions() {
                                         <span
                                           class='font-medium text-gray-200'
                                         >
-                                          {voter.substr(0, 4) + '...' + voter.substr(voter.length - 4, voter.length)}
+                                          {stringShorten(voter, 4)}
                                         </span>
                                         {` voted ${ vote.aye ? 'aye' : 'nay' } with ${ new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString() } votes`}
                                       </p>
