@@ -1,16 +1,8 @@
-import { createSignal, For, createEffect, Show, onMount, on, createMemo } from 'solid-js';
-import {
-  Accordion, AccordionItem, AccordionButton, AccordionIcon, AccordionPanel,
-  Text,
-  Button,
-  Progress, ProgressIndicator, ProgressLabel,
-  CircularProgress, CircularProgressIndicator, CircularProgressLabel,
-} from '@hope-ui/solid';
-import { type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
+import { createSignal, For, createEffect, Show } from 'solid-js';
+import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call } from '@polkadot/types/interfaces';
-import { FaSolidCircleCheck, FaSolidCircleXmark } from 'solid-icons/fa';
 import { useSearchParams } from '@solidjs/router';
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
@@ -25,6 +17,7 @@ import { FALLBACK_TEXT_STYLE } from '../utils/consts';
 import { processCallData } from '../utils/processCallData';
 import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
+import SaturnProgress from '../components/legos/SaturnProgress';
 
 export type QueuePageProps = {
 };
@@ -33,30 +26,75 @@ export default function Transactions() {
   let accordion: AccordionInterface;
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
   const [members, setMembers] = createSignal<MembersType[]>([]);
+  const [totalMembers, setTotalMembers] = createSignal<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
 
-  createEffect(() => {
+  async function totalMultisigMembers(): Promise<number> {
+    const id = saturnContext.state.multisigId;
     const saturn = saturnContext.state.saturn;
-    const multisigId = saturnContext.state.multisigId;
 
-    const runAsync = async () => {
-      if (!saturn || typeof multisigId !== 'number') {
-        return;
+    if (typeof id !== 'number' || !saturn) {
+      return 0;
+    }
+
+    const count = await getAllMembers(id, saturn);
+    return Promise.resolve(count.length);
+  }
+
+  function totalVotes(records: ParsedTallyRecords): number {
+    let total = 0;
+    for (let record of Object.values(records)) {
+      console.log({ record });
+      if (record.aye) {
+        total += parseInt(record.aye.toString());
       }
+      if (record.nay) {
+        total += parseInt(record.nay.toString());
+      }
+    }
 
-      const pendingCalls = await saturn.getPendingCalls(multisigId);
-      setPendingProposals(pendingCalls);
+    return total / 1000000;
+  }
 
-      const members = await getAllMembers(multisigId, saturn);
-      setMembers(members);
-    };
+  function totalAyeVotes(records: ParsedTallyRecords): number {
+    let total = 0;
 
-    runAsync();
-  });
+    for (let record of Object.values(records)) {
+      if (record.aye) {
+        total += parseInt(record.aye.toString());
+      }
+    }
+
+    // Calculate the percentage of total votes
+    const percentage = total / 1000000 / totalVotes(records) * 100;
+
+    // Round the percentage to a whole number
+    const roundedPercentage = Math.round(percentage);
+
+    return roundedPercentage;
+  }
+
+  function totalNayVotes(records: ParsedTallyRecords): number {
+    let total = 0;
+
+    for (let record of Object.values(records)) {
+      if (record.nay) {
+        total += parseInt(record.nay.toString());
+      }
+    }
+
+    // Calculate the percentage of total votes
+    const percentage = total / 1000000 / totalVotes(records) * 100;
+
+    // Round the percentage to a whole number
+    const roundedPercentage = Math.round(percentage);
+
+    return roundedPercentage;
+  }
 
   const vote = async (callHash: string, aye: boolean) => {
 
@@ -179,6 +217,34 @@ export default function Transactions() {
     }
   });
 
+  createEffect(() => {
+    const saturn = saturnContext.state.saturn;
+    const multisigId = saturnContext.state.multisigId;
+
+    const runAsync = async () => {
+      if (!saturn || typeof multisigId !== 'number') {
+        return;
+      }
+
+      const pendingCalls = await saturn.getPendingCalls(multisigId);
+      setPendingProposals(pendingCalls);
+
+      const members = await getAllMembers(multisigId, saturn);
+      setMembers(members);
+    };
+
+    runAsync();
+  });
+
+  createEffect(() => {
+    const fetchTotalMembers = async () => {
+      const members = await totalMultisigMembers();
+      setTotalMembers(members);
+    };
+
+    fetchTotalMembers();
+  });
+
   return (
     <div>
       <div id="accordion-collapse" data-accordion="collapse" class="flex flex-col">
@@ -213,119 +279,45 @@ export default function Transactions() {
                         </div>
                       </div>
                     </div>;
-                  }
-                  }
+                  }}
                 </For>
+              </div>
+              <div class="flex flex-row justify-between">
+                {/* Vote breakdown */}
+                <div class="flex flex-col w-full">
+                  <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
+                  <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
+                  <SaturnProgress percentage={totalVotes(pc.details.tally.records)} overridePercentage={<span class="text-xs text-black dark:text-white">
+                    <span>{totalVotes(pc.details.tally.records)}</span>
+                    <span class="text-saturn-lightgrey"> / {totalMembers()}</span>
+                  </span>} color='bg-saturn-purple' label='Voter Turnout' />
+                </div>
+
+                {/* Support breakdown */}
+                <dl class="text-xs w-3/12 ml-2 py-4">
+                  <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
+                    <dt>Support needed:</dt>
+                    <dd class="text-black dark:text-white font-bold">
+                      {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
+                    </dd>
+                  </div>
+                  <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
+                    <dt>Approval needed:</dt>
+                    <dd class="text-black dark:text-white font-bold">
+                      {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              <div class='flex flex-row gap-3 my-3'>
+                <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
+                <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
               </div>
             </SaturnAccordionItem>
             }
           </For>
         </Show>
       </div>
-
-      <Accordion
-        index={pendingProposals().findIndex((p) => p.callHash.toString() == searchParams.prop)}
-        onChange={(index) => (index as number) >= 0 ? setSearchParams({ prop: pendingProposals()[index as number].callHash.toString() }) : setSearchParams({ prop: null })}
-      >
-        <For each={pendingProposals()}>
-          {(pc: CallDetailsWithHash) => <AccordionItem>
-            <h2>
-              <AccordionButton class='ps-0'>
-                <div class='flex px-2 gap-1'>
-                  <For each={processNetworkIcons(pc.details.actualCall as unknown as Call)}>
-                    {(icon: string) =>
-                      <div class='flex items-center justify-center h-6 w-6 rounded-full border border-white'>
-                        <img src={icon} class='max-h-5 rounded-full' />
-                      </div>
-                    }</For>
-                </div>
-                <Text flex={1} fontWeight='$medium' textAlign='start'>
-                  {processCallDescription(pc.details.actualCall as unknown as Call)}
-                </Text>
-                <AccordionIcon />
-              </AccordionButton>
-            </h2>
-            <AccordionPanel>
-              <div class='flex flex-row divide-x'>
-                <div class='px-1 basis-5/6 max-w-[83%]'>
-
-                  <div class="flex flex-col">
-                    <div class="max-h-[300px] overflow-scroll">
-                      <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
-                    </div>
-
-                    <div class='flex flex-row pt-2.5'>
-                      <div class='w-[70%] pr-3'>
-                        <Progress height='24px' width='100%' value={processSupport(pc.details.tally.ayes)}>
-                          <ProgressIndicator color='#D55E8A'>
-                            <ProgressLabel fontSize='15px' />
-                          </ProgressIndicator>
-                        </Progress>
-                        Support needed: {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                      </div>
-                      <div>
-                        <div style={{ position: 'relative' }}>
-                          <CircularProgress
-                            style={{ position: 'absolute', top: '0', left: '0' }}
-                            value={processApprovalAye(pc.details.tally.ayes, pc.details.tally.nays)}
-                            trackColor='rgba(0,0,0,0)'
-                          >
-                            <CircularProgressIndicator class='-scale-x-100 -scale-y-100' color='$success9' />
-                            <CircularProgressLabel />
-                          </CircularProgress>
-                          <CircularProgress value={processApprovalNay(pc.details.tally.ayes, pc.details.tally.nays)} trackColor='rgba(0,0,0,0)' >
-                            <CircularProgressIndicator class='-scale-y-100' color='#f2828d' />
-                          </CircularProgress>
-                        </div>
-                        Approval needed: {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
-                      </div>
-                    </div>
-                    <div class='flex gap-2'>
-                      <Button class='bg-green-500 hover:bg-saturn-red' onClick={() => vote(pc.callHash.toString(), true)}>Aye</Button>
-                      <Button class='bg-green-500 hover:bg-saturn-red' onClick={() => vote(pc.callHash.toString(), false)}>Nay</Button>
-                    </div>
-                  </div>
-                </div>
-                <div class='px-1 basis-1/6 max-w-[16%]'>
-                  <div>
-                    <div class='flow-root'>
-                      <ul class='-mb-8'>
-                        <For each={Object.entries(pc.details.tally.records)}>
-                          {([voter, vote]: [string, ParsedTallyRecordsVote]) =>
-                            <li>
-                              <div class='relative pb-8'>
-                                <div class='relative flex space-x-3'>
-                                  <div class='flex h-8 w-8 items-center justify-center rounded-full'>
-                                    {vote.aye
-                                      ? <img src={AyeIcon} />
-                                      : <img src={NayIcon} />
-                                    }
-                                  </div>
-                                  <div class='flex min-w-0 flex-1 justify-between space-x-4 pt-1.5'>
-                                    <div>
-                                      <p class='text-sm text-gray-400'>
-                                        <span
-                                          class='font-medium text-gray-200'
-                                        >
-                                          {stringShorten(voter, 4)}
-                                        </span>
-                                        {` voted ${ vote.aye ? 'aye' : 'nay' } with ${ new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString() } votes`}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </li>
-                          }</For>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </AccordionPanel>
-          </AccordionItem>
-          }</For>
-      </Accordion>
     </div>
   );
 }
