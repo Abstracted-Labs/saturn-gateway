@@ -2,6 +2,7 @@ import { Show, Suspense, createResource } from 'solid-js';
 import TalismanIdenticon from '../identity/TalismanIdenticon';
 import { getBestIdentity, type AggregatedIdentity } from "../../utils/identityProcessor";
 import { useIdentityContext } from "../../providers/identityProvider";
+import { stringShorten } from '@polkadot/util';
 
 export default function Identity(props: { address: string; }) {
   const identityContext = useIdentityContext();
@@ -24,24 +25,24 @@ export default function Identity(props: { address: string; }) {
   return (
     <div onClick={() => openIdentityCard()}>
       <Suspense fallback={
-        <div class="flex flex-row gap-2.5 items-center">
-          <TalismanIdenticon value={getAddress()} size={40} />
-          {getAddress()}
+        <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
+          <TalismanIdenticon value={getAddress()} size={34} />
+          {stringShorten(getAddress(), 4)}
         </div>
       }>
-        <div class="flex flex-row gap-2.5 items-center">
+        <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
           <Show
             when={image()}
             fallback={
-              <TalismanIdenticon value={getAddress()} size={40} />
+              <TalismanIdenticon value={getAddress()} size={34} />
             }
           >
-            <img class="h-[40px] w-[40px] rounded-full"
+            <img class="h-[34px] w-[34px] rounded-full"
               src={image()}
             />
           </Show>
 
-          {name() || getAddress()}
+          {name() || stringShorten(getAddress(), 4)}
         </div>
       </Suspense>
     </div>

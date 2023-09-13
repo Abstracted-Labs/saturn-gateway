@@ -26,7 +26,6 @@ export default function Transactions() {
   let accordion: AccordionInterface;
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
   const [members, setMembers] = createSignal<MembersType[]>([]);
-  const [totalMembers, setTotalMembers] = createSignal<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const ringApisContext = useRingApisContext();
@@ -236,15 +235,6 @@ export default function Transactions() {
     runAsync();
   });
 
-  createEffect(() => {
-    const fetchTotalMembers = async () => {
-      const members = await totalMultisigMembers();
-      setTotalMembers(members);
-    };
-
-    fetchTotalMembers();
-  });
-
   return (
     <div>
       <div id="accordion-collapse" data-accordion="collapse" class="flex flex-col">
@@ -287,9 +277,9 @@ export default function Transactions() {
                 <div class="flex flex-col rounded-md w-full border border-[1px] border-gray-100 dark:border-gray-800 p-4">
                   <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
                   <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
-                  <SaturnProgress percentage={totalVotes(pc.details.tally.records)} overridePercentage={<span class="text-xs text-black dark:text-white">
+                  <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
                     <span>{totalVotes(pc.details.tally.records)}</span>
-                    <span class="text-saturn-lightgrey"> / {totalMembers()}</span>
+                    <span class="text-saturn-lightgrey"> / {members().length}</span>
                   </span>} color='bg-saturn-purple' label='Voter Turnout' />
                 </div>
 
