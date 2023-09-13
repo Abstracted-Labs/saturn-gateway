@@ -96,6 +96,18 @@ export default function Transactions() {
     return roundedPercentage;
   }
 
+  function handleAccordionClick(index: number) {
+    try {
+      if (document.querySelector(`#content${ index }`)) {
+        accordion.toggle(`#content${ (index) }`);
+      } else {
+        console.error('Accordion is not initialized');
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
   const vote = async (callHash: string, aye: boolean) => {
 
     const selected = selectedAccountContext.state;
@@ -180,18 +192,6 @@ export default function Transactions() {
   const processApprovalAye = (ayes: BN, nays: BN): number => new BN(ayes).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
-
-  function handleAccordionClick(index: number) {
-    try {
-      if (document.querySelector(`#content${ index }`)) {
-        accordion.toggle(`#content${ (index) }`);
-      } else {
-        console.error('Accordion is not initialized');
-      }
-    } catch (e) {
-      return null;
-    }
-  }
 
   createEffect(() => {
     initAccordions();
@@ -284,7 +284,7 @@ export default function Transactions() {
               </div>
               <div class="flex flex-row justify-between">
                 {/* Vote breakdown */}
-                <div class="flex flex-col w-full">
+                <div class="flex flex-col rounded-md w-full border border-[1px] border-gray-100 dark:border-gray-800 p-4">
                   <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
                   <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
                   <SaturnProgress percentage={totalVotes(pc.details.tally.records)} overridePercentage={<span class="text-xs text-black dark:text-white">
@@ -294,16 +294,16 @@ export default function Transactions() {
                 </div>
 
                 {/* Support breakdown */}
-                <dl class="text-xs w-3/12 ml-2 py-4">
-                  <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
+                <dl class="text-xs w-3/12 ml-3 py-2">
+                  <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
                     <dt>Support needed:</dt>
-                    <dd class="text-black dark:text-white font-bold">
+                    <dd class="text-black dark:text-white">
                       {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
                     </dd>
                   </div>
-                  <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
+                  <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
                     <dt>Approval needed:</dt>
-                    <dd class="text-black dark:text-white font-bold">
+                    <dd class="text-black dark:text-white">
                       {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
                     </dd>
                   </div>
