@@ -70,7 +70,7 @@ export default function Members() {
   }));
 
   return (
-    <Show when={members() && members().length} fallback={<span class={FALLBACK_TEXT_STYLE}>Loading...or is?</span>}>
+    <Show when={members() && members().length} fallback={<span class={FALLBACK_TEXT_STYLE}>Loading member list...</span>}>
       <div class="flex flex-row justify-between items-center mb-3">
         <h3 class="text-sm text-saturn-black dark:text-saturn-offwhite">Members {members() && members().length > 0 ? <span class="text-xxs text-saturn-lightgrey align-top ml-1">{members().length}</span> : null}</h3>
         <div class="flex flex-row items-center gap-3">
