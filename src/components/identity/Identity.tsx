@@ -17,6 +17,8 @@ export default function Identity(props: { address: string; }) {
   const name = () => { return identity()?.name; };
 
   const openIdentityCard = () => {
+    console.log('open identity card disabled');
+    return;
     const i: AggregatedIdentity = identity() || { address: getAddress(), otherIdentities: [] };
 
     identityContext.setters.openModal(i);

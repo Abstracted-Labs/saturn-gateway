@@ -19,7 +19,7 @@ const MainContent = () => {
     } else if (currentPage().endsWith('/transactions')) {
       return 'Transactions';
     } else if (currentPage().endsWith('/members')) {
-      return `Members (${ membersCount() })`;
+      return '';
     } else {
       return '...';
     }

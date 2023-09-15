@@ -32,18 +32,6 @@ export default function Transactions() {
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
 
-  async function totalMultisigMembers(): Promise<number> {
-    const id = saturnContext.state.multisigId;
-    const saturn = saturnContext.state.saturn;
-
-    if (typeof id !== 'number' || !saturn) {
-      return 0;
-    }
-
-    const count = await getAllMembers(id, saturn);
-    return Promise.resolve(count.length);
-  }
-
   function totalVotes(records: ParsedTallyRecords): number {
     let total = 0;
     for (let record of Object.values(records)) {
