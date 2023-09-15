@@ -41,7 +41,7 @@ export default function Identity(props: { address: string; }) {
               <TalismanIdenticon value={getAddress()} size={34} />
             }
           >
-            <img class="h-[34px] w-[34px] rounded-full"
+            <img class="max-h-[34px] max-w-[34px] rounded-full"
               src={image()}
             />
           </Show>
