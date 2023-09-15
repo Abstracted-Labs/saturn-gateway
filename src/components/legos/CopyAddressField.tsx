@@ -2,8 +2,11 @@ import { stringShorten } from "@polkadot/util";
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { createEffect, createMemo, createSignal, on } from "solid-js";
 
-const CopyAddressField = (props: { address: string | undefined; length: number; }) => {
+type CopyAddressFieldProps = { address: string | undefined; length: number; name?: string; };
+
+const CopyAddressField = (props: CopyAddressFieldProps) => {
   const [copied, setCopied] = createSignal<boolean>(false);
+  const hasName = createMemo(() => props.name !== undefined);
 
   function copyToClipboard(e: MouseEvent) {
     // Prevent the click event from bubbling up to the parent element
@@ -23,7 +26,7 @@ const CopyAddressField = (props: { address: string | undefined; length: number; 
 
   return <>
     <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
-      <span class="mx-2">{stringShorten(props.address ?? '--', props.length)}</span>
+      <span class="mx-2">{hasName() ? props.name : stringShorten(props.address ?? '--', props.length)}</span>
       <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyToClipboard(e)}>
         {copied() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
         </span>}

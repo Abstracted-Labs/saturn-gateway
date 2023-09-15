@@ -1,8 +1,10 @@
-import { Show, Suspense, createResource } from 'solid-js';
+import { Show, Suspense, createResource, lazy } from 'solid-js';
 import TalismanIdenticon from '../identity/TalismanIdenticon';
 import { getBestIdentity, type AggregatedIdentity } from "../../utils/identityProcessor";
 import { useIdentityContext } from "../../providers/identityProvider";
 import { stringShorten } from '@polkadot/util';
+
+const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
 export default function Identity(props: { address: string; }) {
   const identityContext = useIdentityContext();
@@ -29,7 +31,7 @@ export default function Identity(props: { address: string; }) {
       <Suspense fallback={
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
           <TalismanIdenticon value={getAddress()} size={34} />
-          {stringShorten(getAddress(), 4)}
+          <CopyAddress name={name()} address={getAddress()} length={4} />
         </div>
       }>
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
@@ -43,8 +45,7 @@ export default function Identity(props: { address: string; }) {
               src={image()}
             />
           </Show>
-
-          {name() || stringShorten(getAddress(), 4)}
+          <CopyAddress name={name()} address={getAddress()} length={4} />
         </div>
       </Suspense>
     </div>
