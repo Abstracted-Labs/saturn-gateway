@@ -319,27 +319,6 @@ const AssetsContext = () => {
     runAsync();
   }));
 
-  // createEffect(on(() => proposeContext.state.currentNetwork, () => {
-  //   // Updating the From/To dropdowns when the current network changes
-  //   const a = asset();
-  //   const n = initialNetwork();
-  //   const currentNetwork = proposeContext.state.currentNetwork;
-
-  //   if (a && n && NetworksByAsset[a]) {
-  //     setInitialNetwork(n);
-  //     if (currentNetwork) {
-  //       setFinalNetworkPair({ from: currentNetwork, to: n });
-  //       const filterNetworksFromBalances = balances().find(([network, assets]) => network == currentNetwork);
-  //       const filterAssetsFromNetwork = filterNetworksFromBalances?.[1].map(([asset, balances]) => asset);
-
-  //       if (filterAssetsFromNetwork && filterAssetsFromNetwork.length > 0) {
-  //         const asset = filterAssetsFromNetwork[0];
-  //         setAsset(asset as AssetEnum);
-  //       }
-  //     }
-  //   }
-  // }));
-
   createEffect(on(() => finalNetworkPair().from, () => {
     // Updating the From/To dropdowns when the current network changes
     const a = asset();
@@ -350,7 +329,6 @@ const AssetsContext = () => {
         // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
         const filterNetworksFromBalances = balances().find(([network, assets]) => network == currentNetwork);
         const filterAssetsFromNetwork = filterNetworksFromBalances?.[1].map(([asset, balances]) => asset);
-
         if (filterAssetsFromNetwork && filterAssetsFromNetwork.length > 0) {
           const asset = filterAssetsFromNetwork[0];
           setAsset(asset as AssetEnum);

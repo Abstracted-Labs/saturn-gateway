@@ -62,7 +62,7 @@ const SaturnNumberInput = (props: SaturnTextFieldType) => {
 
   return <div class="flex flex-row gap-1 items-center">
     <button type="button" class={MATH_STYLE} onClick={decrement}>-</button>
-    <input class={`${ INPUT_COMMON_STYLE } text-center w-10 h-10 p-2`} type="text" value={text()} onKeyDown={handleKeyDown} onInput={handleInput} />
+    <input class={`${ INPUT_COMMON_STYLE } text-center w-10 h-10 p-2 dark:focus:text-white focus:text-saturn-purple`} type="text" value={text()} onKeyDown={handleKeyDown} onInput={handleInput} />
     <button type="button" class={MATH_STYLE} onClick={increment}>+</button>
   </div>;
 };

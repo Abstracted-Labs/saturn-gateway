@@ -3,7 +3,6 @@ import TinkernetIcon from '../assets/icons/tinkernet-icon.svg';
 import PicassoIcon from '../assets/icons/picasso-icon.svg';
 import KusamaIcon from '../assets/icons/kusama-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
-import { AssetEnum, NetworksByAsset } from '../data/rings';
 
 export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center';
 
@@ -12,6 +11,8 @@ export const INPUT_COMMON_STYLE = "rounded-md border-0 outline-0 focus:ring-0 bg
 export const MINI_TEXT_LINK_STYLE = "text-saturn-purple text-xxs font-bold hover:cursor-pointer hover:text-purple-500 inline-flex shrink";
 
 export const FALLBACK_TEXT_STYLE = "text-saturn-black dark:text-saturn-offwhite text-center text-xs";
+
+export const CRUMB_STYLE = "text-xxs font-medium py-3 rounded-md focus:outline-none text-center w-[150px] crumb-btn disabled:cursor-not-allowed";
 
 export enum WalletTypeEnum {
   SUBWALLET = "sub", // ?
@@ -29,8 +30,8 @@ export enum NetworkEnum {
   POLKADOT = "polkadot",
 }
 
-export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
-// export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
+// export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
+export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
 
 export const AssetIconByCurrency: Record<string, string> = {
   TNKR: TinkernetIcon,

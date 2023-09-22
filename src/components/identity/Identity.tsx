@@ -15,8 +15,8 @@ export default function Identity(props: { address: string; }) {
 
   const [identity, { mutate, refetch }] = createResource(getAddress, getBestIdentity);
 
-  const image = () => { return identity()?.image?.value; };
-  const name = () => { return identity()?.name; };
+  const image = () => identity()?.image?.value;
+  const name = () => identity()?.name;
 
   const openIdentityCard = () => {
     console.log('open identity card disabled');
@@ -31,7 +31,7 @@ export default function Identity(props: { address: string; }) {
       <Suspense fallback={
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
           <TalismanIdenticon value={getAddress()} size={34} />
-          <CopyAddress name={name()} address={getAddress()} length={4} />
+          <CopyAddress name={name()} address={getAddress()} length={10} />
         </div>
       }>
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
@@ -45,7 +45,7 @@ export default function Identity(props: { address: string; }) {
               src={image()}
             />
           </Show>
-          <CopyAddress name={name()} address={getAddress()} length={4} />
+          <CopyAddress name={name()} address={getAddress()} length={10} />
         </div>
       </Suspense>
     </div>

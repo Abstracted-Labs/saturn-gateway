@@ -35,7 +35,6 @@ export default function Transactions() {
   function totalVotes(records: ParsedTallyRecords): number {
     let total = 0;
     for (let record of Object.values(records)) {
-      console.log({ record });
       if (record.aye) {
         total += parseInt(record.aye.toString());
       }

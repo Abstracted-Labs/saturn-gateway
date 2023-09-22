@@ -109,7 +109,7 @@ export default function Members() {
                   }
                 }
 
-                return <tr class={index() % 2 === 0 ? 'dark:bg-gray-700 bg-gray-200' : 'dark:bg-gray-800 bg-gray-100'}>
+                return <tr class='border-b-[1px] border-gray-200 dark:border-gray-800'>
                   <td class='py-3 px-4 h-full font-medium'>
                     <Identity address={member.address} />
                   </td>

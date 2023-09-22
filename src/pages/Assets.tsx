@@ -115,7 +115,7 @@ export default function Assets() {
               <Show when={assets.length}>
                 <tbody class="dark:text-saturn-offwhite text-saturn-black">
                   <For each={assets}>{([asset, b]) => {
-                    return <tr class="border-b border-gray-200 dark:border-gray-700">
+                    return <tr class="border-b border-gray-200 dark:border-gray-800">
                       {/* Asset */}
                       <td class='py-3 px-4 text-left w-[20%]'>
                         <span class="flex flex-row items-center gap-1">

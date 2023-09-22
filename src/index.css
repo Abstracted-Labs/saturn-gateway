@@ -53,4 +53,31 @@ code {
   /* div[drawer-backdrop]:active,:hover {
     box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.2);
   } */
+
+  /* For Webkit-based browsers (Chrome, Safari and Opera) */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* For IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Crumbs */
+  .crumb-li:not(:last-child)::after {
+    content: '_______';
+    display: block;
+    height: 2px;
+    width: 40%;
+    margin-left: 5px;
+    margin-right: 5px;
+    color: rgba(0,0,0,0);
+    background: linear-gradient(to right, transparent, #692EFF);
+  }
+
+  .crumb-li[aria-disabled="true"] {
+    opacity: 0.5;
+  }
 }

@@ -27,7 +27,6 @@ const TransactionsContext = () => {
       }
 
       const pendingCalls = await saturn.getPendingCalls(multisigId);
-      console.log({ pendingCalls });
       setPendingProposals(pendingCalls);
     };
 
@@ -37,7 +36,6 @@ const TransactionsContext = () => {
   createEffect(() => {
     // console.log('activity', activity());
   });
-
 
   return <SaturnCard header="Multisig Activity">
     <div class="mt-1">
