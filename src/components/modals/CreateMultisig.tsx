@@ -112,23 +112,17 @@ const CreateMultisig = () => {
   };
 
   function handleSetActive(crumb: string) {
-    console.log({ crumb });
+    // scroll to crumb
     setActive(crumb);
   }
 
   function getCurrentStep() {
+    // get current step in crumb trail
     return active();
   }
 
-  function goBack() {
-    const currentStep = getCurrentStep();
-    const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
-    const previousStep = MULTISIG_CRUMB_TRAIL[currentIndex - 1];
-
-    setActive(previousStep);
-  }
-
   function getNextStep() {
+    // get next step in crumb trail
     const currentStep = getCurrentStep();
     const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
     const nextStep = MULTISIG_CRUMB_TRAIL[currentIndex + 1];
@@ -136,7 +130,17 @@ const CreateMultisig = () => {
     return nextStep;
   }
 
+  function goBack() {
+    // go back one step
+    const currentStep = getCurrentStep();
+    const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
+    const previousStep = MULTISIG_CRUMB_TRAIL[currentIndex - 1];
+
+    setActive(previousStep);
+  }
+
   function goForward() {
+    // check if next step is disabled, then go forward one step
     const currentStep = getCurrentStep();
     const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
     const nextStep = MULTISIG_CRUMB_TRAIL[currentIndex + 1];

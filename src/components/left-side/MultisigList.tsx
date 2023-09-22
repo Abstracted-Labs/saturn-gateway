@@ -124,6 +124,7 @@ const MultisigList = () => {
     if (!sat || !acc || !api) return;
 
     const runAsync = async () => {
+      let iden;
       const multisigs = await sat.getMultisigsForAccount(acc);
 
       const processedList = await Promise.all(multisigs.map(async (m) => {
@@ -134,12 +135,12 @@ const MultisigList = () => {
             api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
           ), 117);
 
-        const iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+        iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
           info: {
             display: { Raw: string; };
             image: { Raw: string; };
           };
-        }).info);
+        })?.info);
 
         const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
 
