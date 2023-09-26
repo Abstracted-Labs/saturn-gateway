@@ -10,7 +10,7 @@ code {
 @tailwind utilities;
 
 @layer utilities {
-  /* utilities to style multisig scrollbar */
+  /* Scrollbars */
   .saturn-scrollbar::-webkit-scrollbar {
     width: 5px;
   }
@@ -25,7 +25,7 @@ code {
   }
 
   .saturn-scrollbar.islight::-webkit-scrollbar-track {
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .saturn-scrollbar::-webkit-scrollbar-thumb {
@@ -66,7 +66,7 @@ code {
   }
 
   /* Crumbs */
-  .crumb-li:not(:last-child)::after {
+  .crumb-li:not(:first-child)::before {
     content: '_______';
     display: block;
     height: 2px;
@@ -79,5 +79,15 @@ code {
 
   .crumb-li[aria-disabled="true"] {
     opacity: 0.5;
+  }
+
+  /* Multisig UI bg image */
+  .bg-image {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 }

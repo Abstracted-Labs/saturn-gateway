@@ -4,7 +4,7 @@ import { useSaturnContext } from "../providers/saturnProvider";
 import Identity from '../components/identity/Identity';
 import { getAllMembers } from '../utils/getAllMembers';
 import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE } from '../utils/consts';
-import RemoveIcon from '../assets/icons/remove-member-icon-14-17x17.svg';
+import RemoveIcon from '../assets/icons/remove-member-icon.svg';
 import SaturnNumberInput from '../components/legos/SaturnNumberInput';
 import SearchIcon from '../assets/icons/search.svg';
 
@@ -114,10 +114,10 @@ export default function Members() {
                     <Identity address={member.address} />
                   </td>
                   <td class='py-3 px-4 h-full'>
-                    <SaturnNumberInput initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
+                    <SaturnNumberInput label="UpdateVotes" min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
                   </td>
                   <td class='py-3 px-4'>
-                    {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
+                    {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
                   </td>
                   <td class='py-3 px-4 h-full'>
                     <button type="button" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={() => removeMember(member.address)}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>

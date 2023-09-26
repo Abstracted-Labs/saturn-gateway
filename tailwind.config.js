@@ -8,6 +8,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      backdropBlur: {
+        'none': '0',
+        'blur': 'blur(5px)',
+      },
       colors: {
         saturn: {
           'purple': '#692EFF', // purple 

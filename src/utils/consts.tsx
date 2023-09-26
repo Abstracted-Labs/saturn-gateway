@@ -4,13 +4,15 @@ import PicassoIcon from '../assets/icons/picasso-icon.svg';
 import KusamaIcon from '../assets/icons/kusama-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
 
-export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center';
+export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center focus:outline-none';
 
-export const INPUT_COMMON_STYLE = "rounded-md border-0 outline-0 focus:ring-0 bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xxs focus:bg-purple-100 dark:focus:bg-saturn-darkpurple";
+export const INPUT_COMMON_STYLE = "rounded-md border-0 outline-0 focus:ring-0 bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xxs focus:bg-purple-100 focus:bg-opacity-50 dark:focus:bg-saturn-darkpurple";
+
+export const INPUT_CREATE_MULTISIG_STYLE = "rounded-md border-0 outline-0 focus:ring-2 focus:ring-purple-500 bg-white dark:bg-white dark:bg-opacity-50 bg-opacity-50 text-black dark:text-black focus:text-black dark:focus:text-black px-2 py-[10px] flex flex-row items-center justify-center text-sm focus:bg-opacity-100 dark:focus:bg-opacity-100";
 
 export const MINI_TEXT_LINK_STYLE = "text-saturn-purple text-xxs font-bold hover:cursor-pointer hover:text-purple-500 inline-flex shrink";
 
-export const FALLBACK_TEXT_STYLE = "text-saturn-black dark:text-saturn-offwhite text-center text-xs";
+export const FALLBACK_TEXT_STYLE = "text-saturn-black dark:text-saturn-offwhite text-xs";
 
 export const CRUMB_STYLE = "text-xxs font-medium py-3 rounded-md focus:outline-none text-center w-[150px] crumb-btn disabled:cursor-not-allowed";
 
@@ -48,3 +50,8 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   KSM: [TinkernetIcon, BasiliskIcon, PicassoIcon],
   DOT: [PolkadotIcon],
 };
+
+export enum MultisigEnum {
+  TRADITIONAL = "Traditional",
+  GOVERNANCE = "Governance",
+}

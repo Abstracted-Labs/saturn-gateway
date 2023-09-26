@@ -1,4 +1,4 @@
-import { For, createMemo } from "solid-js";
+import { For, createEffect, createMemo } from "solid-js";
 import { CRUMB_STYLE } from "../../utils/consts";
 
 interface SaturnCrumbProps {
@@ -13,28 +13,35 @@ const SaturnCrumb = (props: SaturnCrumbProps) => {
   const filteredTrail = createMemo(() => props.trail.filter(crumb => crumb !== 'success'));
   const disabledCrumbs = createMemo(() => props.disabledCrumbs || []);
 
-  function handleCrumbClick(crumb: string) {
+  function scrollCrumb(crumb: string) {
     const activeCrumbElement = document.getElementById(crumb);
     if (activeCrumbElement) {
       activeCrumbElement.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     }
+  }
 
+  function handleCrumbClick(crumb: string) {
+    scrollCrumb(crumb);
     props.setActive(crumb);
   }
 
+  createEffect(() => {
+    scrollCrumb(props.active);
+  });
+
   return (
-    <nav class="px-5 py-3 inline-flex w-full" aria-label="Breadcrumb">
-      <ol id="breadcrumb" class={`pl-3 overflow-x-scroll overflow-y-hidden inline-flex ${ props.trailWidth } scrollbar-hide gap-2 justify-start`}>
+    <nav class="py-3 inline-flex w-full justify-center" aria-label="Breadcrumb">
+      <ol id="breadcrumb" class={`overflow-x-scroll overflow-y-hidden inline-flex ${ props.trailWidth } scrollbar-hide gap-2 justify-start`}>
         <For each={filteredTrail()}>
           {(crumb, index) => (
             <li aria-disabled={disabledCrumbs().includes(crumb)} id={crumb} class={`relative inline-flex items-center crumb-li w-full ${ props.active === crumb ? 'justify-center' : '' }`}>
-              <span class={`absolute z-10 crumb-index border-[1px] ${ props.active === crumb ? 'bg-white text-saturn-purple border-saturn-purple' : disabledCrumbs().includes(crumb) ? 'bg-gray-200 border-gray-200 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-600' : 'bg-saturn-purple border-saturn-purple' } left-[-5px] rounded-full text-[6px] text-center left-1 pt-[1px] w-3 h-3`}>
+              <span class={`relative z-10 crumb-index border-[1px] ${ props.active === crumb ? 'bg-white text-saturn-purple border-saturn-purple' : disabledCrumbs().includes(crumb) ? 'bg-gray-200 border-gray-200 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-600' : 'bg-saturn-purple border-saturn-purple' } rounded-full text-[6px] text-center left-2 pt-[1px] p-1 h-[12.5px]`}>
                 {index() + 1}
               </span>
               <button
                 disabled={disabledCrumbs().includes(crumb)}
                 type="button"
-                class={`${ CRUMB_STYLE } ${ props.active === crumb ? 'bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-purple-300 text-saturn-lightgrey hover:text-saturn-purple dark:hover:bg-purple-950 hover:bg-purple-300' : 'text-gray-400 hover:text-purple-500 hover:bg-purple-100 dark:text-gray-500 dark:hover:text-gray-400 bg-gray-100 dark:bg-gray-900 dark:hover:bg-saturn-darkpurple' }`}
+                class={`w-48 ${ CRUMB_STYLE } ${ props.active === crumb ? 'bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-purple-300 text-saturn-lightgrey hover:text-saturn-purple dark:hover:bg-purple-950 hover:bg-purple-300' : 'text-gray-400 hover:text-purple-500 hover:bg-purple-100 dark:text-gray-500 dark:hover:text-gray-400 bg-gray-100 dark:bg-gray-900 dark:hover:bg-saturn-darkpurple' }`}
                 onClick={() => handleCrumbClick(crumb)}
               >
                 {crumb}
