@@ -393,12 +393,12 @@ const CreateMultisig = () => {
       </div>
       <div class="flex flex-row items-center justify-between gap-3">
         <div class="flex flex-row items-center gap-1">
-          <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[12px]/none`}>Minimum Support (%)</label>
+          <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[11.5px]/none`}>Minimum Support (%)</label>
           <SaturnNumberInput isMultisigUi label="minimumSupport" initialValue={minimumSupportField()} currentValue={(support) => setMinimumSupportField(support)} min={1} max={100} />
         </div>
         <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
           <div class="flex flex-row items-center gap-1">
-            <label for="requiredApproval" class={`${ FALLBACK_TEXT_STYLE } text-left text-[12px]/none`}>Required Approval (%)</label>
+            <label for="requiredApproval" class={`${ FALLBACK_TEXT_STYLE } text-left text-[11.5px]/none`}>Required Approval (%)</label>
             <SaturnNumberInput isMultisigUi label="requiredApproval" disabled={multisigType() === MultisigEnum.TRADITIONAL} initialValue={requiredApprovalField()} currentValue={(approval) => setRequiredApprovalField(approval)} min={1} max={100} />
           </div>
         </Show>
