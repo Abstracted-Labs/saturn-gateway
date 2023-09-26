@@ -1,7 +1,7 @@
 import { BaseWallet, Account } from "@polkadot-onboard/core";
 import { u8aToHex, hexToU8a } from "@polkadot/util";
 import { decodeAddress, isAddress } from "@polkadot/util-crypto";
-import { useParams } from "@solidjs/router";
+import { useLocation, useParams } from "@solidjs/router";
 import { Web3Wallet } from "@walletconnect/web3wallet";
 import { Component, createSignal, createEffect } from "solid-js";
 import { Portal } from "solid-js/web";
@@ -44,6 +44,7 @@ const MainContainer = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
+  const location = useLocation();
 
   setupSaturnConnect(saturnContext, proposeContext);
 

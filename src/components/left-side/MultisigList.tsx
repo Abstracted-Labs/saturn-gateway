@@ -1,9 +1,9 @@
 import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
-import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy } from 'solid-js';
+import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy, on } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
-import { A, useNavigate } from '@solidjs/router';
+import { A, useLocation, useNavigate, useParams } from '@solidjs/router';
 import { useThemeContext } from '../../providers/themeProvider';
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
@@ -50,6 +50,9 @@ const MultisigList = () => {
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
   const navigate = useNavigate();
+  const params = useParams<{ idOrAddress: string; }>();
+  const loc = useLocation();
+  const getParams = createMemo(() => params);
 
   function handleClick(index: number) {
     const sat = saturnContext.state.saturn;
@@ -77,7 +80,7 @@ const MultisigList = () => {
         }
       });
 
-      navigate(`/${ id }/assets`);
+      navigate(`/${ id }/members`);
 
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];
@@ -175,24 +178,33 @@ const MultisigList = () => {
     runAsync();
   });
 
+  createEffect(() => {
+    if (!location.pathname.endsWith('/members') || !location.pathname.endsWith('/assets') || !location.pathname.endsWith('/transactions')) {
+      if (!!saturnContext.state.multisigId) {
+        console.log('hi love', saturnContext.state.multisigId);
+        navigate(`/${ saturnContext.state.multisigId }/members`);
+      }
+    }
+  });
+
   /* createEffect(() => {
    *   const updatedItems = Array(10).fill(null).map((item, index) => {
    *     const name = `John Doe ${ index + 1 }`; // Example name for testing
    *     const address = randomAsHex(32); // Example address for testing
    *     const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
-
+  
    *     // Defensive code to handle empty or undefined name
    *     const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
-
+  
    *     return {
    *       address,
    *       capitalizedFirstName,
    *       copyIcon
    *     };
    *   });
-
+  
    *   setMultisigItems(updatedItems);
-
+  
    *   // Set the activeButton to the address of the first item
    *   if (updatedItems.length > 0) {
    *     setActiveButton(updatedItems[0].address);

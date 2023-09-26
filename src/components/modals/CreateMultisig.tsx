@@ -343,32 +343,34 @@ const CreateMultisig = () => {
       </div>
 
       {/* Scrollable list of additional members */}
-      <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 pt-1 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
-        <For each={members()}>
-          {([address, weight], index) => (
-            <Show when={address !== selectedState().account?.address}>
-              <div class="flex flex-row items-center gap-2 mb-2">
-                <div class="ml-1">
-                  <input type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
-                    onInput={(e: any) => {
-                      const newMembers = members();
-                      newMembers[index()][0] = e.target.value;
-                      setMembers(newMembers);
-                      console.log('new member address: ', index(), e.target.value);
-                    }} />
+      <Show when={members().length > 1}>
+        <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 pt-1 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+          <For each={members()}>
+            {([address, weight], index) => (
+              <Show when={address !== selectedState().account?.address}>
+                <div class="flex flex-row items-center gap-2 mb-2">
+                  <div class="ml-1">
+                    <input type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
+                      onInput={(e: any) => {
+                        const newMembers = members();
+                        newMembers[index()][0] = e.target.value;
+                        setMembers(newMembers);
+                        console.log('new member address: ', index(), e.target.value);
+                      }} />
+                  </div>
+                  <SaturnNumberInput isMultisigUi label="votes" min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
+                    const newMembers = members();
+                    newMembers[index()][1] = parseInt(votes);
+                    setMembers(newMembers);
+                    console.log('new member votes: ', index(), votes);
+                  }} />
+                  <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="mx-auto focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
                 </div>
-                <SaturnNumberInput isMultisigUi label="votes" min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
-                  const newMembers = members();
-                  newMembers[index()][1] = parseInt(votes);
-                  setMembers(newMembers);
-                  console.log('new member votes: ', index(), votes);
-                }} />
-                <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="mx-auto focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
-              </div>
-            </Show>
-          )}
-        </For>
-      </div>
+              </Show>
+            )}
+          </For>
+        </div>
+      </Show>
     </div>
   );
 
