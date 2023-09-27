@@ -15,6 +15,9 @@ import GradientBgImage from "../../assets/images/gradient-bg.svg";
 import FlagIcon from "../../assets/icons/flag-icon.svg";
 import RemoveMemberIcon from "../../assets/icons/remove-member-icon.svg";
 import EditDataIcon from "../../assets/icons/edit-data-icon.svg";
+import AyeIcon from "../../assets/icons/aye-icon-17x17.svg";
+import NayIcon from "../../assets/icons/nay-icon-17x17.svg";
+import { isValidPolkadotAddress } from "../../utils/isValidPolkadotAddress";
 
 const THRESHOLD_TEXT_STYLE = "text-xxs p-2 border border-saturn-lightgrey rounded-md text-black dark:text-white";
 const SECTION_TEXT_STYLE = "text-black dark:text-white text-lg mb-3";
@@ -35,14 +38,19 @@ const CreateMultisig = () => {
   const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('50');
   const [multisigType, setMultisigType] = createSignal<MultisigEnum>(MultisigEnum.TRADITIONAL);
   const [textHint, setTextHint] = createSignal<string>('');
+  const [nameError, setNameError] = createSignal<string>('');
+  const [hasAddressError, setHasAddressError] = createSignal<number[]>([]);
 
   const selectedState = createMemo(() => selectedAccountContext.state);
+
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
+
   const totalSupportCount = createMemo(() => {
     // number of total members in multisig
     const party = members();
     return party.length;
   });
+
   const totalApprovalCount = createMemo(() => {
     // number of votes required to approve a proposal
     const party = members();
@@ -53,13 +61,14 @@ const CreateMultisig = () => {
     }
     return total;
   });
+
   const disableCrumbs = createMemo(() => {
     // check if any fields are invalid and disable crumbs accordingly
     const party = members();
     const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '' || parseInt(minimumSupportField()) < totalSupportCount();
     const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '' || (multisigType() === MultisigEnum.GOVERNANCE && parseInt(requiredApprovalField()) < totalApprovalCount());
 
-    if (multisigName() === '') {
+    if (multisigName() === '' || nameError()) {
       return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb !== MULTISIG_CRUMB_TRAIL[0]);
     }
 
@@ -76,12 +85,17 @@ const CreateMultisig = () => {
       }
     }
 
+    if (hasAddressError().length > 0) {
+      return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[2] || crumb === MULTISIG_CRUMB_TRAIL[3]);
+    }
+
     if (isMinimumSupportInvalid || isRequiredApprovalInvalid) {
       return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[3]);
     }
 
     return [];
   });
+
   const inReviewStep = createMemo(() => {
     // check if on next to last crumb trail
     return getCurrentStep() === MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2];
@@ -160,6 +174,30 @@ const CreateMultisig = () => {
     setActive(crumb);
   }
 
+  function handleSetMultisigName(e: any) {
+    // set multisig name
+    try {
+      // first clear any previous errors
+      setNameError('');
+      // throw an error if it's too long
+      if (e.target.value.length > 20) {
+        throw new Error('Multisig name cannot be longer than 20 characters.');
+      }
+      // throw an error if it's empty
+      if (e.target.value === '') {
+        throw new Error('Multisig name cannot be empty.');
+      }
+      // throw an error if it's not alphanumeric
+      if (!e.target.value.match(/^[a-z0-9]+$/i)) {
+        throw new Error('Multisig name must be alphanumeric (letters and numbers).');
+      }
+      setMultisigName(e.target.value);
+    } catch (error) {
+      console.error(error);
+      setNameError((error as any).message);
+    }
+  }
+
   function handleSetMultisigType(type: MultisigEnum) {
     // set multisig type and associated fields
     if (type === MultisigEnum.TRADITIONAL) {
@@ -228,7 +266,10 @@ const CreateMultisig = () => {
     const currentMembers = members();
     const newMembers = currentMembers.filter((_, i) => i !== index);
     setMembers(newMembers);
-    console.log('removed member: ', newMembers);
+
+    // remove this index from hasAddressError array
+    const newHasAddressError = hasAddressError().filter((i) => i !== index);
+    setHasAddressError(newHasAddressError);
   }
 
   function abortUi() {
@@ -312,7 +353,10 @@ const CreateMultisig = () => {
   const STEP_1_NAME = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[0]}>
       <div class={SECTION_TEXT_STYLE}>First, let's start with a name!</div>
-      <input tabIndex={1} type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={multisigName()} onInput={(e: any) => setMultisigName(e.target.value)} />
+      <input tabIndex={1} type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={multisigName()} onInput={handleSetMultisigName} />
+      <Show when={nameError()}>
+        <div class="text-xxs text-saturn-red mt-2">{nameError()}</div>
+      </Show>
     </div>
   );
 
@@ -322,14 +366,10 @@ const CreateMultisig = () => {
 
       {/* First row is the multisig creator's address */}
       <div class="flex flex-row items-end gap-2 mb-2">
-        <div class="flex flex-col ml-1">
+        <div class="relative flex flex-col ml-2">
+          <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
-          <input name="defaultMember" disabled type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={members()[0][0]}
-            onInput={(e: any) => {
-              const newMembers = members();
-              newMembers[0][0] = e.target.value;
-              setMembers(newMembers);
-            }} />
+          <input name="defaultMember" disabled type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={members()[0][0]} />
         </div>
         <div>
           <label for="defaultVotes" class={`${ LIST_LABEL_STYLE } ml-5`}>Votes</label>
@@ -346,28 +386,58 @@ const CreateMultisig = () => {
       <Show when={members().length > 1}>
         <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 pt-1 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
           <For each={members()}>
-            {([address, weight], index) => (
-              <Show when={address !== selectedState().account?.address}>
-                <div class="flex flex-row items-center gap-2 mb-2">
-                  <div class="ml-1">
-                    <input type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
-                      onInput={(e: any) => {
-                        const newMembers = members();
-                        newMembers[index()][0] = e.target.value;
-                        setMembers(newMembers);
-                        console.log('new member address: ', index(), e.target.value);
-                      }} />
-                  </div>
-                  <SaturnNumberInput isMultisigUi label="votes" min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
-                    const newMembers = members();
-                    newMembers[index()][1] = parseInt(votes);
+            {([address, weight], index) => {
+              const [error, setError] = createSignal<boolean | undefined>();
+
+              function validateMemberAddress(e: any) {
+                try {
+                  setError(undefined);
+                  if (hasAddressError().includes(index())) {
+                    const newHasAddressError = hasAddressError().filter((i) => i !== index());
+                    setHasAddressError(newHasAddressError);
+                  }
+                  const newMembers = members();
+                  const isUnique = newMembers.every((member) => member[0] !== e.target.value);
+                  if (isValidPolkadotAddress(e.target.value) && isUnique) {
+                    setError(false);
+                    newMembers[index()][0] = e.target.value;
                     setMembers(newMembers);
-                    console.log('new member votes: ', index(), votes);
-                  }} />
-                  <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="mx-auto focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
-                </div>
-              </Show>
-            )}
+                  } else {
+                    setError(true);
+                    if (!hasAddressError().includes(index())) {
+                      setHasAddressError([...hasAddressError(), index()]);
+                    }
+                  }
+                } catch (error) {
+                  console.error(error);
+                }
+              }
+              return (
+                <Show when={address !== selectedState().account?.address}>
+                  <div class="flex flex-row items-center gap-2 mb-2">
+                    <div class="relative ml-2">
+                      <Switch>
+                        <Match when={error() === true}>
+                          <span class="absolute left-[-7px] top-[15px]"><img src={NayIcon} width={12} height={12} /></span>
+                        </Match>
+                        <Match when={error() === false}>
+                          <span class="absolute left-[-7px] top-[15px]"><img src={AyeIcon} width={12} height={12} /></span>
+                        </Match>
+                      </Switch>
+                      <input type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
+                        onInput={validateMemberAddress} />
+                    </div>
+                    <SaturnNumberInput isMultisigUi label="votes" min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
+                      const newMembers = members();
+                      newMembers[index()][1] = parseInt(votes);
+                      setMembers(newMembers);
+                      console.log('new member votes: ', index(), votes);
+                    }} />
+                    <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="ml-[15px] focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
+                  </div>
+                </Show>
+              );
+            }}
           </For>
         </div>
       </Show>

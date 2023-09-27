@@ -8,7 +8,7 @@ export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1px] border-saturn-purple
 
 export const INPUT_COMMON_STYLE = "rounded-md border-0 outline-0 focus:ring-0 bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xxs focus:bg-purple-100 focus:bg-opacity-50 dark:focus:bg-saturn-darkpurple";
 
-export const INPUT_CREATE_MULTISIG_STYLE = "rounded-md border-0 outline-0 focus:ring-2 focus:ring-purple-500 bg-white dark:bg-white dark:bg-opacity-50 bg-opacity-50 text-black dark:text-black focus:text-black dark:focus:text-black px-2 py-[10px] flex flex-row items-center justify-center text-sm focus:bg-opacity-100 dark:focus:bg-opacity-100";
+export const INPUT_CREATE_MULTISIG_STYLE = "rounded-md border-0 outline-0 focus:ring-2 focus:ring-purple-500 bg-white dark:bg-white dark:bg-opacity-50 bg-opacity-50 text-black dark:text-black focus:text-black dark:focus:text-black px-2 py-[10px] flex flex-row items-center justify-center text-sm hover:bg-opacity-75 dark:hover:bg-opacity-75 focus:bg-opacity-100 dark:focus:bg-opacity-100";
 
 export const MINI_TEXT_LINK_STYLE = "text-saturn-purple text-xxs font-bold hover:cursor-pointer hover:text-purple-500 inline-flex shrink";
 

@@ -179,9 +179,9 @@ const MultisigList = () => {
   });
 
   createEffect(() => {
+    if (location.pathname.endsWith('/create')) return;
     if (!location.pathname.endsWith('/members') || !location.pathname.endsWith('/assets') || !location.pathname.endsWith('/transactions')) {
       if (!!saturnContext.state.multisigId) {
-        console.log('hi love', saturnContext.state.multisigId);
         navigate(`/${ saturnContext.state.multisigId }/members`);
       }
     }
