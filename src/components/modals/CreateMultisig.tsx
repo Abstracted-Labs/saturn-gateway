@@ -390,6 +390,7 @@ const CreateMultisig = () => {
               const [error, setError] = createSignal<boolean | undefined>();
 
               function validateMemberAddress(e: any) {
+                e.preventDefault();
                 try {
                   setError(undefined);
                   if (hasAddressError().includes(index())) {
