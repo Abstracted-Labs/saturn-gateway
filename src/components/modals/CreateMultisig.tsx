@@ -455,15 +455,22 @@ const CreateMultisig = () => {
                   setError(false);
                   newMembers[index()][0] = web3name;
                   setMembers(newMembers);
-                  if (hasAddressError().includes(index())) {
-                    const newHasAddressError = hasAddressError().filter((i) => i !== index());
-                    setHasAddressError(newHasAddressError);
-                  }
-                  return;
+                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
+                  setHasAddressError(newHasAddressError);
                 } catch (error) {
                   console.error(error);
                 }
               }
+
+              onMount(() => {
+                if (hasAddressError().includes(index())) {
+                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
+                  setHasAddressError(newHasAddressError);
+                }
+                if (address) {
+                  setError(false);
+                }
+              });
 
               return (
                 <Show when={address !== selectedState().account?.address}>

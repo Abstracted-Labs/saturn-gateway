@@ -12,11 +12,10 @@ export async function isValidKiltWeb3Name(web3Name: string) {
       if (encodedDid !== null) {
         const linkedInfo = Kilt.Did.linkedInfoFromChain(encodedDid, 117);
         returnAddress = linkedInfo.accounts[0];
-        console.log('returnAddress: ', returnAddress);
       }
     }
   } catch (error) {
-    console.error('web3Name is not valid: ', web3Name);
+    console.error(web3Name + ' does not exist!');
   } finally {
     await Kilt.disconnect();
   }
