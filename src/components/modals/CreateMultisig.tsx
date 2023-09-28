@@ -18,6 +18,7 @@ import EditDataIcon from "../../assets/icons/edit-data-icon.svg";
 import AyeIcon from "../../assets/icons/aye-icon-17x17.svg";
 import NayIcon from "../../assets/icons/nay-icon-17x17.svg";
 import { isValidPolkadotAddress } from "../../utils/isValidPolkadotAddress";
+import { isValidKiltWeb3Name } from "../../utils/isValidKiltWeb3Name";
 
 const THRESHOLD_TEXT_STYLE = "text-xxs p-2 border border-saturn-lightgrey rounded-md text-black dark:text-white";
 const SECTION_TEXT_STYLE = "text-black dark:text-white text-lg mb-3";
@@ -369,11 +370,11 @@ const CreateMultisig = () => {
         <div class="relative flex flex-col ml-2">
           <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
-          <input name="defaultMember" disabled type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={members()[0][0]} />
+          <input id="defaultMember" name="defaultMember" disabled type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={members()[0][0]} />
         </div>
         <div>
           <label for="defaultVotes" class={`${ LIST_LABEL_STYLE } ml-5`}>Votes</label>
-          <SaturnNumberInput isMultisigUi label="defaultVotes" min={1} max={50} initialValue={members()[0][1].toString()} currentValue={(votes: string) => {
+          <SaturnNumberInput isMultisigUi label="defaultVotes" id="defaultVotes" min={1} max={50} initialValue={members()[0][1].toString()} currentValue={(votes: string) => {
             const newMembers = members();
             newMembers[0][1] = parseInt(votes);
             setMembers(newMembers);
@@ -391,28 +392,79 @@ const CreateMultisig = () => {
 
               function validateMemberAddress(e: any) {
                 e.preventDefault();
+                setError(undefined);
                 try {
-                  setError(undefined);
+                  const newMembers = members();
+                  const inputValue = e.target.value;
+                  const isUnique = () => newMembers.every((member) => member[0] !== inputValue);
+                  const isValidAddress = isValidPolkadotAddress(inputValue);
+
                   if (hasAddressError().includes(index())) {
                     const newHasAddressError = hasAddressError().filter((i) => i !== index());
                     setHasAddressError(newHasAddressError);
                   }
-                  const newMembers = members();
-                  const isUnique = newMembers.every((member) => member[0] !== e.target.value);
-                  if (isValidPolkadotAddress(e.target.value) && isUnique) {
+
+                  if (isUnique() && isValidAddress) {
                     setError(false);
-                    newMembers[index()][0] = e.target.value;
+                    newMembers[index()][0] = inputValue;
                     setMembers(newMembers);
                   } else {
                     setError(true);
                     if (!hasAddressError().includes(index())) {
                       setHasAddressError([...hasAddressError(), index()]);
+                      // throw new Error('Member address is invalid or was already added.');
                     }
                   }
                 } catch (error) {
                   console.error(error);
                 }
               }
+
+              async function validateWeb3Name(e: any) {
+                e.preventDefault();
+                try {
+                  const newMembers = members();
+                  const inputValue = e.target.value;
+                  const web3name = await isValidKiltWeb3Name(inputValue);
+                  const isUnique = () => newMembers.every((member) => member[0] !== web3name);
+                  const isValidAddress = isValidPolkadotAddress(inputValue);
+
+                  if (isValidAddress && isUnique()) {
+                    setError(false);
+                    return;
+                  }
+
+                  if (web3name === '' || !web3name) {
+                    setError(true);
+                    if (!hasAddressError().includes(index())) {
+                      setHasAddressError([...hasAddressError(), index()]);
+                      // throw new Error('Member web3name does not exist.');
+                    }
+                    return;
+                  }
+
+                  if (!isUnique()) {
+                    setError(true);
+                    if (!hasAddressError().includes(index())) {
+                      setHasAddressError([...hasAddressError(), index()]);
+                      // throw new Error('Member web3name was already added.');
+                    }
+                    return;
+                  }
+
+                  setError(false);
+                  newMembers[index()][0] = web3name;
+                  setMembers(newMembers);
+                  if (hasAddressError().includes(index())) {
+                    const newHasAddressError = hasAddressError().filter((i) => i !== index());
+                    setHasAddressError(newHasAddressError);
+                  }
+                  return;
+                } catch (error) {
+                  console.error(error);
+                }
+              }
+
               return (
                 <Show when={address !== selectedState().account?.address}>
                   <div class="flex flex-row items-center gap-2 mb-2">
@@ -425,16 +477,15 @@ const CreateMultisig = () => {
                           <span class="absolute left-[-7px] top-[15px]"><img src={AyeIcon} width={12} height={12} /></span>
                         </Match>
                       </Switch>
-                      <input type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
-                        onInput={validateMemberAddress} />
+                      <input id={`text-${ index() }`} type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
+                        onInput={validateMemberAddress} onBlur={validateWeb3Name} />
                     </div>
-                    <SaturnNumberInput isMultisigUi label="votes" min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
+                    <SaturnNumberInput isMultisigUi label={`votes-${ index() }`} min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
                       const newMembers = members();
                       newMembers[index()][1] = parseInt(votes);
                       setMembers(newMembers);
-                      console.log('new member votes: ', index(), votes);
                     }} />
-                    <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="ml-[15px] focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
+                    <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
                   </div>
                 </Show>
               );
