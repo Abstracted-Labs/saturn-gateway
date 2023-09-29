@@ -630,7 +630,7 @@ const CreateMultisig = () => {
 
   return <div class="w-full flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0">
     <Show when={!!getCurrentStep()}>
-      <Show when={isLastStep()}>
+      <Show when={!isLastStep()}>
         <SaturnCrumb trail={MULTISIG_CRUMB_TRAIL} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
       </Show>
       <SaturnCard noPadding>
