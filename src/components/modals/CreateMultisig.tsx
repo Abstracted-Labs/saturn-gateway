@@ -1,4 +1,4 @@
-import { For, Match, Show, Switch, createEffect, createMemo, createSignal, on, onMount } from "solid-js";
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, on, onMount } from "solid-js";
 import SaturnCrumb from "../legos/SaturnCrumb";
 import { BN, stringShorten } from "@polkadot/util";
 import { FeeAsset } from "@invarch/saturn-sdk";
@@ -19,6 +19,9 @@ import AyeIcon from "../../assets/icons/aye-icon-17x17.svg";
 import NayIcon from "../../assets/icons/nay-icon-17x17.svg";
 import { isValidPolkadotAddress } from "../../utils/isValidPolkadotAddress";
 import { isValidKiltWeb3Name } from "../../utils/isValidKiltWeb3Name";
+import LoaderAnimation from "../legos/LoaderAnimation";
+
+const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
 const THRESHOLD_TEXT_STYLE = "text-xxs p-2 border border-saturn-lightgrey rounded-md text-black dark:text-white";
 const SECTION_TEXT_STYLE = "text-black dark:text-white text-lg mb-3";
@@ -41,6 +44,8 @@ const CreateMultisig = () => {
   const [textHint, setTextHint] = createSignal<string>('');
   const [nameError, setNameError] = createSignal<string>('');
   const [hasAddressError, setHasAddressError] = createSignal<number[]>([]);
+  const [finishing, setFinishing] = createSignal<boolean>(false);
+  const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
 
   const selectedState = createMemo(() => selectedAccountContext.state);
 
@@ -94,6 +99,11 @@ const CreateMultisig = () => {
       return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[3]);
     }
 
+    if (finishing()) {
+      // disable everything
+      return MULTISIG_CRUMB_TRAIL;
+    }
+
     return [];
   });
 
@@ -103,29 +113,30 @@ const CreateMultisig = () => {
   });
 
   async function createMultisig() {
-    const selected = selectedState();
+    // create multisig
+    setFinishing(true);
+    const wallet = selectedState().wallet;
+    const account = selectedState().account;
     const saturn = saturnContext.state.saturn;
     const tinkernetApi = ringApisContext.state.tinkernet;
 
-    console.log({ selected });
+    if (!saturn || !wallet || !account) return;
 
-    if (!saturn || !selected.account || !selected.wallet) return;
+    wallet.connect();
 
     const name = multisigName();
     const requiredApproval = requiredApprovalField();
     const minimumSupport = minimumSupportField();
     const multisigParty = members();
 
-    const { account, wallet } = selected;
+    console.log(name, multisigParty, minimumSupport, requiredApproval, wallet.signer);
 
-    console.log(name, minimumSupport, requiredApproval, wallet.signer);
-
-    if (!name || !minimumSupport || !requiredApproval || !wallet.signer) return;
+    if (!name || !wallet.signer) return;
 
     let ms = parseFloat(minimumSupport);
     let ra = parseFloat(requiredApproval);
 
-    if (!ms || !ra) return;
+    if (!ms) return;
 
     ms = ms * 10000000;
     ra = ra * 10000000;
@@ -148,8 +159,8 @@ const CreateMultisig = () => {
     if (multisigParty && typeof multisigParty === 'object') {
       // loop through multisigParty and add vote weight for each member
       for (const [address, weight] of multisigParty) {
-        const votes = new BN(weight).mul(new BN("10000000"));
-        innerCalls.push(tinkernetApi.tx.inv4.tokenMint(address, votes.toString()));
+        const votes = weight * 10000000;
+        innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, address));
       }
     }
 
@@ -163,10 +174,15 @@ const CreateMultisig = () => {
 
     try {
       tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, ({ status }) => {
-        if (status.isFinalized || status.isInBlock) navigate(`/${ multisigId }/members`, { resolve: false });
+        setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
+        if (status.isFinalized || status.isInBlock) {
+          navigate(`/${ multisigId }/members`, { resolve: false, replace: true });
+        }
       });
     } catch (error) {
       console.error(error);
+    } finally {
+      wallet.disconnect();
     }
   };
 
@@ -271,6 +287,7 @@ const CreateMultisig = () => {
     // remove this index from hasAddressError array
     const newHasAddressError = hasAddressError().filter((i) => i !== index);
     setHasAddressError(newHasAddressError);
+    setDisableAddMember(false);
   }
 
   function abortUi() {
@@ -281,6 +298,7 @@ const CreateMultisig = () => {
     setRequiredApprovalField('50');
     setActive(MULTISIG_CRUMB_TRAIL[0]);
     setSelfAddress();
+    setFinishing(false);
   }
 
   function setSelfAddress() {
@@ -338,6 +356,7 @@ const CreateMultisig = () => {
         setTextHint('Review your multisig details and confirm.');
         break;
       case MULTISIG_CRUMB_TRAIL[4]:
+        setFinishing(false);
         setTextHint('Congratulations! Now get to work.');
         break;
       default:
@@ -348,7 +367,7 @@ const CreateMultisig = () => {
 
   const ToCrumb = (props: { crumb: string; }) => {
     // scroll to crumb
-    return <button onClick={[handleSetActive, props.crumb]} type="button" class="focus:outline-none ml-1 opacity-50 hover:opacity-100 p-1 rounded-md border border-px border-saturn-lightgrey"><img src={EditDataIcon} /></button>;
+    return <button disabled={finishing()} onClick={[handleSetActive, props.crumb]} type="button" class="focus:outline-none ml-1 opacity-50 hover:opacity-100 p-1 rounded-md border border-px border-saturn-lightgrey"><img src={EditDataIcon} /></button>;
   };
 
   const STEP_1_NAME = () => (
@@ -380,7 +399,7 @@ const CreateMultisig = () => {
             setMembers(newMembers);
           }} />
         </div>
-        <button type="button" class="py-2 px-4 bg-saturn-purple rounded-md hover:bg-purple-600 focus:outline-purple-500 text-md" onClick={addMember}>+</button>
+        <button type="button" class="py-2 px-4 bg-saturn-purple rounded-md hover:bg-purple-600 focus:outline-purple-500 text-md" disabled={disableAddMember()} onClick={addMember}>+</button>
       </div>
 
       {/* Scrollable list of additional members */}
@@ -404,7 +423,7 @@ const CreateMultisig = () => {
                     setHasAddressError(newHasAddressError);
                   }
 
-                  if (isUnique() && isValidAddress) {
+                  if (isUnique() && isValidAddress && error()) {
                     setError(false);
                     newMembers[index()][0] = inputValue;
                     setMembers(newMembers);
@@ -422,6 +441,7 @@ const CreateMultisig = () => {
 
               async function validateWeb3Name(e: any) {
                 e.preventDefault();
+
                 try {
                   const newMembers = members();
                   const inputValue = e.target.value;
@@ -429,36 +449,37 @@ const CreateMultisig = () => {
                   const isUnique = () => newMembers.every((member) => member[0] !== web3name);
                   const isValidAddress = isValidPolkadotAddress(inputValue);
 
-                  if (isValidAddress && isUnique()) {
+                  // If the input is a valid address and there's no error, we're done
+                  if (isValidAddress && error()) {
                     setError(false);
                     return;
                   }
 
-                  if (web3name === '' || !web3name) {
+                  // If the web3name is empty, not unique or invalid, set an error
+                  if (!web3name || !isUnique()) {
                     setError(true);
-                    if (!hasAddressError().includes(index())) {
-                      setHasAddressError([...hasAddressError(), index()]);
-                      // throw new Error('Member web3name does not exist.');
-                    }
+                    updateAddressError(index());
                     return;
                   }
 
-                  if (!isUnique()) {
-                    setError(true);
-                    if (!hasAddressError().includes(index())) {
-                      setHasAddressError([...hasAddressError(), index()]);
-                      // throw new Error('Member web3name was already added.');
-                    }
-                    return;
-                  }
-
+                  // At this point, the web3name is valid and unique. Update the member's address.
                   setError(false);
                   newMembers[index()][0] = web3name;
                   setMembers(newMembers);
-                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
-                  setHasAddressError(newHasAddressError);
+                  updateAddressError(index(), false);
+                  setDisableAddMember(false);
                 } catch (error) {
                   console.error(error);
+                }
+              }
+
+              // Helper function to update the address error state
+              function updateAddressError(index: number, remove = false) {
+                const newHasAddressError = hasAddressError().filter((i) => i !== index);
+                if (remove) {
+                  setHasAddressError(newHasAddressError);
+                } else {
+                  setHasAddressError([...hasAddressError(), index]);
                 }
               }
 
@@ -470,6 +491,10 @@ const CreateMultisig = () => {
                 if (address) {
                   setError(false);
                 }
+              });
+
+              createEffect(() => {
+                if (error() === true) setDisableAddMember(true);
               });
 
               return (
@@ -585,7 +610,7 @@ const CreateMultisig = () => {
 
   const STEP_5_SUCCESS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[4]}>
-      <div class={SECTION_TEXT_STYLE}>That's it!</div>
+      <div class={SECTION_TEXT_STYLE}>That's it! Once the multisig is finalised, you will be automatically redirected to the new members page<EllipsisAnimation /></div>
     </div>
   );
 
@@ -597,11 +622,11 @@ const CreateMultisig = () => {
       <SaturnCard noPadding>
         <div class="p-5 h-96">
           <div class="grid grid-cols-4 gap-2 place-items-center h-full">
-            <div class="col-span-2 px-3">
+            <div class="lg:col-span-2 col-span-1 px-3">
               <h3 class="text-4xl md:text-[5vw]/none lg:text-[3vw]/none h-40 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-10">Create a new<br />Saturn Multisig</h3>
               <h6 class="text-sm text-black dark:text-white">A Multisig is an account that is managed by one or more owners using multiple accounts.</h6>
             </div>
-            <div class="mx-8 col-span-2 bg-image" style={{ 'background-image': `url(${ GradientBgImage })` }}>
+            <div class="mx-8 lg:col-span-2 col-span-3 bg-image" style={{ 'background-image': `url(${ GradientBgImage })` }}>
               <div class="flex flex-col justify-center bg-gray-950 p-5 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full">
                 <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
                   <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]}>
@@ -629,8 +654,8 @@ const CreateMultisig = () => {
             <div class="flex flex-row items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg">
               <div class="text-xs dark:text-white text-black text-center mx-auto px-3">{textHint()}</div>
               <div class="flex flex-row">
-                <button disabled={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200" onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">Back</span></span></button>
-                <button disabled={disableCrumbs().includes(getNextStep())} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center" onClick={!inReviewStep() ? goForward : createMultisig}>{inReviewStep() ? <span class="px-3 flex">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex"><span class="mr-2">Next</span> &gt;</span>}</button>
+                <button disabled={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0] || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200" onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">Back</span></span></button>
+                <button disabled={disableCrumbs().includes(getNextStep()) || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center" onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex"><LoaderAnimation text={<div>Processing<EllipsisAnimation /></div>} /></span> : inReviewStep() ? <span class="px-3 flex">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex"><span class="mr-2">Next</span> &gt;</span>}</button>
               </div>
             </div>
           </Show>

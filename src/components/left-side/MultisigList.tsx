@@ -53,6 +53,7 @@ const MultisigList = () => {
   const params = useParams<{ idOrAddress: string; }>();
   const loc = useLocation();
   const getParams = createMemo(() => params);
+  const selectedState = createMemo(() => selectedAccountContext.state);
 
   function handleClick(index: number) {
     const sat = saturnContext.state.saturn;
@@ -121,7 +122,7 @@ const MultisigList = () => {
 
   createEffect(() => {
     const sat = saturnContext.state.saturn;
-    const acc = selectedAccountContext.state.account?.address;
+    const acc = selectedState().account?.address;
     const api = ringApisContext.state.tinkernet;
 
     if (!sat || !acc || !api) return;
@@ -129,8 +130,9 @@ const MultisigList = () => {
     const runAsync = async () => {
       let iden;
       const multisigs = await sat.getMultisigsForAccount(acc);
+      const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
 
-      const processedList = await Promise.all(multisigs.map(async (m) => {
+      const processedList = await Promise.all(sortedByDescendingId.map(async (m) => {
         // We calculate the address locally instead of wasting time fetching from the chain.
         // The v2 of the Saturn SDK should have a function to calculate the address.
         const address = encodeAddress(
