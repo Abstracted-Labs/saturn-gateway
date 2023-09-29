@@ -169,7 +169,7 @@ const MultisigList = () => {
       }));
 
       setMultisigItems(processedList);
-      console.log({ processedList });
+
       // Set the activeButton to the address of the first item
       if (processedList.length > 0) {
         setActiveButton(processedList[0].id);
