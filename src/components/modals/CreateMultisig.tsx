@@ -17,6 +17,7 @@ import RemoveMemberIcon from "../../assets/icons/remove-member-icon.svg";
 import EditDataIcon from "../../assets/icons/edit-data-icon.svg";
 import AyeIcon from "../../assets/icons/aye-icon-17x17.svg";
 import NayIcon from "../../assets/icons/nay-icon-17x17.svg";
+import CheckIcon from "../../assets/icons/check.svg";
 import { isValidPolkadotAddress } from "../../utils/isValidPolkadotAddress";
 import { isValidKiltWeb3Name } from "../../utils/isValidKiltWeb3Name";
 import LoaderAnimation from "../legos/LoaderAnimation";
@@ -178,8 +179,8 @@ const CreateMultisig = () => {
     try {
       tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, ({ status }) => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
+
         if (status.isFinalized || status.isInBlock) {
-          // history.replaceState({}, '', `#/${ multisigId }/members`);
           navigate(`/${ multisigId }/members`, { replace: true });
 
           setTimeout(() => {
@@ -245,6 +246,11 @@ const CreateMultisig = () => {
     const nextStep = MULTISIG_CRUMB_TRAIL[currentIndex + 1];
 
     return nextStep;
+  }
+
+  function isLastStep() {
+    // check if on last step in crumb trail
+    return getCurrentStep() === MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1];
   }
 
   function goBack() {
@@ -328,7 +334,7 @@ const CreateMultisig = () => {
 
   createEffect(() => {
     // set default threshold values when multisigType changes 
-    if (active() === MULTISIG_CRUMB_TRAIL[2]) {
+    if (getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]) {
       const supportCount = totalSupportCount();
       const approvalCount = totalApprovalCount();
 
@@ -350,7 +356,7 @@ const CreateMultisig = () => {
 
   createEffect(() => {
     // update textHint() when active() crumb trail changes
-    switch (active()) {
+    switch (getCurrentStep()) {
       case MULTISIG_CRUMB_TRAIL[0]:
         setTextHint('This can be the name of your organization, community, department, or anything you like.');
         break;
@@ -618,21 +624,25 @@ const CreateMultisig = () => {
 
   const STEP_5_SUCCESS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[4]}>
-      <div class={SECTION_TEXT_STYLE}>That's it! Once the multisig is finalised, you will be automatically redirected to the new members page<EllipsisAnimation /></div>
+      <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to its new Members page<EllipsisAnimation /></div>
     </div>
   );
 
   return <div class="w-full flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0">
-    <Show when={!!active()}>
-      <Show when={getCurrentStep() !== MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]}>
-        <SaturnCrumb trail={MULTISIG_CRUMB_TRAIL} disabledCrumbs={disableCrumbs()} active={active()} setActive={handleSetActive} trailWidth="max-w-full" />
+    <Show when={!!getCurrentStep()}>
+      <Show when={isLastStep()}>
+        <SaturnCrumb trail={MULTISIG_CRUMB_TRAIL} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
       </Show>
       <SaturnCard noPadding>
         <div class="p-5 h-96">
           <div class="grid grid-cols-4 gap-2 place-items-center h-full">
             <div class="lg:col-span-2 col-span-1 px-3">
-              <h3 class="text-4xl md:text-[5vw]/none lg:text-[3vw]/none h-40 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-10">Create a new<br />Saturn Multisig</h3>
-              <h6 class="text-sm text-black dark:text-white">A Multisig is an account that is managed by one or more owners using multiple accounts.</h6>
+              <h3 class="text-4xl md:text-[5vw] lg:text-[3vw]/none h-auto lg:h-44 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-10">{!isLastStep() ? <span>
+                Create a new<br />Saturn Multisig
+              </span> : <span class="flex flex-col items-center"><img src={CheckIcon} width={80} height={80} /><span class="mt-5 break-words">You're All Set!</span></span>}</h3>
+              <Show when={!isLastStep()}>
+                <h6 class="text-sm text-black dark:text-white">A Multisig is an account that is managed by one or more owners using multiple accounts.</h6>
+              </Show>
             </div>
             <div class="mx-8 lg:col-span-2 col-span-3 bg-image" style={{ 'background-image': `url(${ GradientBgImage })` }}>
               <div class="flex flex-col justify-center bg-gray-950 p-5 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full">
@@ -658,7 +668,7 @@ const CreateMultisig = () => {
           </div>
         </div>
         <div>
-          <Show when={getCurrentStep() !== MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]}>
+          <Show when={getCurrentStep() !== MULTISIG_CRUMB_TRAIL[4]}>
             <div class="flex flex-row items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg">
               <div class="text-xs dark:text-white text-black text-center mx-auto px-3">{textHint()}</div>
               <div class="flex flex-row">
