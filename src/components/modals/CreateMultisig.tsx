@@ -71,8 +71,10 @@ const CreateMultisig = () => {
   const disableCrumbs = createMemo(() => {
     // check if any fields are invalid and disable crumbs accordingly
     const party = members();
-    const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '' || parseInt(minimumSupportField()) < totalSupportCount();
-    const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '' || (multisigType() === MultisigEnum.GOVERNANCE && parseInt(requiredApprovalField()) < totalApprovalCount());
+    // const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '' || parseInt(minimumSupportField()) < totalSupportCount();
+    const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '';
+    // const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '' || (multisigType() === MultisigEnum.GOVERNANCE && parseInt(requiredApprovalField()) < totalApprovalCount());
+    const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '';
 
     if (multisigName() === '' || nameError()) {
       return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb !== MULTISIG_CRUMB_TRAIL[0]);
@@ -115,6 +117,7 @@ const CreateMultisig = () => {
   async function createMultisig() {
     // create multisig
     setFinishing(true);
+
     const wallet = selectedState().wallet;
     const account = selectedState().account;
     const saturn = saturnContext.state.saturn;
@@ -159,7 +162,7 @@ const CreateMultisig = () => {
     if (multisigParty && typeof multisigParty === 'object') {
       // loop through multisigParty and add vote weight for each member
       for (const [address, weight] of multisigParty) {
-        const votes = weight * 10000000;
+        const votes = weight * 1000000;
         innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, address));
       }
     }
@@ -176,7 +179,12 @@ const CreateMultisig = () => {
       tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, ({ status }) => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
         if (status.isFinalized || status.isInBlock) {
-          navigate(`/${ multisigId }/members`, { resolve: false, replace: true });
+          // history.replaceState({}, '', `#/${ multisigId }/members`);
+          navigate(`/${ multisigId }/members`, { replace: true });
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
         }
       });
     } catch (error) {
@@ -466,7 +474,7 @@ const CreateMultisig = () => {
                   setError(false);
                   newMembers[index()][0] = web3name;
                   setMembers(newMembers);
-                  updateAddressError(index(), false);
+                  updateAddressError(index(), true);
                   setDisableAddMember(false);
                 } catch (error) {
                   console.error(error);
@@ -655,7 +663,7 @@ const CreateMultisig = () => {
               <div class="text-xs dark:text-white text-black text-center mx-auto px-3">{textHint()}</div>
               <div class="flex flex-row">
                 <button disabled={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0] || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200" onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">Back</span></span></button>
-                <button disabled={disableCrumbs().includes(getNextStep()) || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center" onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex"><LoaderAnimation text={<div>Processing<EllipsisAnimation /></div>} /></span> : inReviewStep() ? <span class="px-3 flex">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex"><span class="mr-2">Next</span> &gt;</span>}</button>
+                <button disabled={disableCrumbs().includes(getNextStep()) || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center" onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex"><span class="mr-2">Next</span> &gt;</span>}</button>
               </div>
             </div>
           </Show>

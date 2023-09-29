@@ -16,21 +16,6 @@ export default function Members() {
   const [search, setSearch] = createSignal<string>('');
   const saturnContext = useSaturnContext();
 
-  createEffect(async () => {
-    const saturn = saturnContext.state.saturn;
-    const multisigId = saturnContext.state.multisigId;
-
-    if (!saturn || typeof multisigId != "number") return;
-
-    const runAsync = async () => {
-      const members = await getAllMembers(multisigId, saturn);
-      originalMembers = members;
-      setMembers(members);
-    };
-
-    runAsync();
-  });
-
   function removeMember(address: string) {
     const newMembers = members().filter((member) => member.address !== address);
     console.log('removing member: ', address);
@@ -54,6 +39,21 @@ export default function Members() {
       console.log('searching for: ', search());
     }
   }
+
+  createEffect(async () => {
+    const saturn = saturnContext.state.saturn;
+    const multisigId = saturnContext.state.multisigId;
+
+    if (!saturn || typeof multisigId != "number") return;
+
+    const runAsync = async () => {
+      const members = await getAllMembers(multisigId, saturn);
+      originalMembers = members;
+      setMembers(members);
+    };
+
+    runAsync();
+  });
 
   createEffect(on(search, () => {
     // filter members by search
@@ -114,7 +114,7 @@ export default function Members() {
                     <Identity address={member.address} />
                   </td>
                   <td class='py-3 px-4 h-full'>
-                    <SaturnNumberInput label="UpdateVotes" min={1} max={50} initialValue={member.votes.div("10000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
+                    <SaturnNumberInput label="UpdateVotes" min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
                   </td>
                   <td class='py-3 px-4'>
                     {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}

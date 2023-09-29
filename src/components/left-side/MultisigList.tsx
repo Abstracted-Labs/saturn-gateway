@@ -50,10 +50,9 @@ const MultisigList = () => {
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
   const navigate = useNavigate();
-  const params = useParams<{ idOrAddress: string; }>();
-  const loc = useLocation();
-  const getParams = createMemo(() => params);
   const selectedState = createMemo(() => selectedAccountContext.state);
+  const location = useLocation();
+  const currentPage = createMemo(() => location.pathname);
 
   function handleClick(index: number) {
     const sat = saturnContext.state.saturn;
@@ -116,75 +115,81 @@ const MultisigList = () => {
     }, 3000);
   }
 
-  createEffect(() => {
-    setOriginalOrder([...multisigItems()]);
-  });
-
-  createEffect(() => {
+  async function load() {
     const sat = saturnContext.state.saturn;
     const acc = selectedState().account?.address;
     const api = ringApisContext.state.tinkernet;
 
     if (!sat || !acc || !api) return;
 
-    const runAsync = async () => {
-      let iden;
-      const multisigs = await sat.getMultisigsForAccount(acc);
-      const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
+    let iden;
+    const multisigs = await sat.getMultisigsForAccount(acc);
+    const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
 
-      const processedList = await Promise.all(sortedByDescendingId.map(async (m) => {
-        // We calculate the address locally instead of wasting time fetching from the chain.
-        // The v2 of the Saturn SDK should have a function to calculate the address.
-        const address = encodeAddress(
-          blake2AsU8a(
-            api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
-          ), 117);
+    const processedList = await Promise.all(sortedByDescendingId.map(async (m) => {
+      // We calculate the address locally instead of wasting time fetching from the chain.
+      // The v2 of the Saturn SDK should have a function to calculate the address.
+      const address = encodeAddress(
+        blake2AsU8a(
+          api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
+        ), 117);
 
-        iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
-          info: {
-            display: { Raw: string; };
-            image: { Raw: string; };
-          };
-        })?.info);
-
-        const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
-
-        const image = iden?.image?.Raw;
-
-        const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
-
-
-        // Defensive code to handle empty or undefined name
-        const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
-
-        const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
-
-        return {
-          id: m.multisigId,
-          image,
-          address,
-          capitalizedFirstName,
-          copyIcon,
-          activeTransactions,
+      iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+        info: {
+          display: { Raw: string; };
+          image: { Raw: string; };
         };
-      }));
+      })?.info);
 
-      setMultisigItems(processedList);
+      const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
 
-      // Set the activeButton to the address of the first item
-      if (processedList.length > 0) {
-        setActiveButton(processedList[0].id);
-      }
-    };
+      const image = iden?.image?.Raw;
 
-    runAsync();
+      const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
+
+
+      // Defensive code to handle empty or undefined name
+      const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
+
+      const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
+
+      return {
+        id: m.multisigId,
+        image,
+        address,
+        capitalizedFirstName,
+        copyIcon,
+        activeTransactions,
+      };
+    }));
+
+    setMultisigItems(processedList);
+
+    // Set the activeButton to the address of the first item
+    if (processedList.length > 0) {
+      setActiveButton(processedList[0].id);
+    }
+  }
+
+  createEffect(() => {
+    setOriginalOrder([...multisigItems()]);
   });
+
+  createEffect(() => {
+    load();
+  });
+
+  createEffect(on(() => location.pathname, () => {
+    if (location.pathname === '/') {
+      load();
+    }
+  }));
 
   createEffect(() => {
     if (location.pathname.endsWith('/create')) return;
     if (!location.pathname.endsWith('/members') || !location.pathname.endsWith('/assets') || !location.pathname.endsWith('/transactions')) {
       if (!!saturnContext.state.multisigId) {
-        navigate(`/${ saturnContext.state.multisigId }/members`);
+        navigate(`/${ saturnContext.state.multisigId }/members`, { replace: true });
       }
     }
   });
