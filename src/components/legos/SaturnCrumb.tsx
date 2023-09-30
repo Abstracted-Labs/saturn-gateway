@@ -41,7 +41,7 @@ const SaturnCrumb = (props: SaturnCrumbProps) => {
               <button
                 disabled={disabledCrumbs().includes(crumb)}
                 type="button"
-                class={`w-48 ${ CRUMB_STYLE } ${ props.active === crumb ? 'bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-purple-300 text-saturn-lightgrey hover:text-saturn-purple dark:hover:bg-purple-950 hover:bg-purple-300' : 'text-gray-400 hover:text-purple-500 hover:bg-purple-100 dark:text-gray-500 dark:hover:text-gray-400 bg-gray-100 dark:bg-gray-900 dark:hover:bg-saturn-darkpurple' }`}
+                class={`w-52 ${ CRUMB_STYLE } ${ props.active === crumb ? 'bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-purple-300 text-saturn-lightgrey hover:text-saturn-purple dark:hover:bg-purple-950 hover:bg-purple-300' : 'text-gray-400 hover:text-purple-500 hover:bg-purple-100 dark:text-gray-500 dark:hover:text-gray-400 bg-gray-100 dark:bg-gray-900 dark:hover:bg-saturn-darkpurple' }`}
                 onClick={() => handleCrumbClick(crumb)}
               >
                 {crumb}
