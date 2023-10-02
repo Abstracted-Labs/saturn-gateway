@@ -1,11 +1,12 @@
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import LogoutIcon from "../../assets/icons/logout-icon-15x15.svg";
-import { Show, createMemo } from "solid-js";
-import { removeAccountsModal } from "../../utils/removeAccountsModal";
+import { Show } from "solid-js";
 import { WALLET_ACCOUNTS_MODAL_ID } from "./ConnectWallet";
+import { useSaturnContext } from "../../providers/saturnProvider";
 
 const LogoutButton = (props: { onClick: () => any; }) => {
   const selectedAccount = useSelectedAccountContext();
+  const saturnContext = useSaturnContext();
 
   async function onLogout(e: Event, account: any) {
     e.preventDefault();
@@ -14,7 +15,9 @@ const LogoutButton = (props: { onClick: () => any; }) => {
       if (account.state.wallet && account.state.wallet.disconnect) {
         await account.state.wallet.disconnect();
         await account.setters.clearSelected();
+        saturnContext.setters.logout();
         props.onClick();
+        window.location.href = '/';
       }
     } catch (error) {
       console.error(error);

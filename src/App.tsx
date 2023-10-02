@@ -1,6 +1,6 @@
 import type { Component } from 'solid-js';
-import { lazy, onMount } from 'solid-js';
-import { Routes, Route } from '@solidjs/router';
+import { createEffect, createMemo, lazy, onMount } from 'solid-js';
+import { Routes, Route, useNavigate } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn } from '@invarch/saturn-sdk';
 import {
@@ -18,6 +18,7 @@ import { IdentityProvider } from "./providers/identityProvider";
 import Layout from './components/legos/Layout';
 import { ThemeProvider } from './providers/themeProvider';
 import MainContainer from './components/center-main/MainContainer';
+import Home from './pages/Home';
 
 const Create = lazy(async () => import('./pages/Create'));
 
@@ -61,6 +62,18 @@ const HomePlanet: Component = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
+  const navigate = useNavigate();
+  const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
+  const isHomepage = createMemo(() => window.location.pathname === '/');
+  const getDefaultMultisigId = createMemo(() => {
+    // return undefined if no multisigs
+    if (!saturnContext.state.multisigItems || saturnContext.state.multisigItems.length === 0) {
+      return undefined;
+    }
+
+    const defaultMultisigId = saturnContext.state.multisigItems[0].id;
+    return defaultMultisigId;
+  });
 
   onMount(async () => {
     const current = selectedAccountContext.setters.getSelectedStorage();
@@ -90,9 +103,20 @@ const HomePlanet: Component = () => {
     }
   });
 
+  createEffect(() => {
+    if (isLoggedIn()) {
+      // if logged in and on homepage, redirect to multisig members page
+      if (!!getDefaultMultisigId() && isHomepage()) {
+        navigate(`/${ getDefaultMultisigId() }/members`, { resolve: false });
+        return;
+      }
+    }
+  });
+
   return (
     <Layout>
       <Routes>
+        <Route path="/" component={Home} />
         <Route path="/create" component={Create} />
         <Route path='/:idOrAddress/*' component={MainContainer} />
       </Routes>

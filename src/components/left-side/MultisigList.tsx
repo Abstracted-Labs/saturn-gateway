@@ -10,19 +10,9 @@ import { useSelectedAccountContext } from "../../providers/selectedAccountProvid
 import { Rings } from "../../data/rings";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
-import { FALLBACK_TEXT_STYLE } from '../../utils/consts';
+import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 
 const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
-
-type MultisigItem = {
-  id: number;
-  copyIcon: JSXElement;
-  address: string,
-  capitalizedFirstName: string;
-  image?: string;
-  activeTransactions: number;
-};
-
 
 function capitalizeFirstName(name: string): string {
   const words = name.trim().split(" ");
@@ -40,7 +30,7 @@ const MultisigList = () => {
   const theme = useThemeContext();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const [activeButton, setActiveButton] = createSignal<number | null>(null);
-  const [multisigItems, setMultisigItems] = createSignal<Array<any>>([]);
+  const [multisigItems, setMultisigItems] = createSignal<MultisigItem[]>([]);
   const [originalOrder, setOriginalOrder] = createSignal([...multisigItems()]);
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
   const multisigItemsLength = createMemo(() => multisigItems().length);
@@ -131,7 +121,7 @@ const MultisigList = () => {
       const multisigs = await sat.getMultisigsForAccount(acc);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
 
-      const processedList = await Promise.all(sortedByDescendingId.map(async (m) => {
+      const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
         // We calculate the address locally instead of wasting time fetching from the chain.
         // The v2 of the Saturn SDK should have a function to calculate the address.
         const address = encodeAddress(
@@ -169,6 +159,7 @@ const MultisigList = () => {
       }));
 
       setMultisigItems(processedList);
+      saturnContext.setters.setMultisigItems(processedList);
 
       // Set the activeButton to the address of the first item
       if (processedList.length > 0) {
@@ -181,11 +172,6 @@ const MultisigList = () => {
 
   createEffect(() => {
     if (location.pathname.endsWith('/create')) return;
-    if (!location.pathname.endsWith('/members') || !location.pathname.endsWith('/assets') || !location.pathname.endsWith('/transactions')) {
-      if (!!saturnContext.state.multisigId) {
-        navigate(`/${ saturnContext.state.multisigId }/members`, { resolve: false });
-      }
-    }
   });
 
   /* createEffect(() => {

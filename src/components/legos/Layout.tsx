@@ -10,6 +10,9 @@ const Layout = ({ children }: { children: any; }) => {
   const showRightSide = createMemo(() => {
     return location.pathname !== '/' && !location.pathname.endsWith('create') && !location.pathname.endsWith('settings');
   });
+  const hideLeftSide = createMemo(() => {
+    return window.location.pathname === '/';
+  });
 
   return <div>
     {/* Portal elements */}
@@ -20,17 +23,19 @@ const Layout = ({ children }: { children: any; }) => {
 
     <div>
       {/* Left side */}
-      <div class="hidden lg:block">
-        <SidenavLeft />
-      </div>
+      <Show when={!hideLeftSide()}>
+        <div class="hidden lg:block">
+          <SidenavLeft />
+        </div>
+      </Show>
 
       {/* Main content */}
-      <div class="lg:w-auto lg:ml-[288px] lg:mr-[338px]">
+      <div class={`lg:w-auto ${ hideLeftSide() ? '' : 'lg:ml-[288px] lg:mr-[338px]' }`}>
         {children}
       </div>
 
       {/* Right side */}
-      <Show when={showRightSide()}>
+      <Show when={showRightSide() || !hideLeftSide()}>
         <div class="hidden lg:block">
           <SidenavRight />
         </div>

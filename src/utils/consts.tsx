@@ -3,6 +3,7 @@ import TinkernetIcon from '../assets/icons/tinkernet-icon.svg';
 import PicassoIcon from '../assets/icons/picasso-icon.svg';
 import KusamaIcon from '../assets/icons/kusama-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
+import { JSXElement } from 'solid-js';
 
 export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center focus:outline-none';
 
@@ -55,3 +56,12 @@ export enum MultisigEnum {
   TRADITIONAL = "Traditional",
   GOVERNANCE = "Governance",
 }
+
+export type MultisigItem = {
+  id: number;
+  copyIcon: JSXElement;
+  address: string,
+  capitalizedFirstName: string;
+  image?: string;
+  activeTransactions: number;
+};
