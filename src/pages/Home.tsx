@@ -125,7 +125,7 @@ const Home = () => {
   return (
     <div class="relative">
       {/* <div ref={setContainer} class="absolute" /> */}
-      <div class="fixed left-[-100%] top-[-100%] overflow-hidden h-[300%] w-[300%]">
+      <div class="fixed left-[-50%] top-[-50%] overflow-hidden h-[200%] w-[200%]">
         <div class="rotate-background" />
       </div>
       <div class="absolute z-1">
