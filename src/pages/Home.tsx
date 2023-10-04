@@ -1,10 +1,10 @@
 import { Match, Switch, createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
-import { WebGLRenderer, Scene, PerspectiveCamera, Points, PointsMaterial, BufferGeometry, Float32BufferAttribute, MathUtils, Color } from 'three';
+// import { WebGLRenderer, Scene, PerspectiveCamera, Points, PointsMaterial, BufferGeometry, Float32BufferAttribute, MathUtils, Color } from 'three';
+// import HomeLogo from '../components/legos/HomeLogo';
 import SaturnPlanetLight from '../assets/images/saturn-planet-light.svg';
 import SaturnPlanetDark from '../assets/images/saturn-planet-dark.svg';
 import { useThemeContext } from '../providers/themeProvider';
 import ColorSwitch, { ColorModeEnum } from '../components/left-side/ColorSwitch';
-import HomeLogo from '../components/legos/HomeLogo';
 import { WALLET_ACCOUNTS_MODAL_ID } from '../components/top-nav/ConnectWallet';
 import { Modal, initModals } from 'flowbite';
 import type { ModalOptions, ModalInterface } from 'flowbite';
@@ -70,67 +70,70 @@ const Home = () => {
     }
   });
 
-  createEffect(() => {
-    cleanup(); // Clean up the previous scene
+  // createEffect(() => {
+  //   cleanup(); // Clean up the previous scene
 
-    const scene = new Scene();
-    scene.background = isLightTheme() ? new Color(0xF9F9FB) : new Color(0x000000); // Set bg color
+  //   const scene = new Scene();
+  //   scene.background = isLightTheme() ? new Color(0xF9F9FB) : new Color(0x000000); // Set bg color
 
-    const renderer = new WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  //   const renderer = new WebGLRenderer();
+  //   renderer.setSize(window.innerWidth, window.innerHeight);
 
-    const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+  //   const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  //   camera.position.z = 5;
 
-    const vertices = [];
-    for (let i = 0; i < 10000; i++) {
-      vertices.push(
-        MathUtils.randFloatSpread(2000), // x
-        MathUtils.randFloatSpread(2000), // y
-        MathUtils.randFloatSpread(2000)  // z
-      );
-    }
+  //   const vertices = [];
+  //   for (let i = 0; i < 10000; i++) {
+  //     vertices.push(
+  //       MathUtils.randFloatSpread(2000), // x
+  //       MathUtils.randFloatSpread(2000), // y
+  //       MathUtils.randFloatSpread(2000)  // z
+  //     );
+  //   }
 
-    const starsGeometry = new BufferGeometry();
-    starsGeometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+  //   const starsGeometry = new BufferGeometry();
+  //   starsGeometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 
-    const starsMaterial = new PointsMaterial({
-      color: isLightTheme() ? 0x888893 : 0xF9F9FB, // Set stars color based on theme
-      size: Math.random() * 2.3,
-      sizeAttenuation: true,
-    });
+  //   const starsMaterial = new PointsMaterial({
+  //     color: isLightTheme() ? 0x888893 : 0xF9F9FB, // Set stars color based on theme
+  //     size: Math.random() * 2.3,
+  //     sizeAttenuation: true,
+  //   });
 
-    const starField = new Points(starsGeometry, starsMaterial);
-    scene.add(starField);
+  //   const starField = new Points(starsGeometry, starsMaterial);
+  //   scene.add(starField);
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      starField.rotation.x += 0.001;
-      starField.rotation.y += 0.001;
-      renderer.render(scene, camera);
-    };
+  //   const animate = () => {
+  //     requestAnimationFrame(animate);
+  //     starField.rotation.x += 0.001;
+  //     starField.rotation.y += 0.001;
+  //     renderer.render(scene, camera);
+  //   };
 
-    container()?.appendChild(renderer.domElement);
-    animate();
+  //   container()?.appendChild(renderer.domElement);
+  //   animate();
 
-    cleanup = () => {
-      container()?.removeChild(renderer.domElement);
-      renderer.dispose();
-      scene.remove(starField);
-      starsMaterial.dispose();
-      starsGeometry.dispose();
-    };
-  });
+  //   cleanup = () => {
+  //     container()?.removeChild(renderer.domElement);
+  //     renderer.dispose();
+  //     scene.remove(starField);
+  //     starsMaterial.dispose();
+  //     starsGeometry.dispose();
+  //   };
+  // });
 
   return (
     <div class="relative">
-      <div ref={setContainer} class="absolute" />
+      {/* <div ref={setContainer} class="absolute" /> */}
+      <div class="fixed left-[-100%] top-[-100%] overflow-hidden h-[300%] w-[300%]">
+        <div class="rotate-background" />
+      </div>
       <div class="absolute z-1">
         <div class="absolute inset-0 flex items-center justify-center h-screen text-center">
           <div class="flex flex-col items-around inset-0 text-center">
-            <div class="text-center px-20 mx-auto mb-20">
+            {/* <div class="text-center px-20 mx-auto mb-20">
               <HomeLogo />
-            </div>
+            </div> */}
             <h3 class="text-5xl/none lg:text-6xl/none h-32 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]">One Multisig.<br />
               Any Blockchain.
             </h3>

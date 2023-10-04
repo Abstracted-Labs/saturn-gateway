@@ -9,6 +9,19 @@ code {
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .rotate-background {
+    @apply absolute mx-auto inset-0 bg-cover bg-black bg-center bg-no-repeat opacity-50;
+    background-image: url('./assets/images/starfield3.svg');
+    animation: spin 360s linear infinite;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @layer utilities {
   /* Scrollbars */
   .saturn-scrollbar::-webkit-scrollbar {
