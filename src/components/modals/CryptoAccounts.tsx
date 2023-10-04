@@ -12,6 +12,8 @@ import LogoutButton from "../top-nav/LogoutButton";
 import { WALLET_ACCOUNTS_MODAL_ID } from "../top-nav/ConnectWallet";
 import { Modal, initModals } from 'flowbite';
 import type { ModalOptions, ModalInterface } from 'flowbite';
+import { useNavigate } from "@solidjs/router";
+import { useSaturnContext } from "../../providers/saturnProvider";
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
@@ -20,7 +22,9 @@ const CryptoAccounts = () => {
   );
   const [availableAccounts, setAvailableAccounts] = createSignal<Account[] & { title?: string; }>([]);
   const selectedAccountContext = useSelectedAccountContext();
+  const saturnContext = useSaturnContext();
   const theme = useThemeContext();
+  const nav = useNavigate();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
 
@@ -63,6 +67,11 @@ const CryptoAccounts = () => {
       await selectedAccountContext.setters.setSelected(acc, availableWallets().find((w) => {
         return w.metadata.title === (acc as any).title;
       }));
+
+      if (location.pathname === '/') {
+        saturnContext.state.multisigId ? nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false }) :
+          nav(`/create`, { resolve: false });
+      }
 
       removeModal();
     }

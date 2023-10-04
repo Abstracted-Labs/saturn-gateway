@@ -1,3 +1,4 @@
+import ColorSwitch from "../left-side/ColorSwitch";
 import ChangeNetworkButton from "./ChangeNetworkButton";
 import ConnectWallet from "./ConnectWallet";
 import NotifyButton from "./NotifyButton";

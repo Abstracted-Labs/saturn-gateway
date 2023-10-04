@@ -24,7 +24,7 @@ export async function getBalancesFromAllNetworks(address: string): Promise<Netwo
   ).then(async response => response.json().then(res => {
     const newRes = (res as { state: { free_raw?: string, reserved_raw?: string, frozen_raw?: string, id: string, symbol: string; }; }[]);
 
-    const balances: NetworkBalances = newRes
+    const balances: NetworkBalances = Array.isArray(newRes) ? newRes
       .map((asset) => {
         return {
           [asset.state.id as keyof typeof Rings]: {
@@ -45,7 +45,7 @@ export async function getBalancesFromAllNetworks(address: string): Promise<Netwo
         newPrev[Object.keys(asset)[0] as keyof typeof Rings] = assets;
 
         return newPrev;
-      }, {} as NetworkBalances);
+      }, {} as NetworkBalances) : {} as NetworkBalances;
 
     return balances;
   }

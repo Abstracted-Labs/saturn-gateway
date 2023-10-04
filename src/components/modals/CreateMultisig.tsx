@@ -27,7 +27,7 @@ const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 const THRESHOLD_TEXT_STYLE = "text-xxs p-2 border border-saturn-lightgrey rounded-md text-black dark:text-white";
 const SECTION_TEXT_STYLE = "text-black dark:text-white text-lg mb-3";
 const LIST_LABEL_STYLE = "text-saturn-darkgrey dark:text-white text-xxs mb-1";
-const MULTISIG_CRUMB_TRAIL = ['Choose a Name', 'Add Members', 'Set Voting Thresholds', 'Review', 'success'];
+const MULTISIG_CRUMB_TRAIL = ['Choose Name', 'Add Members', 'Set Thresholds', 'Review', 'success'];
 
 const CreateMultisig = () => {
   const navigate = useNavigate();

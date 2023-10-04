@@ -1,11 +1,10 @@
 import { Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { ColorModeEnum } from "../left-side/ColorSwitch";
 import { useThemeContext } from "../../providers/themeProvider";
-import darkLogo from "../../assets/icons/saturn-logo-dark-beta.svg";
-import lightLogo from "../../assets/icons/saturn-logo-light-beta.svg";
-import { A } from "@solidjs/router";
+import darkLogo from "../../assets/icons/saturn-home-logo-dark.svg";
+import lightLogo from "../../assets/icons/saturn-home-logo-light.svg";
 
-const SaturnLogo = () => {
+const HomeLogo = () => {
   const [lightMode, setLightMode] = createSignal<boolean>(false);
   const theme = useThemeContext();
   const colorMode = createMemo(() => theme.getColorMode());
@@ -18,15 +17,15 @@ const SaturnLogo = () => {
     }
   }));
 
-  return <A href="/" class="flex ml-2 md:mr-24">
+  return <>
     <Show when={lightMode()}>
-      <img id="lightLogo" src={lightLogo} class="h-8 my-5 mr-3 max-w-xs" alt="Saturn Gateway Logo Light" />
+      <img id="lightLogo" src={lightLogo} class="flex" alt="Saturn Gateway Logo Light" />
     </Show>
     <Show when={!lightMode()}>
-      <img id="darkLogo" src={darkLogo} class="h-8 my-5 mr-3 max-w-xs" alt="Saturn Gateway Logo Dark" />
+      <img id="darkLogo" src={darkLogo} class="flex" alt="Saturn Gateway Logo Dark" />
     </Show>
-  </A>;
+  </>;
 };
 
-SaturnLogo.displayName = "SaturnLogo";
-export default SaturnLogo;
+HomeLogo.displayName = "HomeLogo";
+export default HomeLogo;

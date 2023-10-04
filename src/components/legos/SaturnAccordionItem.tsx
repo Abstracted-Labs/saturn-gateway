@@ -48,25 +48,6 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
       {props.children}
     </div>
   </>;
-
-  return <div class="flex flex-col">
-    {props.children}
-    {/* <div class="flex flex-row">
-      call data
-      <div class="max-h-[300px] overflow-scroll">
-        <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call)} />
-      </div>
-      votes history
-    </div>
-    <div class="flex flex-row">
-      progress details
-      % needed
-    </div>
-    <div class="flex flex-row">
-      aye vote button
-      nay vote button
-    </div> */}
-  </div>;
 };
 
 SaturnAccordionItem.displayName = 'SaturnAccordionItem';

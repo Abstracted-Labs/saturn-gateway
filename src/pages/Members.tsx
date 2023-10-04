@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Show, createMemo, on } from 'solid-js';
+import { createSignal, For, createEffect, Show, createMemo, on, onMount } from 'solid-js';
 import { BigNumber } from 'bignumber.js';
 import { useSaturnContext } from "../providers/saturnProvider";
 import Identity from '../components/identity/Identity';
@@ -7,14 +7,19 @@ import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE } from '../utils/consts';
 import RemoveIcon from '../assets/icons/remove-member-icon.svg';
 import SaturnNumberInput from '../components/legos/SaturnNumberInput';
 import SearchIcon from '../assets/icons/search.svg';
+import { Modal, initModals } from 'flowbite';
+import type { ModalInterface } from 'flowbite';
+import { WALLET_ACCOUNTS_MODAL_ID } from '../components/top-nav/ConnectWallet';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
 export default function Members() {
+  let modal: ModalInterface;
   let originalMembers: MembersType[];
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [search, setSearch] = createSignal<string>('');
   const saturnContext = useSaturnContext();
+  const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
 
   function removeMember(address: string) {
     const newMembers = members().filter((member) => member.address !== address);
@@ -39,6 +44,14 @@ export default function Members() {
       console.log('searching for: ', search());
     }
   }
+
+  onMount(() => {
+    initModals();
+    if ($modalElement()) {
+      modal = new Modal($modalElement());
+      modal.hide();
+    }
+  });
 
   createEffect(async () => {
     const saturn = saturnContext.state.saturn;

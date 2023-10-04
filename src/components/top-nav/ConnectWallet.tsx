@@ -57,10 +57,14 @@ const ConnectWallet = () => {
 
   onMount(() => {
     initModals();
-    modal = new Modal($modalElement(), modalOptions);
+    if (!$modalElement()) {
+      modal = new Modal($modalElement(), modalOptions);
+    }
 
     initDropdowns();
-    dropdown = new Dropdown($toggleElement(), $dropdownElement(), dropdownOptions);
+    if (!$dropdownElement()) {
+      dropdown = new Dropdown($toggleElement(), $dropdownElement(), dropdownOptions);
+    }
   });
 
   createEffect(() => {

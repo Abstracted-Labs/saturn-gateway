@@ -64,7 +64,7 @@ const HomePlanet: Component = () => {
   const selectedAccountContext = useSelectedAccountContext();
   const navigate = useNavigate();
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
-  const isHomepage = createMemo(() => window.location.pathname === '/');
+  const isHomepage = createMemo(() => location.pathname === '/');
   const getDefaultMultisigId = createMemo(() => {
     // return undefined if no multisigs
     if (!saturnContext.state.multisigItems || saturnContext.state.multisigItems.length === 0) {

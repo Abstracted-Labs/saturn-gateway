@@ -9,7 +9,7 @@ const RightContent = () => {
   const location = useLocation();
   const currentPage = createMemo(() => location.pathname);
 
-  return <div class="h-full px-3 py-2 overflow-y-auto bg-saturn-offwhite dark:bg-saturn-black">
+  return <div class="h-full px-5 py-2 overflow-y-auto bg-saturn-offwhite dark:bg-saturn-black">
     <div class="grid grid-cols-1 gap-12 text-black dark:text-white">
       <Switch fallback="No data.">
         <Match when={currentPage().endsWith('/assets')}>
