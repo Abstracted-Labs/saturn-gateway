@@ -144,7 +144,7 @@ const Home = () => {
           </div>
         </div>
         <div class="relative w-screen">
-          <div class="fixed w-screen h-auto xs:bottom-[-10%] sm:bottom-[-15%] lg:bottom-0" onClick={togglePalette}>
+          <div class="fixed w-screen h-auto bottom-[-10%] sm:bottom-[-15%] lg:bottom-0" onClick={togglePalette}>
             <Switch>
               <Match when={isLightTheme()}>
                 <div class="overflow-hidden h-[190px]">
