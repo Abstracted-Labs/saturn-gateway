@@ -3,7 +3,7 @@ import DrawerRight from "../right-side/DrawerRight";
 import CaretLeftIcon from "../../assets/icons/caret-left-icon.svg";
 import CaretRightIcon from "../../assets/icons/caret-right-icon.svg";
 
-const SubNavbar = ({ ...props }) => {
+const SubNavbar = (props: any) => {
   return <div>
     <nav {...props} class="bg-saturn-purple py-1.5 sticky w-full h-10 z-40 top-0 left-0 flex justify-between lg:hidden">
 

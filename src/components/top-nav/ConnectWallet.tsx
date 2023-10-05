@@ -96,7 +96,7 @@ const ConnectWallet = () => {
       data-dropdown-offset-distance="-6"
       id={WALLET_DROPDOWN_ID}
       data-dropdown-toggle={WALLET_TOGGLE_ID}
-      class={`${ BUTTON_COMMON_STYLE } text-sm text-saturn-black dark:text-saturn-offwhite h-full justify-between pl-4 z-30 w-60 flex items-center focus:outline-none`}
+      class={`${ BUTTON_COMMON_STYLE } text-sm text-saturn-black dark:text-saturn-offwhite h-10 justify-between pl-4 z-30 w-60 flex items-center focus:outline-none`}
       type="button">
       <AvatarAndName enlarge={false} name={selectedAccount.state.account?.name} avatar={(selectedAccount.state.account as any)?.avatar} />
       <svg data-accordion-icon class={`transition-all w-3 h-3 ${ isDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">

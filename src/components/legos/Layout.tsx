@@ -10,7 +10,7 @@ const Layout = ({ children }: { children: any; }) => {
   const showRightSide = createMemo(() => {
     return location.pathname !== '/' && !location.pathname.endsWith('create') && !location.pathname.endsWith('settings');
   });
-  const hideLeftSide = createMemo(() => {
+  const atHome = createMemo(() => {
     return location.pathname === '/';
   });
 
@@ -19,25 +19,23 @@ const Layout = ({ children }: { children: any; }) => {
     <CryptoAccounts />
 
     {/* Top nav */}
-    <Show when={!hideLeftSide()}>
-      <Navbar />
-    </Show>
+    <Navbar />
 
     <div>
       {/* Left side */}
-      <Show when={!hideLeftSide()}>
+      <Show when={!atHome()}>
         <div class="hidden lg:block">
           <SidenavLeft />
         </div>
       </Show>
 
       {/* Main content */}
-      <div class={`lg:w-auto ${ hideLeftSide() ? '' : 'lg:ml-[288px] lg:mr-[353px]' }`}>
+      <div class={`lg:w-auto ${ atHome() ? '' : 'lg:ml-[288px] lg:mr-[353px]' }`}>
         {children}
       </div>
 
       {/* Right side */}
-      <Show when={showRightSide() && !hideLeftSide()}>
+      <Show when={showRightSide() && !atHome()}>
         <div class="hidden lg:block">
           <SidenavRight />
         </div>

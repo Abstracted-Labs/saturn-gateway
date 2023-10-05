@@ -34,13 +34,13 @@ const Home = () => {
     return; // prevent toggling to light mode for now
 
     // if set via local storage previously
-    if (isLightTheme()) {
-      document.documentElement.classList.add(ColorModeEnum.DARK);
-      theme.setMode(ColorModeEnum.DARK);
-    } else {
-      document.documentElement.classList.remove(ColorModeEnum.DARK);
-      theme.setMode(ColorModeEnum.LIGHT);
-    }
+    // if (isLightTheme()) {
+    //   document.documentElement.classList.add(ColorModeEnum.DARK);
+    //   theme.setMode(ColorModeEnum.DARK);
+    // } else {
+    //   document.documentElement.classList.remove(ColorModeEnum.DARK);
+    //   theme.setMode(ColorModeEnum.LIGHT);
+    // }
   }
 
   function openConnectWallet() {
@@ -129,21 +129,21 @@ const Home = () => {
         <div class="rotate-background" />
       </div>
       <div class="absolute z-1">
-        <div class="absolute inset-0 flex items-center justify-center h-screen text-center">
+        <div class="absolute inset-0 flex items-center justify-center text-center translate-y-[100%]">
           <div class="flex flex-col items-around inset-0 text-center">
             {/* <div class="text-center px-20 mx-auto mb-20">
               <HomeLogo />
             </div> */}
-            <h3 class="text-5xl/none lg:text-6xl/none h-32 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]">One Multisig.<br />
+            <h1 class="text-5xl/none lg:text-6xl/none h-32 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]">One Multisig.<br />
               Any Blockchain.
-            </h3>
-            <h4 class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-xl lg:text-2xl mb-5 mt-2`}>Welcome to the future of asset management.</h4>
+            </h1>
+            <h2 class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-xl lg:text-2xl mb-5 mt-2`}>Welcome to the future of asset management.</h2>
             <p class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-sm/tight w-2/3 px-10 block text-center mx-auto`}>A multichain multisig secured by Polkadot that can manage assets across any blockchain.</p>
             <button type="button" class="z-20 text-white w-1/3 mx-auto my-5 bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-saturn-purple focus:ring-none font-bold rounded-md text-sm px-5 py-5 text-center" onClick={openConnectWallet} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} >Enter the Gateway</button>
             <ColorSwitch />
           </div>
         </div>
-        <div class="relative w-screen bottom-[-578px]" onClick={togglePalette}>
+        <div class="relative w-screen bottom-[-480px]" onClick={togglePalette}>
           <Switch>
             <Match when={isLightTheme()}>
               <div class="overflow-hidden h-[190px]">

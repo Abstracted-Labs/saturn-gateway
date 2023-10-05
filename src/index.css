@@ -11,7 +11,7 @@ code {
 
 @layer components {
   .rotate-background {
-    @apply absolute mx-auto inset-0 bg-cover bg-black bg-center bg-no-repeat opacity-50;
+    @apply absolute mx-auto inset-0 bg-cover bg-black bg-center bg-repeat opacity-50;
     background-image: url('./assets/images/starfield.png');
     animation: spin 360s linear infinite;
   }
