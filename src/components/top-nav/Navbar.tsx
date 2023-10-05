@@ -14,12 +14,12 @@ const Navbar = (props: any) => {
 
   return <>
     <nav {...props} class={`${ atHome() ? 'bg-transparent backdrop-blur' : 'bg-saturn-offwhite dark:bg-saturn-black' } sticky z-50 top-0 left-0`}>
-      <div class="px-3 py-3 lg:px-5 lg:pl-3">
+      <div class="py-3 px-5">
         <div class="flex items-center justify-between">
           <div class="">
             <SaturnLogo />
           </div>
-          <div class="flex flex-row items-center gap-2">
+          <div class="flex flex-row items-center gap-2 z-1">
             <Show when={!atHome()}>
               <NotifyButton />
               <ChangeNetworkButton />
