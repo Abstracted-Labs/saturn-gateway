@@ -139,12 +139,12 @@ const Home = () => {
             </h1>
             <h2 class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-xl lg:text-2xl mb-5 mt-2`}>Welcome to the future of asset management.</h2>
             <p class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-sm/tight w-2/3 px-10 block text-center mx-auto`}>A multichain multisig secured by Polkadot that can manage assets across any blockchain.</p>
-            <button type="button" class="z-20 text-white w-1/2 md:w-1/3 mx-auto my-5 bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-saturn-purple focus:ring-none font-bold rounded-md text-sm px-5 py-5 text-center" onClick={openConnectWallet} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} >Enter the Gateway</button>
+            <button type="button" class="z-50 text-white w-1/2 md:w-1/3 mx-auto my-5 bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-saturn-purple focus:ring-none font-bold rounded-md text-sm px-5 py-5 text-center" onClick={openConnectWallet} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} >Enter the Gateway</button>
             <ColorSwitch />
           </div>
         </div>
         <div class="relative w-screen">
-          <div class="fixed w-screen h-auto bottom-[-10%] sm:bottom-[-15%] lg:bottom-0" onClick={togglePalette}>
+          <div class="fixed w-screen h-auto bottom-[-130px] sm:bottom-[-15%] lg:bottom-0" onClick={togglePalette}>
             <Switch>
               <Match when={isLightTheme()}>
                 <div class="overflow-hidden h-[190px]">
