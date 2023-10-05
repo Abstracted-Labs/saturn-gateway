@@ -129,7 +129,7 @@ const Home = () => {
         <div class="rotate-background" />
       </div>
       <div class="absolute z-1">
-        <div class="absolute inset-0 flex items-center justify-center text-center translate-y-[100%]">
+        <div class="flex items-center justify-center text-center translate-y-[50%]">
           <div class="flex flex-col items-around inset-0 text-center">
             {/* <div class="text-center px-20 mx-auto mb-20">
               <HomeLogo />
@@ -143,19 +143,21 @@ const Home = () => {
             <ColorSwitch />
           </div>
         </div>
-        <div class="relative w-screen bottom-[-480px]" onClick={togglePalette}>
-          <Switch>
-            <Match when={isLightTheme()}>
-              <div class="overflow-hidden h-[190px]">
-                <img src={SaturnPlanetLight} alt="Saturn Planet" />
-              </div>
-            </Match>
-            <Match when={!isLightTheme()}>
-              <div class="overflow-hidden h-[190px]">
-                <img src={SaturnPlanetDark} alt="Saturn Planet" />
-              </div>
-            </Match>
-          </Switch>
+        <div class="relative w-screen">
+          <div class="fixed w-screen h-auto bottom-0" onClick={togglePalette}>
+            <Switch>
+              <Match when={isLightTheme()}>
+                <div class="overflow-hidden h-[190px]">
+                  <img src={SaturnPlanetLight} alt="Saturn Planet" />
+                </div>
+              </Match>
+              <Match when={!isLightTheme()}>
+                <div class="overflow-hidden h-[190px]">
+                  <img src={SaturnPlanetDark} alt="Saturn Planet" />
+                </div>
+              </Match>
+            </Switch>
+          </div>
         </div>
       </div>
     </div>

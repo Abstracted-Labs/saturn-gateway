@@ -25,7 +25,7 @@ const Navbar = (props: any) => {
               <ChangeNetworkButton />
             </Show>
             <Show when={atHome()}>
-              <div class="text-white mr-3 text-xs lg:text-sm xs:hidden md:block">Saturn SDK Gateway</div>
+              <div class="text-white mr-3 text-xs lg:text-sm hidden md:block">Saturn SDK Gateway</div>
             </Show>
             <ConnectWallet />
           </div>
