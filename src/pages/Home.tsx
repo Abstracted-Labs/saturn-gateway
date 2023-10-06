@@ -128,6 +128,7 @@ const Home = () => {
       {/* <div ref={setContainer} class="absolute" /> */}
       <div class="fixed left-[-50%] top-[-50%] overflow-hidden h-[200%] w-[200%]">
         <div class="rotate-background" />
+        <div class="rotate-background2" />
       </div>
       <div id="planetContainer" />
       <div class="flex items-center justify-center text-center translate-y-[50%]">

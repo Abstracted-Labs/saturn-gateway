@@ -9,13 +9,32 @@ code {
 @tailwind components;
 @tailwind utilities;
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin2 {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
 @layer components {
   .rotate-background {
-    @apply absolute mx-auto inset-0 bg-cover bg-black bg-center bg-repeat opacity-50;
+    @apply absolute mx-auto inset-0 bg-cover bg-black bg-center bg-repeat opacity-[25%];
     background-image: url('./assets/images/starfield.png');
-    animation: spin 360s linear infinite;
+    animation: spin 500s linear infinite;
   }
 }
+
+@layer components {
+  .rotate-background2 {
+    @apply absolute mx-auto inset-0 bg-cover bg-black bg-center bg-repeat opacity-[50%];
+    background-image: url('./assets/images/starfield.png');
+    animation: spin2 500s linear infinite;
+  }
+}
+
 
 @layer components {
   #planetContainer {
@@ -25,11 +44,6 @@ code {
     z-index: 0;
     bottom: -68%; /* Adjust this value to offset the image offscreen */
   }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 @layer utilities {
