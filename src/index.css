@@ -17,6 +17,16 @@ code {
   }
 }
 
+@layer components {
+  #planetContainer {
+    @apply bg-no-repeat bg-bottom bg-cover w-screen h-full;
+    background-image: url('./assets/images/saturn-planet-dark.svg');
+    position: fixed;
+    z-index: 0;
+    bottom: -68%; /* Adjust this value to offset the image offscreen */
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

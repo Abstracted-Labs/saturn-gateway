@@ -16,6 +16,7 @@ const Home = () => {
   let modal: ModalInterface;
   let cleanup = () => { };
   const [container, setContainer] = createSignal<HTMLElement>();
+  const [isHovered, setHovered] = createSignal(false);
   const theme = useThemeContext();
   const nav = useNavigate();
   const saturnContext = useSaturnContext();
@@ -128,36 +129,28 @@ const Home = () => {
       <div class="fixed left-[-50%] top-[-50%] overflow-hidden h-[200%] w-[200%]">
         <div class="rotate-background" />
       </div>
-      <div class="absolute z-1">
-        <div class="flex items-center justify-center text-center translate-y-[25%] lg:translate-y-[50%]">
-          <div class="flex flex-col items-around inset-0 text-center">
-            {/* <div class="text-center px-20 mx-auto mb-20">
+      <div id="planetContainer" />
+      <div class="flex items-center justify-center text-center translate-y-[50%]">
+        <div class="flex flex-col justify-center items-around inset-0 text-center">
+          {/* <div class="text-center px-20 mx-auto mb-20">
               <HomeLogo />
             </div> */}
-            <h1 class="text-5xl/none lg:text-6xl/none h-32 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]">One Multisig.<br />
-              Any Blockchain.
-            </h1>
-            <h2 class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-xl lg:text-2xl mb-5 mt-2`}>Welcome to the future of asset management.</h2>
-            <p class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-sm/tight w-full lg:w-2/3 px-10 block text-center mx-auto`}>A multichain multisig secured by Polkadot that can manage assets across any blockchain.</p>
-            <button type="button" class="z-50 text-white w-1/2 md:w-1/3 mx-auto my-5 bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-saturn-purple focus:ring-none font-bold rounded-md text-sm px-5 py-5 text-center" onClick={openConnectWallet} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} >Enter the Gateway</button>
-            <ColorSwitch />
-          </div>
-        </div>
-        <div class="relative w-screen">
-          <div class="fixed w-screen h-auto bottom-[-130px] sm:bottom-[-15%] lg:bottom-0" onClick={togglePalette}>
-            <Switch>
-              <Match when={isLightTheme()}>
-                <div class="overflow-hidden h-[190px]">
-                  <img src={SaturnPlanetLight} alt="Saturn Planet" />
-                </div>
-              </Match>
-              <Match when={!isLightTheme()}>
-                <div class="overflow-hidden h-[190px]">
-                  <img src={SaturnPlanetDark} alt="Saturn Planet" />
-                </div>
-              </Match>
-            </Switch>
-          </div>
+          <h1 class="text-5xl/none lg:text-6xl/none h-32 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]">One Multisig.<br />
+            Any Blockchain.
+          </h1>
+          <h2 class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-xl lg:text-2xl mb-5 mt-2`}>Welcome to the future of asset management.</h2>
+          <p class={`${ !isLightTheme() ? 'text-white' : 'text-black' } text-sm/tight w-full lg:w-2/3 px-10 block text-center mx-auto`}>A multichain multisig secured by Polkadot that can manage assets across any blockchain.</p>
+          <button id="enter"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onTouchStart={() => setHovered(true)}
+            onTouchEnd={() => setHovered(false)}
+            class="z-20 relative my-5 p-0.5 overflow-hidden text-sm font-bold w-1/2 md:w-1/3 mx-auto rounded-md group bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-none focus:ring-saturn-purple dark:focus:ring-saturn-purple hover:text-black">
+            <span class="w-full h-14 flex items-center justify-center block mx-auto transition-all ease-in duration-75 bg-white dark:bg-black rounded-md group-hover:bg-opacity-0">
+              <span class={!isHovered() ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]' : 'text-black'}>Enter the Gateway</span>
+            </span>
+          </button>
+          <ColorSwitch />
         </div>
       </div>
     </div>
@@ -165,3 +158,21 @@ const Home = () => {
 };
 
 export default Home;
+
+
+{/* <div class="relative w-screen">
+          <div class="fixed mx-auto w-fit h-auto bottom-0" onClick={togglePalette}>
+            <Switch>
+              <Match when={isLightTheme()}>
+                <div class="overflow-hidden">
+                  <img src={SaturnPlanetLight} alt="Saturn Planet" />
+                </div>
+              </Match>
+              <Match when={!isLightTheme()}>
+                <div class="overflow-hidden">
+                  <img src={SaturnPlanetDark} alt="Saturn Planet" />
+                </div>
+              </Match>
+            </Switch>
+          </div>
+        </div> */}
