@@ -158,21 +158,3 @@ const Home = () => {
 };
 
 export default Home;
-
-
-{/* <div class="relative w-screen">
-          <div class="fixed mx-auto w-fit h-auto bottom-0" onClick={togglePalette}>
-            <Switch>
-              <Match when={isLightTheme()}>
-                <div class="overflow-hidden">
-                  <img src={SaturnPlanetLight} alt="Saturn Planet" />
-                </div>
-              </Match>
-              <Match when={!isLightTheme()}>
-                <div class="overflow-hidden">
-                  <img src={SaturnPlanetDark} alt="Saturn Planet" />
-                </div>
-              </Match>
-            </Switch>
-          </div>
-        </div> */}
