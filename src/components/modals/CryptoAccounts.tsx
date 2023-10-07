@@ -96,9 +96,9 @@ const CryptoAccounts = () => {
 
   return (
     <>
-      <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto p-4 overflow-x-hidden md:mt-10 overflow-y-scroll z-[60]">
+      <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
         <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
-        <div class="relative h-[650px] bg-saturn-offwhite dark:bg-black rounded-md">
+        <div class={`relative h-auto px-4 bg-saturn-offwhite dark:bg-black rounded-md`}>
           <div class="flex items-start justify-between p-4">
             <h4 class="text-md font-semibold text-gray-900 dark:text-white">
               Connect Wallet
@@ -110,28 +110,30 @@ const CryptoAccounts = () => {
               <span class="sr-only">Close modal</span>
             </button>
           </div>
-          <div class="mx-6 h-[500px]">
+          <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
             {/* <div class="relative mx-auto flex-row flex justify-center items-center w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-800 mb-3">
             <img src={Keyhole} alt="Login to continue" class="opacity-75" />
             <img src={WalletIcon} alt="purple-wallet-icon" class="absolute bottom-[4px] right-[8px]" />
           </div>
           <p class="text-sm font-normal text-saturn-black dark:text-saturn-offwhite my-5">Connect Wallet to Continue</p> */}
             <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
-              <For each={availableAccounts()}>
-                {account => {
-                  return (
-                    <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]}>
-                      <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
-                      <div class="flex flex-row justify-between items-start my-3
+              <Show when={availableAccounts().length > 2}>
+                <For each={availableAccounts()}>
+                  {account => {
+                    return (
+                      <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]}>
+                        <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
+                        <div class="flex flex-row justify-between items-start my-3
                     ">
-                        <WalletLabel walletType={(account as any).title} />
-                        <div class="text-xs"><NetworkBalance address={account.address} /></div>
+                          <WalletLabel walletType={(account as any).title} />
+                          <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
+                        </div>
+                        <CopyAddressField address={account.address} length={18} />
                       </div>
-                      <CopyAddressField address={account.address} length={18} />
-                    </div>
-                  );
-                }}
-              </For>
+                    );
+                  }}
+                </For>
+              </Show>
             </div>
           </div>
 
