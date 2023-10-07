@@ -15,20 +15,17 @@ const Navbar = (props: any) => {
   return <>
     <nav {...props} class={`${ atHome() ? 'bg-transparent backdrop-blur' : 'bg-saturn-offwhite dark:bg-saturn-black' } sticky z-50 top-0 left-0`}>
       <div class="py-3 px-5">
-        <div class="flex items-center justify-between">
+        <div class={`flex items-center ${ atHome() ? 'justify-center' : 'justify-between' }`}>
           <div class="">
             <SaturnLogo />
           </div>
-          <div class="flex flex-row items-center gap-2 z-1">
-            <Show when={!atHome()}>
+          <Show when={!atHome()}>
+            <div class="flex flex-row items-center gap-2 z-1">
               <NotifyButton />
               <ChangeNetworkButton />
-            </Show>
-            <Show when={atHome()}>
-              <div class="text-white mr-3 text-xs lg:text-sm hidden md:block">Saturn SDK Gateway</div>
-            </Show>
-            <ConnectWallet />
-          </div>
+              <ConnectWallet />
+            </div>
+          </Show>
         </div>
       </div>
       <Show when={!atHome()}>
