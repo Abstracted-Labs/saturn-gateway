@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/md5": "^2.3.2",
+    "@types/qrcode": "^1.5.2",
     "@types/three": "^0.156.0",
     "@typescript-eslint/eslint-plugin": ">=5.57.0",
     "@typescript-eslint/parser": ">=5.57.0",
@@ -54,6 +55,7 @@
     "colorjs.io": "^0.4.5",
     "flowbite": "^1.8.1",
     "md5": "^2.3.0",
+    "qrcode": "^1.5.3",
     "solid-forms": "^0.4.8",
     "solid-icons": "^1.0.4",
     "solid-js": "^1.6.10",

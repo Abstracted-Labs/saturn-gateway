@@ -12,5 +12,7 @@ export function matchTypeToLabel(type: string | undefined) {
     return WalletTypeEnum.PJS;
   } else if (WalletTypeEnum.CRUSTWALLET.toLowerCase().includes(type)) {
     return WalletTypeEnum.CRUSTWALLET;
+  } else {
+    return WalletTypeEnum.WALLETCONNECT;
   }
 }

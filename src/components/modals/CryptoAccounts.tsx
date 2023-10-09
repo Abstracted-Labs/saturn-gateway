@@ -1,5 +1,5 @@
 import { Account, BaseWallet } from "@polkadot-onboard/core";
-import { For, onMount, createMemo, createSignal, Show, createEffect, on } from "solid-js";
+import { For, onMount, createMemo, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { walletAggregator } from "../../App";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import WalletLabel from "../top-nav/WalletLabel";
@@ -14,15 +14,24 @@ import { Modal, initModals } from 'flowbite';
 import type { ModalInterface } from 'flowbite';
 import { useNavigate } from "@solidjs/router";
 import { useSaturnContext } from "../../providers/saturnProvider";
+import { useWalletConnectContext } from "../../providers/walletConnectProvider";
+import QRCode from 'qrcode';
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
+  const [canvasReady, setCanvasReady] = createSignal(false);
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
   const [availableAccounts, setAvailableAccounts] = createSignal<Account[] & { title?: string; }>([]);
+  const [openWalletConnect, setOpenWalletConnect] = createSignal(false);
+  const [qrCodeUri, setQrCodeUri] = createSignal<string>('');
+  // const [wcActiveSessions, setWcActiveSessions] = createSignal<
+  //   Array<[string, SessionTypes.Struct]>
+  // >([]);
   const selectedAccountContext = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
+  const walletContext = useWalletConnectContext();
   const theme = useThemeContext();
   const nav = useNavigate();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
@@ -39,10 +48,10 @@ const CryptoAccounts = () => {
           throw new Error('wallet is not valid or getAccounts is not a function');
         }
 
-        if (wallet.type === 'WALLET_CONNECT') {
-          // We handle Wallet Connect differently elsewhere
-          continue;
-        }
+        // if (wallet.type === 'WALLET_CONNECT') {
+        //   // We handle Wallet Connect differently elsewhere
+        //   continue;
+        // }
 
         // Connect to each wallet
         await wallet.connect();
@@ -77,11 +86,41 @@ const CryptoAccounts = () => {
     }
   }
 
+  function handleOpenWalletConnect() {
+    setOpenWalletConnect(true);
+  }
+
   function removeModal() {
     if (modal) {
       modal.hide();
     }
+    setOpenWalletConnect(false);
   }
+
+  async function tryWcConnectDapp() {
+    const uri = qrCodeUri();
+
+    console.log('qrCodeUri: ', uri);
+
+    if (walletContext.state.w3w) {
+      await walletContext.state.w3w.core.pairing.pair({ uri });
+    }
+  }
+
+  async function disconnectWeb3Wallet(topic: string) {
+    if (walletContext.state.w3w) {
+      await walletContext.state.w3w.disconnectSession({
+        topic,
+        reason: { code: 123, message: '' },
+      });
+
+      console.log('session disconnected');
+
+      // setWcActiveSessions(Object.entries(walletContext.state.w3w.getActiveSessions()));
+
+      removeModal();
+    }
+  };
 
   onMount(() => {
     initModals();
@@ -94,12 +133,51 @@ const CryptoAccounts = () => {
     getAllAccounts();
   });
 
+  onMount(() => {
+    setCanvasReady(true);
+  });
+
+  createEffect(() => {
+    const uri = walletContext.state.saturnQr;
+    if (uri) {
+      setQrCodeUri(uri);
+    }
+  });
+
+  createEffect(() => {
+    let timeout: any;
+    if (!canvasReady()) return;
+    if (!openWalletConnect()) return;
+
+    const runAsync = async () => {
+      const canvas = document.getElementById('qr-code-canvas');
+      const text = qrCodeUri();
+      try {
+        if (canvas !== null) {
+          timeout = setTimeout(async () => {
+            await QRCode.toCanvas(canvas, text);
+          }, 100);
+        } else {
+          console.error('Error generating QR code: canvas is null');
+        }
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+      }
+    };
+
+    runAsync();
+
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
+  });
+
   return (
     <>
       <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
         <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
         <div class={`relative h-auto px-4 bg-saturn-offwhite dark:bg-black rounded-md`}>
-          <div class="flex items-start justify-between p-4">
+          <div class="flex flex-row items-start justify-between p-4">
             <h4 class="text-md font-semibold text-gray-900 dark:text-white">
               Connect Wallet
             </h4>
@@ -110,37 +188,56 @@ const CryptoAccounts = () => {
               <span class="sr-only">Close modal</span>
             </button>
           </div>
-          <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
-            {/* <div class="relative mx-auto flex-row flex justify-center items-center w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-800 mb-3">
-            <img src={Keyhole} alt="Login to continue" class="opacity-75" />
-            <img src={WalletIcon} alt="purple-wallet-icon" class="absolute bottom-[4px] right-[8px]" />
-          </div>
-          <p class="text-sm font-normal text-saturn-black dark:text-saturn-offwhite my-5">Connect Wallet to Continue</p> */}
-            <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
-              <Show when={availableAccounts().length > 2}>
-                <For each={availableAccounts()}>
-                  {account => {
-                    return (
-                      <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]}>
-                        <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
-                        <div class="flex flex-row justify-between items-start my-3
-                    ">
-                          <WalletLabel walletType={(account as any).title} />
-                          <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
-                        </div>
-                        <CopyAddressField address={account.address} length={18} />
-                      </div>
-                    );
-                  }}
-                </For>
+          <Show when={openWalletConnect()}>
+            <div class="mx-4">
+              {/* <input
+                class="text-black"
+                value={qrCodeUri()}
+                onInput={(e: any) => {
+                  setQrCodeUri(e.currentTarget.value);
+                }}
+              /> */}
+              <Show when={canvasReady()} fallback={<span class="text-black dark:text-white text-xxs align-center">Loading QR Code...</span>}>
+                <canvas class="rounded-md" id="qr-code-canvas"></canvas>
               </Show>
+              {/* <button
+                class='bg-green-500 hover:bg-saturn-red'
+                onClick={() => tryWcConnectDapp()}
+              >
+                Connect to dApp
+              </button> */}
             </div>
-          </div>
-
-          <div class="flex flex-row justify-end gap-2 items-center m-6">
-            <LogoutButton onClick={removeModal} />
-            <WalletConnectButton onClick={() => null} />
-          </div>
+            <div class="flex flex-row justify-end gap-2 items-center m-6">
+              <LogoutButton cancel={true} onClick={removeModal} />
+            </div>
+          </Show>
+          <Show when={!openWalletConnect()}>
+            <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
+              <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+                <Show when={availableAccounts().length > 2}>
+                  <For each={availableAccounts()}>
+                    {account => {
+                      return (
+                        <div class="dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer" onClick={[connectUserAccount, account]}>
+                          <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
+                          <div class="flex flex-row justify-between items-start my-3
+                    ">
+                            <WalletLabel walletType={(account as any).title} />
+                            <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
+                          </div>
+                          <CopyAddressField address={account.address} length={18} />
+                        </div>
+                      );
+                    }}
+                  </For>
+                </Show>
+              </div>
+            </div>
+            <div class="flex flex-row justify-end gap-2 items-center m-6">
+              <LogoutButton onClick={removeModal} />
+              <WalletConnectButton onClick={handleOpenWalletConnect} />
+            </div>
+          </Show>
         </div>
       </div>
     </>

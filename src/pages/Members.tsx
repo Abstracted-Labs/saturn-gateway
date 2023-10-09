@@ -88,7 +88,7 @@ export default function Members() {
         <h3 class="text-sm text-saturn-black dark:text-saturn-offwhite">Members {members() && members().length > 0 ? <span class="text-xxs text-saturn-lightgrey align-top ml-1">{members().length}</span> : null}</h3>
         <div class="flex flex-row items-center gap-3">
           <div class="relative flex items-center">
-            <input class={`${ INPUT_COMMON_STYLE } pr-8`} type="text" placeholder="Search by address" value={search()} onInput={handleSearch} />
+            <input class={`${ INPUT_COMMON_STYLE } pr-8`} id="searchBar" type="text" placeholder="Search by address" value={search()} onInput={handleSearch} />
             <span class="absolute float-right right-0 mr-3">
               <img src={SearchIcon} width={12} height={12} />
             </span>
@@ -127,7 +127,7 @@ export default function Members() {
                     <Identity address={member.address} />
                   </td>
                   <td class='py-3 px-4 h-full'>
-                    <SaturnNumberInput label="UpdateVotes" min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
+                    <SaturnNumberInput label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
                   </td>
                   <td class='py-3 px-4'>
                     {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}

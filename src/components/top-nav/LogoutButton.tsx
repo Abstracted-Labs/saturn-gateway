@@ -4,7 +4,7 @@ import { Show } from "solid-js";
 import { WALLET_ACCOUNTS_MODAL_ID } from "./ConnectWallet";
 import { useSaturnContext } from "../../providers/saturnProvider";
 
-const LogoutButton = (props: { onClick: () => any; }) => {
+const LogoutButton = (props: { onClick: () => any; cancel?: boolean | undefined; }) => {
   const selectedAccount = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
 
@@ -25,8 +25,11 @@ const LogoutButton = (props: { onClick: () => any; }) => {
   }
 
   return <>
-    <Show when={!!selectedAccount.state.account}>
+    <Show when={!!selectedAccount.state.account && !props.cancel}>
       <button type="button" data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-toggle={WALLET_ACCOUNTS_MODAL_ID} onClick={(e) => onLogout(e, selectedAccount)} class="p-4 bg-transparent text-sm rounded-md dark:hover:bg-gray-900 hover:bg-gray-200 focus:outline-none text-saturn-lightgrey flex gap-2 items-center flex-row"><span>Logout</span> <img src={LogoutIcon} alt="logout" /></button>
+    </Show>
+    <Show when={props.cancel}>
+      <button type="button" data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-toggle={WALLET_ACCOUNTS_MODAL_ID} onClick={props.onClick} class="p-4 bg-transparent text-sm rounded-md dark:hover:bg-gray-900 hover:bg-gray-200 focus:outline-none text-saturn-lightgrey flex gap-2 items-center flex-row"><span>Cancel</span> <img src={LogoutIcon} alt="logout" /></button>
     </Show>
   </>;
 };

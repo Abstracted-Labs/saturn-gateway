@@ -17,5 +17,7 @@ export function matchTypeToIcon(type: string | undefined) {
     return PjsIcon;
   } else if (WalletTypeEnum.CRUSTWALLET.toLowerCase().includes(type)) {
     return CrustIcon;
+  } else {
+    return PjsIcon;
   }
 }

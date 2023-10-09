@@ -4,14 +4,23 @@ import { MultisigCall } from "@invarch/saturn-sdk";
 import type Web3WalletType from '@walletconnect/web3wallet';
 import { Web3Wallet } from '@walletconnect/web3wallet';
 
-export const WalletConnectContext = createContext<{ state: { w3w?: Web3WalletType; }, setters: any; }>({ state: {}, setters: {} });
+interface IWalletConnectState { w3w?: Web3WalletType; saturnQr?: string; }
+
+export const WalletConnectContext = createContext<{ state: IWalletConnectState, setters: any; }>({ state: {}, setters: {} });
 
 export type WalletConnectProviderProps = {
   children: any;
 };
 
+const defaultState = (): IWalletConnectState => {
+  return {
+    w3w: undefined,
+    saturnQr: undefined,
+  };
+};
+
 export function WalletConnectProvider(props: WalletConnectProviderProps) {
-  const [state, setState] = createStore<{ w3w?: Web3WalletType; }>({});
+  const [state, setState] = createStore<IWalletConnectState>(defaultState());
 
   const value = {
     state,
@@ -23,7 +32,10 @@ export function WalletConnectProvider(props: WalletConnectProviderProps) {
         w3w.on('session_request', sessionRequestCallback);
 
         setState({ w3w });
-      }
+      },
+      setSaturnQr(qrCode: string) {
+        setState({ saturnQr: qrCode });
+      },
     }
   };
 

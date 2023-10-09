@@ -22,7 +22,8 @@ export enum WalletTypeEnum {
   TALISMAN = "talisman",
   NOVAWALLET = "nova",
   PJS = "polkadot-js", // ?
-  CRUSTWALLET = "crust wallet"
+  CRUSTWALLET = "crust wallet",
+  WALLETCONNECT = "wallet-connect"
 }
 
 export enum NetworkEnum {
@@ -35,6 +36,8 @@ export enum NetworkEnum {
 
 // export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
 export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
+
+export const WC_PROJECT_ID = '04b924c5906edbafa51c651573628e23';
 
 export const AssetIconByCurrency: Record<string, string> = {
   TNKR: TinkernetIcon,
