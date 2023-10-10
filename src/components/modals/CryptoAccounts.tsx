@@ -68,6 +68,21 @@ const CryptoAccounts = () => {
     }
   }
 
+  async function connectUserAccount(acc: Account) {
+    if (acc) {
+      await selectedAccountContext.setters.setSelected(acc, availableWallets().find((w) => {
+        return w.metadata.title === (acc as any).title;
+      }));
+
+      if (location.pathname === '/') {
+        saturnContext.state.multisigId ? nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false }) :
+          nav(`/create`, { resolve: false });
+      }
+
+      removeModal();
+    }
+  }
+
   async function connectWalletConnect() {
     // get wc web3wallet from availableWallets()
     const wcWallet = availableWallets().find((w) => w.type === 'WALLET_CONNECT');
@@ -87,24 +102,9 @@ const CryptoAccounts = () => {
     }
   }
 
-  async function connectUserAccount(acc: Account) {
-    if (acc) {
-      await selectedAccountContext.setters.setSelected(acc, availableWallets().find((w) => {
-        return w.metadata.title === (acc as any).title;
-      }));
-
-      if (location.pathname === '/') {
-        saturnContext.state.multisigId ? nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false }) :
-          nav(`/create`, { resolve: false });
-      }
-
-      removeModal();
-    }
-  }
-
   function handleOpenWalletConnect() {
     // setOpenWalletConnect(true);
-
+    connectWalletConnect();
   }
 
   function removeModal() {
