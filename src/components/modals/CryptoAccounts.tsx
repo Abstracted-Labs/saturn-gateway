@@ -48,10 +48,11 @@ const CryptoAccounts = () => {
           throw new Error('wallet is not valid or getAccounts is not a function');
         }
 
-        // if (wallet.type === 'WALLET_CONNECT') {
-        //   // We handle Wallet Connect differently elsewhere
-        //   continue;
-        // }
+        if (wallet.type === 'WALLET_CONNECT') {
+          // We handle Wallet Connect differently elsewhere
+          // Commenting will pop up Web3Modal for Wallet Connect
+          continue;
+        }
 
         // Connect to each wallet
         await wallet.connect();
