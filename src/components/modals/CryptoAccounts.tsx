@@ -72,6 +72,25 @@ const CryptoAccounts = () => {
     }
   }
 
+  async function connectWalletConnect() {
+    // get wc web3wallet from availableWallets()
+    const wcWallet = availableWallets().find((w) => w.type === 'WALLET_CONNECT');
+    await wcWallet?.connect();
+    const accounts = await wcWallet?.getAccounts();
+    const selectedAccount = accounts?.[0];
+    const selectedWcId = selectedAccount?.address; // TODO: handle multiple accounts
+    if (selectedWcId) {
+      await selectedAccountContext.setters.setSelected(selectedAccount, wcWallet);
+
+      if (location.pathname === '/') {
+        saturnContext.state.multisigId ? nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false }) :
+          nav(`/create`, { resolve: false });
+      }
+
+      removeModal();
+    }
+  }
+
   async function connectUserAccount(acc: Account) {
     if (acc) {
       await selectedAccountContext.setters.setSelected(acc, availableWallets().find((w) => {
@@ -88,7 +107,8 @@ const CryptoAccounts = () => {
   }
 
   function handleOpenWalletConnect() {
-    setOpenWalletConnect(true);
+    // setOpenWalletConnect(true);
+
   }
 
   function removeModal() {
@@ -189,32 +209,32 @@ const CryptoAccounts = () => {
               <span class="sr-only">Close modal</span>
             </button>
           </div>
-          <Show when={openWalletConnect()}>
+          {/* <Show when={openWalletConnect()}>
             <div class="mx-4">
-              {/* <input
+              <input
                 class="text-black"
                 value={qrCodeUri()}
                 onInput={(e: any) => {
                   setQrCodeUri(e.currentTarget.value);
                 }}
-              /> */}
+              />
               <Show when={canvasReady()} fallback={<span class="text-black dark:text-white text-xxs align-center">Loading QR Code...</span>}>
                 <div class="bg-saturn-purple dark:bg-saturn-purple p-5 rounded-md">
                   <canvas class="rounded-md mb-3" id="qr-code-canvas"></canvas>
                   <CopyAddressField address={qrCodeUri()} length={10} />
                 </div>
               </Show>
-              {/* <button
+              <button
                 class='bg-green-500 hover:bg-saturn-red'
                 onClick={() => tryWcConnectDapp()}
               >
                 Connect to dApp
-              </button> */}
+              </button>
             </div>
             <div class="flex flex-row justify-end gap-2 items-center m-6">
               <LogoutButton cancel={true} onClick={removeModal} />
             </div>
-          </Show>
+          </Show> */}
           <Show when={!openWalletConnect()}>
             <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
               <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
