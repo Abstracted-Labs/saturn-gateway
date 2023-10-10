@@ -198,7 +198,10 @@ const CryptoAccounts = () => {
                 }}
               /> */}
               <Show when={canvasReady()} fallback={<span class="text-black dark:text-white text-xxs align-center">Loading QR Code...</span>}>
-                <canvas class="rounded-md" id="qr-code-canvas"></canvas>
+                <div class="bg-saturn-purple dark:bg-saturn-purple p-5 rounded-md">
+                  <canvas class="rounded-md mb-3" id="qr-code-canvas"></canvas>
+                  <CopyAddressField address={qrCodeUri()} length={10} />
+                </div>
               </Show>
               {/* <button
                 class='bg-green-500 hover:bg-saturn-red'

@@ -3,6 +3,7 @@ import TalismanIcon from "../assets/icons/talisman-icon.svg";
 import NovaWalletIcon from "../assets/icons/novawallet-icon-27x27.png";
 import PjsIcon from "../assets/icons/pjs-new-icon.png";
 import CrustIcon from "../assets/icons/crust-icon-512x512.svg";
+import WalletConnectIcon from "../assets/images/walletconnect-logo.svg";
 import { WalletTypeEnum } from "./consts";
 
 export function matchTypeToIcon(type: string | undefined) {
@@ -18,6 +19,6 @@ export function matchTypeToIcon(type: string | undefined) {
   } else if (WalletTypeEnum.CRUSTWALLET.toLowerCase().includes(type)) {
     return CrustIcon;
   } else {
-    return PjsIcon;
+    return WalletConnectIcon;
   }
 }
