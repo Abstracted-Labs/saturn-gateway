@@ -35,7 +35,7 @@ const SaturnCrumb = (props: SaturnCrumbProps) => {
         <For each={filteredTrail()}>
           {(crumb, index) => (
             <li aria-disabled={disabledCrumbs().includes(crumb)} id={crumb} class={`relative inline-flex items-center crumb-li w-full ${ props.active === crumb ? 'justify-center' : '' }`}>
-              <span class={`relative z-10 crumb-index border-[1px] ${ props.active === crumb ? 'bg-white text-saturn-purple border-saturn-purple' : disabledCrumbs().includes(crumb) ? 'bg-gray-200 border-gray-200 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-600' : 'bg-saturn-purple border-saturn-purple' } rounded-full text-[6px] text-center left-2 pt-[1px] p-1 h-[12.5px]`}>
+              <span class={`relative z-10 crumb-index border-[1.5px] ${ props.active === crumb ? 'bg-white text-saturn-purple border-saturn-purple' : disabledCrumbs().includes(crumb) ? 'bg-gray-200 border-gray-200 dark:bg-gray-800 dark:border-gray-800 dark:text-gray-600' : 'bg-saturn-purple border-saturn-purple' } rounded-full text-[6px] text-center left-2 pt-[1px] p-1 h-[12.5px]`}>
                 {index() + 1}
               </span>
               <button

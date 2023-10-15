@@ -253,7 +253,7 @@ const MultisigList = () => {
               <>
                 <div
                   onClick={() => handleClick(index())}
-                  class={`relative p-4 mr-4 rounded-lg flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
+                  class={`relative p-4 mr-4 rounded-lg flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
                 >
                   <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
                     <Show when={item.image}>

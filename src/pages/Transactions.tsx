@@ -261,7 +261,7 @@ export default function Transactions() {
               </div>
               <div class="flex flex-row justify-between">
                 {/* Vote breakdown */}
-                <div class="flex flex-col rounded-md w-full border border-[1px] border-gray-100 dark:border-gray-800 p-4">
+                <div class="flex flex-col rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
                   <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
                   <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
                   <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">

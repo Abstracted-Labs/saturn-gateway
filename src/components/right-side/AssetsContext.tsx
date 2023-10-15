@@ -15,6 +15,7 @@ import { getAssetsFromNetwork } from "../../utils/getAssetsFromNetwork";
 import { Balances, getBalancesFromAllNetworks } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
 import { getCurrentUsdPrice } from "../../utils/getCurrentUsdPrice";
+import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 
 const AssetsContext = () => {
   let dropdownFrom: DropdownInterface;
@@ -35,10 +36,10 @@ const AssetsContext = () => {
   const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
   const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
   const [networkFee, setNetworkFee] = createSignal<number>(0.0005);
-
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
+  const saContext = useSelectedAccountContext();
 
   const FROM_TOGGLE_ID = 'networkToggleFrom';
   const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -104,6 +105,8 @@ const AssetsContext = () => {
     return filterAssetBlocks;
   });
 
+  const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
+
   const filteredAssetCount = () => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
@@ -130,6 +133,11 @@ const AssetsContext = () => {
   async function proposeTransfer() {
     const pair = finalNetworkPair();
 
+    if (!isLoggedIn()) {
+      console.error('proposeTransfer: not logged in');
+      return;
+    }
+
     if (
       !saturnContext.state.saturn ||
       typeof saturnContext.state.multisigId !== 'number' ||
@@ -137,6 +145,7 @@ const AssetsContext = () => {
       !ringApisContext.state[pair.from] ||
       !asset || new BigNumber(amount()).lte(0)
     ) {
+      console.error('proposeTransfer: missing data');
       return;
     }
 
@@ -145,7 +154,7 @@ const AssetsContext = () => {
         Rings.tinkernet.decimals,
       ));
 
-      proposeContext.setters.openProposeModal(
+      proposeContext.setters.openProposal(
         new Proposal(ProposalType.LocalTransfer, { chain: NetworkEnum.TINKERNET, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
 
@@ -158,7 +167,7 @@ const AssetsContext = () => {
         BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
       ));
 
-      proposeContext.setters.openProposeModal(
+      proposeContext.setters.openProposal(
         new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
       );
 
@@ -169,11 +178,16 @@ const AssetsContext = () => {
         BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
       ));
 
-      proposeContext.setters.openProposeModal(
+      proposeContext.setters.openProposal(
         new Proposal(ProposalType.XcmTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
     }
   };
+
+  function copySelfAddress() {
+    if (!isLoggedIn()) return;
+    setBridgeToSelf(!bridgeToSelf());
+  }
 
   function validateAmount(e: any) {
     const inputValue = e.currentTarget.value;
@@ -274,6 +288,7 @@ const AssetsContext = () => {
   }
 
   function clearAddress() {
+    if (!isLoggedIn()) return;
     setTargetAddress('');
     setBridgeToSelf(false);
   }
@@ -487,7 +502,7 @@ const AssetsContext = () => {
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
-          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
+          <SaturnSelect disabled={!isLoggedIn()} isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
             <For each={forNetworks()}>
               {([name, element]) => <SaturnSelectItem onClick={() => handleFromOptionClick(name as NetworkEnum)}>
                 {element}
@@ -495,7 +510,7 @@ const AssetsContext = () => {
             </For>
           </SaturnSelect>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
-          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
+          <SaturnSelect disabled={!isLoggedIn()} isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
             <For each={toNetworks()}>
               {([name, element]) => <SaturnSelectItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
                 {element}
@@ -514,14 +529,14 @@ const AssetsContext = () => {
               placeholder="Destination address"
               value={bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()}
               class={`rounded-l-md rounded-r-none grow ${ INPUT_COMMON_STYLE }`}
-              disabled={bridgeToSelf()}
+              disabled={bridgeToSelf() || !isLoggedIn()}
               onInput={e => setTargetAddress(e.currentTarget.value)}
             />
             <span onClick={clearAddress} class="inline-flex items-center px-3 text-xxs text-saturn-lightgrey bg-gray-200 rounded-r-md dark:bg-gray-800 hover:cursor-pointer opacity-50 hover:opacity-100">
               clear
             </span>
           </div>
-          <span class={MINI_TEXT_LINK_STYLE} onClick={() => setBridgeToSelf(!bridgeToSelf())}>use my address</span>
+          <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress}>use my address</span>
         </div>
 
         <div class="flex flex-row justify-between items-start">
@@ -529,7 +544,7 @@ const AssetsContext = () => {
             <span class="align-top mb-1 text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
               Choose Asset
             </span>
-            <SaturnSelect disabled={filteredAssetCount() <= 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssets}>
+            <SaturnSelect disabled={filteredAssetCount() <= 1 || !isLoggedIn()} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssets}>
               <For each={filteredAssets()}>
                 {([name, element]) => <SaturnSelectItem onClick={() => handleAssetOptionClick(name as AssetEnum)}>
                   {element}
@@ -555,6 +570,7 @@ const AssetsContext = () => {
               onInput={validateAmount}
               max={Number(maxAssetAmount())}
               min={0}
+              disabled={!isLoggedIn()}
             />
           </div>
         </div>
@@ -573,7 +589,7 @@ const AssetsContext = () => {
         </div>
       </div>
 
-      <button type="button" class="mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800" onClick={proposeTransfer}>Perform Transaction</button>
+      <button type="button" class="mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800" disabled={!isLoggedIn()} onClick={proposeTransfer}>Perform Transaction</button>
     </div>;
   };
 

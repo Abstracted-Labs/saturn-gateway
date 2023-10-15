@@ -23,7 +23,7 @@ const Navbar = (props: any) => {
             <div class="flex flex-row items-center gap-2 z-1">
               <NotifyButton />
               <ChangeNetworkButton />
-              <ConnectWallet />
+              <ConnectWallet inMultisig={false} />
             </div>
           </Show>
         </div>

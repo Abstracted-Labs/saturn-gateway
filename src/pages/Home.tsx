@@ -28,25 +28,17 @@ const Home = () => {
     closable: true,
   };
 
-  function openConnectWallet() {
+  function enterGateway() {
     setHovered(true);
     const multisigId = saturnContext.state.multisigId;
-    if (alreadyLoggedIn() && !!multisigId) {
-      if (!!multisigId) {
-        nav(`/${ multisigId }/members`);
-        return;
-      } else {
-        nav('/create');
-        return;
-      }
+    if (!!multisigId) {
+      nav(`/${ multisigId }/members`);
+      return;
+    } else {
+      nav('/create');
       return;
     }
-
-    if (modal) {
-      if (modal.isHidden() && !alreadyLoggedIn()) {
-        modal.show();
-      }
-    }
+    return;
   }
 
   onMount(() => {
@@ -129,9 +121,7 @@ const Home = () => {
             onMouseLeave={() => setHovered(false)}
             onTouchStart={() => setHovered(true)}
             onTouchEnd={() => setHovered(false)}
-            onClick={openConnectWallet}
-            data-modal-target={WALLET_ACCOUNTS_MODAL_ID}
-            data-modal-show={WALLET_ACCOUNTS_MODAL_ID}
+            onClick={enterGateway}
             class="z-20 relative my-5 p-0.5 overflow-hidden text-sm font-bold w-1/2 md:w-1/3 mx-auto rounded-md group bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-none focus:ring-saturn-purple dark:focus:ring-saturn-purple hover:text-black">
             <span class="w-full h-14 flex items-center justify-center block mx-auto transition-all ease-in duration-75 bg-white dark:bg-black rounded-md group-hover:bg-opacity-0">
               <span class={`${ !isHovered() ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]' : 'text-black' } visited:text-black`}>Enter the Gateway</span>

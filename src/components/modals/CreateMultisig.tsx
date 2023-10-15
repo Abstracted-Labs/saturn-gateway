@@ -21,6 +21,7 @@ import CheckIcon from "../../assets/icons/check.svg";
 import { isValidPolkadotAddress } from "../../utils/isValidPolkadotAddress";
 import { isValidKiltWeb3Name } from "../../utils/isValidKiltWeb3Name";
 import LoaderAnimation from "../legos/LoaderAnimation";
+import ConnectWallet from "../top-nav/ConnectWallet";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -35,7 +36,6 @@ const CreateMultisig = () => {
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
   const theme = useThemeContext();
-
   const [active, setActive] = createSignal<string>(MULTISIG_CRUMB_TRAIL[0], { equals: false });
   const [multisigName, setMultisigName] = createSignal('');
   const [members, setMembers] = createSignal<[string, number][]>([], { equals: false });
@@ -47,6 +47,8 @@ const CreateMultisig = () => {
   const [hasAddressError, setHasAddressError] = createSignal<number[]>([]);
   const [finishing, setFinishing] = createSignal<boolean>(false);
   const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
+
+  const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
 
   const selectedState = createMemo(() => selectedAccountContext.state);
 
@@ -391,6 +393,13 @@ const CreateMultisig = () => {
     return <button disabled={finishing()} onClick={[handleSetActive, props.crumb]} type="button" class="focus:outline-none ml-1 opacity-50 hover:opacity-100 p-1 rounded-md border border-px border-saturn-lightgrey"><img src={EditDataIcon} /></button>;
   };
 
+  const STEP_LOGIN = () => (
+    <div class="text-black dark:text-white" id="STEP_LOGIN">
+      <div class={SECTION_TEXT_STYLE}>Connect your Substrate-based wallet to continue.</div>
+      <ConnectWallet inMultisig={true} />
+    </div>
+  );
+
   const STEP_1_NAME = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[0]}>
       <div class={SECTION_TEXT_STYLE}>First, let's start with a name!</div>
@@ -654,6 +663,9 @@ const CreateMultisig = () => {
             <div class="mx-8 lg:col-span-2 col-span-3 bg-image" style={{ 'background-image': `url(${ GradientBgImage })` }}>
               <div class="flex flex-col justify-center bg-gray-950 p-5 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full">
                 <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
+                  <Match when={!isLoggedIn()}>
+                    <STEP_LOGIN />
+                  </Match>
                   <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]}>
                     <STEP_1_NAME />
                   </Match>

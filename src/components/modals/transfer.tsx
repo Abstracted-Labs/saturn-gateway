@@ -79,7 +79,7 @@ export default function TransferModal(props: TransferModalProps) {
         Rings.tinkernet.decimals,
       ));
 
-      proposeContext.setters.openProposeModal(
+      proposeContext.setters.openProposal(
         new Proposal(ProposalType.LocalTransfer, { chain: "tinkernet", asset, amount: amountPlank, to: targetAddress() })
       );
 
@@ -92,7 +92,7 @@ export default function TransferModal(props: TransferModalProps) {
         BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
       ));
 
-      proposeContext.setters.openProposeModal(
+      proposeContext.setters.openProposal(
         new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset, amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
       );
 
@@ -103,7 +103,7 @@ export default function TransferModal(props: TransferModalProps) {
         BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
       ));
 
-      proposeContext.setters.openProposeModal(
+      proposeContext.setters.openProposal(
         new Proposal(ProposalType.XcmTransfer, { chain: pair.from, asset, amount: amountPlank, to: targetAddress() })
       );
     }

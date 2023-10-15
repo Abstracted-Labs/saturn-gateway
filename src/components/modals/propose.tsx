@@ -172,11 +172,11 @@ export default function ProposeModal() {
 
     // TODO: Implement LocalTransfer and XcmBridge.
 
-    proposeContext.setters.closeProposeModal();
+    proposeContext.setters.closeProposal();
   };
 
   const cancel = () => {
-    proposeContext.setters.closeProposeModal();
+    proposeContext.setters.closeProposal();
   };
 
   const maybeProposal = proposeContext.state.proposal;

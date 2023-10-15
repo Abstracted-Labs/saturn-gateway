@@ -5,7 +5,7 @@ import KusamaIcon from '../assets/icons/kusama-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
 import { JSXElement } from 'solid-js';
 
-export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center focus:outline-none';
+export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1.5px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center focus:outline-none';
 
 export const INPUT_COMMON_STYLE = "rounded-md border-0 outline-0 focus:ring-0 bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xxs focus:bg-purple-100 focus:bg-opacity-50 dark:focus:bg-saturn-darkpurple";
 
@@ -20,9 +20,10 @@ export const CRUMB_STYLE = "text-xxs font-medium py-3 rounded-md focus:outline-n
 export enum WalletTypeEnum {
   SUBWALLET = "sub", // ?
   TALISMAN = "talisman",
-  NOVAWALLET = "nova",
+  NOVAWALLET = "nova wallet",
   PJS = "polkadot-js", // ?
   CRUSTWALLET = "crust wallet",
+  SPORRAN = "sporran",
   WALLETCONNECT = "wallet-connect"
 }
 
@@ -34,8 +35,9 @@ export enum NetworkEnum {
   POLKADOT = "polkadot",
 }
 
+// export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
 // export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
-export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
+export const WSS_TINKERNET = 'wss://tinkernet-rpc.dwellir.com';
 
 export const WC_PROJECT_ID = '04b924c5906edbafa51c651573628e23';
 

@@ -1,7 +1,7 @@
 import { batch, createContext, createMemo, useContext } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-import { type BaseWallet, type Account } from '@polkadot-onboard/core';
-import { createLocalStorage } from "@solid-primitives/storage";
+import { StorageObject, createLocalStorage } from "@solid-primitives/storage";
+import { Account, BaseWallet } from "@polkadot-onboard/core";
 
 export const SelectedAccountContext = createContext<{
   state: { account?: Account; wallet?: BaseWallet; },
@@ -9,16 +9,9 @@ export const SelectedAccountContext = createContext<{
 }>({ state: {}, setters: {} });
 
 export function SelectedAccountProvider(props: any) {
+  let previousStorageState: StorageObject<string>;
   const [state, setState] = createStore<{ account?: Account; wallet?: BaseWallet; }>({});
-
   const [storageState, setStorageState, { remove }] = createLocalStorage();
-
-  const getSelectedStorage = (): { address: string, wallet: string; } | undefined => {
-    const data = JSON.parse(storageState.selectedAccount);
-    if (data?.address && data?.wallet) {
-      return data;
-    }
-  };
 
   const value = createMemo(() => ({
     state,
@@ -28,7 +21,7 @@ export function SelectedAccountProvider(props: any) {
           if (account && wallet) {
             setState("account", account);
             setState("wallet", wallet);
-            setStorageState("selectedAccount", JSON.stringify({ address: account.address, wallet: wallet.metadata.title }));
+            setStorageState("selectedAccount", JSON.stringify({ address: account.address, wallet: wallet.metadata.title === 'Saturn Gateway' ? 'wallet-connect' : wallet.metadata.title }));
           } else {
             throw new Error('account or wallet is not valid');
           }
@@ -37,7 +30,16 @@ export function SelectedAccountProvider(props: any) {
         }
       },
 
-      getSelectedStorage,
+      getSelectedStorage() {
+        const storageData = storageState;
+        if (storageData && storageData.selectedAccount) {
+          const data = JSON.parse(storageData.selectedAccount);
+          if (data?.address && data?.wallet) {
+            return data;
+          }
+        }
+        return undefined;
+      },
 
       clearSelected() {
         setState({
