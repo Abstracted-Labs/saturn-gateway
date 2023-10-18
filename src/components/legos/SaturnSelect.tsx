@@ -28,7 +28,7 @@ const SaturnSelect = (props: SaturnSelectType) => {
       data-dropdown-offset-distance="-7"
       id={mergedProps.toggleId}
       data-dropdown-toggle={mergedProps.dropdownId}
-      class={`${ isDisabled() ? 'border-none' : null } ${ BUTTON_COMMON_STYLE } justify-between px-3 text-saturn-black dark:text-saturn-offwhite h-full z-30 focus:outline-none ${ mergedProps.isMini ? 'py-1 w-28' : 'py-auto w-44' }`}
+      class={`${ isDisabled() ? 'border-none' : null } ${ BUTTON_COMMON_STYLE } justify-between px-3 text-saturn-black dark:text-saturn-offwhite h-10 z-30 focus:outline-none ${ mergedProps.isMini ? 'py-1 w-28' : 'py-auto w-44' }`}
       type="button">
       <span class={`inline-flex items-center mr-2 ${ mergedProps.isMini ? 'text-xxs' : 'text-sm' }`}>
         {memoLabel() || props.initialOption}

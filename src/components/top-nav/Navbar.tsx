@@ -5,6 +5,7 @@ import NotifyButton from "./NotifyButton";
 import SaturnLogo from "./SaturnLogo";
 import SubNavbar from "./SubNavbar";
 import { useLocation } from "@solidjs/router";
+import MobileMenu from "./MobileMenu";
 
 const Navbar = (props: any) => {
   const loc = useLocation();
@@ -20,11 +21,13 @@ const Navbar = (props: any) => {
             <SaturnLogo />
           </div>
           <Show when={!atHome()}>
+            {/* <MobileMenu> */}
             <div class="flex flex-row items-center gap-2 z-1">
-              <NotifyButton />
-              <ChangeNetworkButton />
+              {/* <NotifyButton /> */}
+              {/* <ChangeNetworkButton /> */}
               <ConnectWallet inMultisig={false} />
             </div>
+            {/* </MobileMenu> */}
           </Show>
         </div>
       </div>

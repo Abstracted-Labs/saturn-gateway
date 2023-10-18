@@ -107,7 +107,7 @@ const CryptoAccounts = () => {
   async function connectWalletConnect() {
     // Logout of any existing WalletConnect session
     try {
-      const wcWallet = availableWallets().find((w) => w.type === "WALLET_CONNECT");
+      const wcWallet = availableWallets().find((w) => w.type === WalletType.WALLET_CONNECT);
       if (!wcWallet) {
         throw new Error("WalletConnect wallet not found");
       }

@@ -1,8 +1,11 @@
 import { useLocation } from "@solidjs/router";
-import { Show, createEffect, createMemo, createSignal, on } from "solid-js";
+import { createMemo } from "solid-js";
 
-const AvatarAndName = (props: { name: string | undefined, avatar: string, enlarge: boolean; }) => {
+interface IAvatarAndNameProps { name: string | undefined, avatar: string, enlarge: boolean; hide?: boolean; }
+
+const AvatarAndName = (props: IAvatarAndNameProps) => {
   const loc = useLocation();
+
   const atHome = createMemo(() => loc.pathname === '/');
 
   return (
