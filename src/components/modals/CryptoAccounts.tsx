@@ -182,22 +182,43 @@ const CryptoAccounts = () => {
   });
 
   createEffect(on(() => wcContext.state.w3w, () => {
+    // Update the UI if the WalletConnect client is disconnected from its mobile peer
+
+    // Get the selected storage
     const getSelectedStorage = () => saContext.setters.getSelectedStorage();
+
+    // Get the client from the context
     const client = wcContext.state.w3w;
+
+    // If there's no client, exit the effect
     if (!client) return;
+
     let lastKnownAddress: string = '';
+
+    // Get the selected address from the storage
     const selectedAddress = getSelectedStorage().address;
+
+    // Get the active sessions from the client
     const sessions = client.getActiveSessions();
+
+    // Find the last known session that matches the selected address
     const lastKnownSession = Object.entries(sessions).find((s) => {
       lastKnownAddress = toWalletAccount(s[1].namespaces?.polkadot?.accounts?.[0] as WcAccount).address;
       return lastKnownAddress === selectedAddress;
     });
+
+    // If there's no last known session or address, exit the effect
     if (!lastKnownSession || !lastKnownAddress) return;
+
     const lastSessionTopic = lastKnownSession[0];
-    client?.events.on('session_delete', (session: { id: string; topic: string; }) => {
+
+    // Listen for the 'session_delete' event on the client
+    client.events.on('session_delete', (session: { id: string; topic: string; }) => {
+      // If the session topic matches the last session topic
       if (session.topic === lastSessionTopic) {
         console.log('session_deleted: ', session);
-        // Remove disconnected account from availableAccounts
+
+        // Remove the disconnected account from availableAccounts
         const updatedAccounts = availableAccounts().filter((a) => a.address !== lastKnownAddress);
         setAvailableAccounts(updatedAccounts);
       }
