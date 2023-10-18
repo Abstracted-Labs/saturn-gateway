@@ -18,10 +18,8 @@ import { Account, WalletType } from "@polkadot-onboard/core";
 import { BaseWallet, WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
 import { WalletNameEnum } from "../../utils/consts";
 
-
 const CryptoAccounts = () => {
   let modal: ModalInterface;
-  // const [canvasReady, setCanvasReady] = createSignal(false);
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
@@ -32,13 +30,6 @@ const CryptoAccounts = () => {
   const theme = useThemeContext();
   const nav = useNavigate();
   const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
-
-  // const getSelectedStorage = createMemo(() => saContext.setters.getSelectedStorage());
-
-  const isWcAccountMatch = createMemo(() => {
-    const storage = saContext.setters.getSelectedStorage();
-    return storage && storage.wallet === WalletNameEnum.WALLETCONNECT;
-  });
 
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
 
@@ -69,9 +60,6 @@ const CryptoAccounts = () => {
             continue;
           }
         } else {
-          // TODO: FiX bug where WalletConnect requires a qr pairing
-          // whenever the app is refreshed. This creates a new session
-          // but it prevents the user from connecting to the dApp ("network issues")
           if (!!wallet && wallet.autoConnect) {
             await wallet.autoConnect();
           }
@@ -204,8 +192,6 @@ const CryptoAccounts = () => {
       lastKnownAddress = toWalletAccount(s[1].namespaces?.polkadot?.accounts?.[0] as WcAccount).address;
       return lastKnownAddress === selectedAddress;
     });
-    console.log('lastKnownSession: ', lastKnownSession);
-    console.log('lastKnownAddress: ', lastKnownAddress);
     if (!lastKnownSession || !lastKnownAddress) return;
     const lastSessionTopic = lastKnownSession[0];
     client?.events.on('session_delete', (session: { id: string; topic: string; }) => {
