@@ -12,16 +12,13 @@ export const WALLET_TOGGLE_ID = 'walletToggle';
 export const WALLET_DROPDOWN_ID = 'walletDropdown';
 export const WALLET_ACCOUNTS_MODAL_ID = 'walletAccountsModal';
 
-const ConnectWallet = (props: { inMultisig: boolean; }) => {
+const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) => void; }) => {
   const [modal, setModal] = createSignal<ModalInterface | null>(null);
   const [dropdown, setDropdown] = createSignal<DropdownInterface | null>(null);
   const [isDropdownActive, setIsDropdownActive] = createSignal(false);
   const selectedAccount = useSelectedAccountContext();
   const isLoggedIn = createMemo(() => !!selectedAccount.state.account?.address);
   const isInMultisig = createMemo(() => props.inMultisig);
-  // const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
-  // const $toggleElement = () => document.getElementById(WALLET_TOGGLE_ID);
-  // const $dropdownElement = () => document.getElementById(WALLET_DROPDOWN_ID);
 
   const modalOptions: ModalOptions = {
     backdrop: 'dynamic',
@@ -34,7 +31,6 @@ const ConnectWallet = (props: { inMultisig: boolean; }) => {
     offsetSkidding: 0,
     offsetDistance: -7,
     delay: 300,
-    ignoreClickOutsideClass: true,
   };
 
   const openDropdown = () => {
@@ -44,6 +40,10 @@ const ConnectWallet = (props: { inMultisig: boolean; }) => {
     } else {
       dropdown()?.hide();
       setIsDropdownActive(false);
+    }
+
+    if (props.isOpen) {
+      props.isOpen(isDropdownActive());
     }
   };
 
@@ -62,20 +62,14 @@ const ConnectWallet = (props: { inMultisig: boolean; }) => {
     const $dropdownElement = () => document.getElementById(WALLET_DROPDOWN_ID);
 
     const runAsync = async () => {
-      // if (!document) return;
-
       initModals();
       if (!$modalElement()) {
         setModal(new Modal($modalElement(), modalOptions));
-      } else {
-        console.log('$modalElement()', $modalElement());
       }
 
       initDropdowns();
       if (!$dropdownElement()) {
         setDropdown(new Dropdown($toggleElement(), $dropdownElement(), dropdownOptions));
-      } else {
-        console.log('$dropdownElement()', $dropdownElement());
       }
     };
 

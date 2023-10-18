@@ -22,12 +22,12 @@ const SaturnLogo = () => {
     }
   }));
 
-  return <A href="/" class={`flex ${ !atHome() ? 'ml-2 md:mr-24' : '' }`}>
+  return <A href="/" class={`flex ${ !atHome() ? 'md:mr-24' : '' }`}>
     <Show when={lightMode()}>
-      <img id="lightLogo" src={lightLogo} class="h-8 my-5 mr-3 max-w-xs" alt="Saturn Gateway Logo Light" />
+      <img id="lightLogo" src={lightLogo} class="h-8 my-5 mr-3 max-w-xs w-2/3 sm:w-auto" alt="Saturn Gateway Logo Light" />
     </Show>
     <Show when={!lightMode()}>
-      <img id="darkLogo" src={darkLogo} class="h-8 my-5 mr-3 max-w-xs" alt="Saturn Gateway Logo Dark" />
+      <img id="darkLogo" src={darkLogo} class="h-8 my-5 mr-3 max-w-xs w-2/3 sm:w-auto" alt="Saturn Gateway Logo Dark" />
     </Show>
   </A>;
 };
