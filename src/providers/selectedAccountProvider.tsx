@@ -1,7 +1,9 @@
 import { batch, createContext, createMemo, useContext } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { StorageObject, createLocalStorage } from "@solid-primitives/storage";
-import { Account, BaseWallet } from "@polkadot-onboard/core";
+import { Account } from "@polkadot-onboard/core";
+import { BaseWallet } from "../lnm/wallet-connect";
+import { WalletNameEnum } from "../utils/consts";
 
 export const SelectedAccountContext = createContext<{
   state: { account?: Account; wallet?: BaseWallet; },
@@ -21,7 +23,7 @@ export function SelectedAccountProvider(props: any) {
           if (account && wallet) {
             setState("account", account);
             setState("wallet", wallet);
-            setStorageState("selectedAccount", JSON.stringify({ address: account.address, wallet: wallet.metadata.title === 'Saturn Gateway' ? 'wallet-connect' : wallet.metadata.title }));
+            setStorageState("selectedAccount", JSON.stringify({ address: account.address, wallet: wallet.metadata.title === 'Saturn Gateway' ? WalletNameEnum.WALLETCONNECT : wallet.metadata.title }));
           } else {
             throw new Error('account or wallet is not valid');
           }

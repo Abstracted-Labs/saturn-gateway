@@ -76,7 +76,6 @@ const ChangeNetworkButton = () => {
     const id = saturnContext.state.multisigId;
     const address = saturnContext.state.multisigAddress;
     if (typeof id !== 'number' || !address) {
-      console.log('no multisig id or address');
       return;
     }
 

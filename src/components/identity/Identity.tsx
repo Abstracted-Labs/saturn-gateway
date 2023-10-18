@@ -1,4 +1,4 @@
-import { Show, Suspense, createResource, lazy } from 'solid-js';
+import { Show, Suspense, createMemo, createResource, lazy } from 'solid-js';
 import TalismanIdenticon from '../identity/TalismanIdenticon';
 import { getBestIdentity, type AggregatedIdentity } from "../../utils/identityProcessor";
 import { useIdentityContext } from "../../providers/identityProvider";
@@ -9,14 +9,14 @@ const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 export default function Identity(props: { address: string; }) {
   const identityContext = useIdentityContext();
 
-  const getAddress = () => {
+  const getAddress = createMemo(() => {
     return props.address;
-  };
+  });
 
   const [identity, { mutate, refetch }] = createResource(getAddress, getBestIdentity);
 
-  const image = () => identity()?.image?.value;
-  const name = () => identity()?.name;
+  const image = createMemo(() => identity()?.image?.value);
+  const name = createMemo(() => identity()?.name);
 
   const openIdentityCard = () => {
     console.log('open identity card disabled');
@@ -27,7 +27,7 @@ export default function Identity(props: { address: string; }) {
   };
 
   return (
-    <div onClick={() => openIdentityCard()}>
+    <div onClick={openIdentityCard}>
       <Suspense fallback={
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
           <TalismanIdenticon value={getAddress()} size={34} />

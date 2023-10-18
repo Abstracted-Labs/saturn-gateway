@@ -117,8 +117,8 @@ const MainContainer = () => {
     <div class="m-2">
       <MainContent />
       <Portal>
-        <ProposeModal />
-        <IdentityCardModal />
+        {/* <ProposeModal /> */}
+        {/* <IdentityCardModal /> */}
       </Portal>
     </div>
   );

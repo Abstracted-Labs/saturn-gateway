@@ -1,8 +1,5 @@
 import { createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
-import { MultisigCall } from "@invarch/saturn-sdk";
-import type Web3WalletType from '@walletconnect/web3wallet';
-import { Web3Wallet } from '@walletconnect/web3wallet';
 import { ApiPromise } from '@polkadot/api';
 
 export interface IRingsContext {

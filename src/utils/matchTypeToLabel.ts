@@ -1,23 +1,23 @@
-import { WalletTypeEnum } from "./consts";
+import { WalletNameEnum } from "./consts";
 
 export function matchTypeToLabel(type: string | undefined) {
   if (!type) return;
   const lcType = type.toLowerCase();
-  if (WalletTypeEnum.SUBWALLET.toLowerCase().includes(lcType)) {
-    return WalletTypeEnum.SUBWALLET;
-  } else if (WalletTypeEnum.TALISMAN.toLowerCase().includes(lcType)) {
-    return WalletTypeEnum.TALISMAN;
-  } else if (WalletTypeEnum.NOVAWALLET.toLowerCase().includes(lcType)) {
-    return WalletTypeEnum.NOVAWALLET;
-  } else if (WalletTypeEnum.PJS.toLowerCase().includes(lcType)) {
-    return WalletTypeEnum.PJS;
-  } else if (WalletTypeEnum.CRUSTWALLET.toLowerCase().includes(lcType)) {
+  if (WalletNameEnum.SUBWALLET.toLowerCase().includes(lcType)) {
+    return WalletNameEnum.SUBWALLET;
+  } else if (WalletNameEnum.TALISMAN.toLowerCase().includes(lcType)) {
+    return WalletNameEnum.TALISMAN;
+  } else if (WalletNameEnum.NOVAWALLET.toLowerCase().includes(lcType)) {
+    return WalletNameEnum.NOVAWALLET;
+  } else if (WalletNameEnum.PJS.toLowerCase().includes(lcType)) {
+    return WalletNameEnum.PJS;
+  } else if (WalletNameEnum.CRUSTWALLET.toLowerCase().includes(lcType)) {
     return undefined;
     // return WalletTypeEnum.CRUSTWALLET;
-  } else if (WalletTypeEnum.SPORRAN.toLowerCase().includes(lcType)) {
+  } else if (WalletNameEnum.SPORRAN.toLowerCase().includes(lcType)) {
     return undefined;
     // return WalletTypeEnum.SPORRAN;
   } else {
-    return WalletTypeEnum.WALLETCONNECT;
+    return WalletNameEnum.WALLETCONNECT;
   }
 }

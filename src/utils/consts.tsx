@@ -17,7 +17,7 @@ export const FALLBACK_TEXT_STYLE = "text-saturn-black dark:text-saturn-offwhite 
 
 export const CRUMB_STYLE = "text-xxs font-medium py-3 rounded-md focus:outline-none text-center w-[150px] crumb-btn disabled:cursor-not-allowed";
 
-export enum WalletTypeEnum {
+export enum WalletNameEnum {
   SUBWALLET = "sub", // ?
   TALISMAN = "talisman",
   NOVAWALLET = "nova wallet",

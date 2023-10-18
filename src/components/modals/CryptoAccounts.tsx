@@ -14,9 +14,10 @@ import { useNavigate } from "@solidjs/router";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useWalletConnectContext } from "../../providers/walletConnectProvider";
 import { walletAggregator } from "../../App";
-import { BaseWallet, Account } from "@polkadot-onboard/core";
-import SignClient from "@walletconnect/sign-client";
-// import QRCode from 'qrcode';
+import { Account, WalletType } from "@polkadot-onboard/core";
+import { BaseWallet, WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
+import { WalletNameEnum } from "../../utils/consts";
+
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
@@ -25,26 +26,25 @@ const CryptoAccounts = () => {
     [],
   );
   const [availableAccounts, setAvailableAccounts] = createSignal<Account[] & { title?: string; }>([]);
-  const [browsingWcList, setBrowsingWcList] = createSignal(false);
-  const [qrCodeUri, setQrCodeUri] = createSignal<string>('');
   const saContext = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
-  const walletContext = useWalletConnectContext();
+  const wcContext = useWalletConnectContext();
   const theme = useThemeContext();
   const nav = useNavigate();
-
   const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
 
+  // const getSelectedStorage = createMemo(() => saContext.setters.getSelectedStorage());
+
   const isWcAccountMatch = createMemo(() => {
-    const wcAccountFromStorage = saContext.setters.getSelectedStorage();
-    return !saContext.state.wallet && wcAccountFromStorage.wallet === 'wallet-connect';
+    const storage = saContext.setters.getSelectedStorage();
+    return storage && storage.wallet === WalletNameEnum.WALLETCONNECT;
   });
 
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
 
   function isActiveAccount(account: Account) {
     const selectedAccount = saContext.state.account;
-    return selectedAccount ? account.address === selectedAccount.address : false;
+    return selectedAccount ? account.address === selectedAccount.address && account : false;
   }
 
   async function getAllAccounts() {
@@ -60,7 +60,7 @@ const CryptoAccounts = () => {
           throw new Error('wallet is not valid or getAccounts is not a function');
         }
 
-        if (wallet.type !== "WALLET_CONNECT") {
+        if (wallet.type !== WalletType.WALLET_CONNECT) {
           try {
             // Connect to each substrate wallet and add accounts to availableAccounts
             await wallet.connect();
@@ -72,15 +72,18 @@ const CryptoAccounts = () => {
           // TODO: FiX bug where WalletConnect requires a qr pairing
           // whenever the app is refreshed. This creates a new session
           // but it prevents the user from connecting to the dApp ("network issues")
+          if (!!wallet && wallet.autoConnect) {
+            await wallet.autoConnect();
+          }
         }
 
         try {
-          // Include the wallet title in the accounts array to display in UI
+          // Include the wallet title and name in Account object to display in UI
           let accounts: Account[] & { title?: string; } = await wallet.getAccounts();
-          accounts = accounts.map((account) => ({ title: wallet.metadata.title, ...account }));
+          accounts = accounts.map((account) => ({ title: wallet.metadata.title, name: wallet.metadata.title, ...account }));
 
           // Accounts should only be an array of unique addresses despite wallet type
-          // accounts = accounts.filter((account, index, self) => self.findIndex((a) => a.address === account.address) === index);
+          accounts = accounts.filter((account, index, self) => self.findIndex((a) => a.address === account.address) === index);
 
           // Merge updated accounts into all available accounts
           setAvailableAccounts([...availableAccounts(), ...accounts]);
@@ -113,20 +116,30 @@ const CryptoAccounts = () => {
     }
   }
 
-  async function connectWalletConnect() { // Connect to WalletConnect
-    const wcWallet = availableWallets().find((w) => w.type === "WALLET_CONNECT");
-    await wcWallet?.connect();
-    const accounts = await wcWallet?.getAccounts();
-    const selectedAccount = accounts?.[0];
-    const selectedWcId = selectedAccount?.address;
-    if (selectedWcId) {
-      // Store WalletConnect session in saturn context
-      await saContext.setters.setSelected(selectedAccount, wcWallet);
+  async function connectWalletConnect() {
+    // Logout of any existing WalletConnect session
+    try {
+      const wcWallet = availableWallets().find((w) => w.type === "WALLET_CONNECT");
+      if (!wcWallet) {
+        throw new Error("WalletConnect wallet not found");
+      }
+
+      await wcWallet.connect();
+
+      const accounts = await wcWallet.getAccounts();
+      const selectedAccount = accounts?.[0];
+      const selectedWcId = selectedAccount?.address;
+      if (!selectedWcId) {
+        throw new Error("No WalletConnect account selected");
+      }
 
       // Finesse selectedAccount to have BaseWallet properties
-      (selectedAccount as any).title = 'wallet-connect';
+      (selectedAccount as any).title = WalletNameEnum.WALLETCONNECT;
       (selectedAccount as any).type = "sr25519";
       (selectedAccount as any).name = wcWallet?.metadata.title;
+
+      // Store WalletConnect session in saturn context
+      await saContext.setters.setSelected(selectedAccount, wcWallet);
 
       // Also add WalletConnect account to availableAccounts
       setAvailableAccounts([...availableAccounts(), selectedAccount]);
@@ -139,45 +152,25 @@ const CryptoAccounts = () => {
       }
 
       removeModal();
+    } catch (error) {
+      console.error('Error connecting to WalletConnect:', (error as any).message);
     }
   }
 
+  function handleLogout() {
+    removeModal();
+    saContext.state.wallet?.disconnect();
+  }
+
   function handleOpenWalletConnect() {
-    if (isWcAccountMatch()) {
-      setBrowsingWcList(true);
-    } else {
-      connectWalletConnect();
-    }
+    connectWalletConnect();
   }
 
   function removeModal() {
     if (modal) {
       modal.hide();
-      setBrowsingWcList(false);
     }
   }
-
-  async function tryWcConnectDapp() {
-    const uri = qrCodeUri();
-
-    console.log('qrCodeUri: ', uri);
-
-    if (walletContext.state.w3w) {
-      await walletContext.state.w3w.core.pairing.pair({ uri });
-    }
-  }
-
-  async function disconnectWeb3Wallet(topic: string) {
-    if (walletContext.state.w3w) {
-      await walletContext.state.w3w.disconnectSession({
-        topic,
-        reason: { code: 123, message: '' },
-      });
-
-      console.log('session disconnected');
-      removeModal();
-    }
-  };
 
   onMount(() => {
     initModals();
@@ -188,15 +181,42 @@ const CryptoAccounts = () => {
   createEffect(() => {
     let timeout: any;
     timeout = setTimeout(async () => {
-      const allWallets = walletAggregator.getWallets();
-      setAvailableWallets(allWallets as BaseWallet[]);
-      getAllAccounts();
-    }, 1000);
+      if (walletAggregator) {
+        const allWallets = walletAggregator.getWallets();
+        setAvailableWallets(allWallets as BaseWallet[]);
+        getAllAccounts();
+      }
+    }, 100);
 
     onCleanup(() => {
       clearTimeout(timeout);
     });
   });
+
+  createEffect(on(() => wcContext.state.w3w, () => {
+    const getSelectedStorage = () => saContext.setters.getSelectedStorage();
+    const client = wcContext.state.w3w;
+    if (!client) return;
+    let lastKnownAddress: string = '';
+    const selectedAddress = getSelectedStorage().address;
+    const sessions = client.getActiveSessions();
+    const lastKnownSession = Object.entries(sessions).find((s) => {
+      lastKnownAddress = toWalletAccount(s[1].namespaces?.polkadot?.accounts?.[0] as WcAccount).address;
+      return lastKnownAddress === selectedAddress;
+    });
+    console.log('lastKnownSession: ', lastKnownSession);
+    console.log('lastKnownAddress: ', lastKnownAddress);
+    if (!lastKnownSession || !lastKnownAddress) return;
+    const lastSessionTopic = lastKnownSession[0];
+    client?.events.on('session_delete', (session: { id: string; topic: string; }) => {
+      if (session.topic === lastSessionTopic) {
+        console.log('session_deleted: ', session);
+        // Remove disconnected account from availableAccounts
+        const updatedAccounts = availableAccounts().filter((a) => a.address !== lastKnownAddress);
+        setAvailableAccounts(updatedAccounts);
+      }
+    });
+  }));
 
   return (
     <>
@@ -214,62 +234,31 @@ const CryptoAccounts = () => {
               <span class="sr-only">Close modal</span>
             </button>
           </div>
-          <Show when={browsingWcList()}>
-            hello!
-          </Show>
-          {/* <Show when={openWalletConnect()}>
-            <div class="mx-4">
-              <input
-                class="text-black"
-                value={qrCodeUri()}
-                onInput={(e: any) => {
-                  setQrCodeUri(e.currentTarget.value);
-                }}
-              />
-              <Show when={canvasReady()} fallback={<span class="text-black dark:text-white text-xxs align-center">Loading QR Code...</span>}>
-                <div class="bg-saturn-purple dark:bg-saturn-purple p-5 rounded-md">
-                  <canvas class="rounded-md mb-3" id="qr-code-canvas"></canvas>
-                  <CopyAddressField address={qrCodeUri()} length={10} />
-                </div>
-              </Show>
-              <button
-                class='bg-green-500 hover:bg-saturn-red'
-                onClick={() => tryWcConnectDapp()}
-              >
-                Connect to dApp
-              </button>
-            </div>
-            <div class="flex flex-row justify-end gap-2 items-center m-6">
-              <LogoutButton cancel={true} onClick={removeModal} />
-            </div>
-          </Show> */}
-          <Show when={!browsingWcList()}>
-            <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
-              <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
-                <Show when={availableAccounts().length > 2}>
-                  <For each={availableAccounts()}>
-                    {account => {
-                      return (
-                        <div class={`${ !isActiveAccount(account) ? '' : 'dark:border-saturn-green' } dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1.5px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer`} onClick={[connectUserAccount, account]}>
-                          <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
-                          <div class="flex flex-row justify-between items-start my-3
+          <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
+            <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+              <Show when={availableAccounts().length > 2}>
+                <For each={availableAccounts()}>
+                  {account => {
+                    return (
+                      <div class={`${ !isActiveAccount(account) ? '' : 'dark:border-saturn-green' } dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1.5px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer`} onClick={[connectUserAccount, account]}>
+                        <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
+                        <div class="flex flex-row justify-between items-start my-3
                     ">
-                            <WalletLabel walletType={(account as any).title} />
-                            <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
-                          </div>
-                          <CopyAddressField address={account.address} length={18} />
+                          <WalletLabel walletType={(account as any).title} />
+                          <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
                         </div>
-                      );
-                    }}
-                  </For>
-                </Show>
-              </div>
+                        <CopyAddressField address={account.address} length={18} />
+                      </div>
+                    );
+                  }}
+                </For>
+              </Show>
             </div>
-            <div class="flex flex-row justify-end gap-2 items-center m-6">
-              <LogoutButton onClick={removeModal} />
-              <WalletConnectButton onClick={handleOpenWalletConnect} />
-            </div>
-          </Show>
+          </div>
+          <div class="flex flex-row justify-end gap-2 items-center m-6">
+            <LogoutButton onClick={handleLogout} />
+            <WalletConnectButton onClick={handleOpenWalletConnect} />
+          </div>
         </div>
       </div>
     </>

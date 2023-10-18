@@ -27,8 +27,8 @@ export function WalletConnectProvider(props: WalletConnectProviderProps) {
     setters: {
       setWalletConnect(walletConnect: Web3WalletType, sessionProposalCallback: (proposal: Web3WalletTypes.SessionProposal) => Promise<void>, sessionRequestCallback: (event: Web3WalletTypes.SessionRequest) => Promise<void>) {
         const w3w = walletConnect;
-        w3w.on('session_proposal', sessionProposalCallback);
-        w3w.on('session_request', sessionRequestCallback);
+        w3w.events.on('session_proposal', sessionProposalCallback);
+        w3w.events.on('session_request', sessionRequestCallback);
         setState({ w3w, sessionProposalCallback, sessionRequestCallback });
       },
 
