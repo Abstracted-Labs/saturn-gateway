@@ -307,7 +307,6 @@ const AssetsContext = () => {
     const address = saturnContext.state.multisigAddress;
 
     if (typeof id !== 'number' || !address) {
-      console.log('no multisig id or address');
       return;
     }
 

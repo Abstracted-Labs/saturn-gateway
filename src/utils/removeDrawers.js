@@ -5,6 +5,9 @@ const removeDrawers = () => {
   // Select all matching drawer elements
   const elements = document.querySelectorAll('#leftSidebar[aria-hidden="true"], #rightSidebar[aria-hidden="true"]');
 
+  const $RightSidebar = () => document.getElementById('rightSidebar');
+  const $LeftSidebar = () => document.getElementById('leftSidebar');
+  const $InDrawer = () => document.getElementById('inDrawer');
 
   if (elements.length === 2) {
     // Loop through the elements and add the display: none style
@@ -15,12 +18,15 @@ const removeDrawers = () => {
 
   // Add a click event listener to each button
   button.forEach((btn) => {
+    if (!$InDrawer()) return;
     btn.addEventListener('click', () => {
       // hide the left sidebar if the rightSidebar button is pressed and vice versa
       if (btn.dataset.drawerTarget === 'rightSidebar') {
-        document.getElementById('rightSidebar').removeAttribute('style');
+        if (!$RightSidebar()) return;
+        $RightSidebar().removeAttribute('style');
       } else {
-        document.getElementById('leftSidebar').removeAttribute('style');
+        if (!$LeftSidebar()) return;
+        $LeftSidebar().removeAttribute('style');
       }
     });
   });

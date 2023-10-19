@@ -1,4 +1,4 @@
-import { Show, createMemo, createSignal } from "solid-js";
+import { Show, createMemo, createSignal, lazy } from "solid-js";
 import ConnectWallet from "./ConnectWallet";
 import SaturnLogo from "./SaturnLogo";
 import SubNavbar from "./SubNavbar";
@@ -15,6 +15,11 @@ const Navbar = (props: any) => {
   const lessThanSm = createMemo(() => {
     const width = window.innerWidth;
     return width < 414;
+  });
+
+  const lessThanLg = createMemo(() => {
+    const width = window.innerWidth;
+    return width < 992;
   });
 
   return <>
@@ -35,7 +40,7 @@ const Navbar = (props: any) => {
           </Show>
         </div>
       </div>
-      <Show when={!atHome()}>
+      <Show when={!atHome() && lessThanLg()}>
         <SubNavbar />
       </Show>
     </nav>

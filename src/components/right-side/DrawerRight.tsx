@@ -7,7 +7,7 @@ const DrawerRight = () => {
       <span class="sr-only">Close menu</span>
     </button>
     <div class="mt-10">
-      {/* <RightContent /> */}
+      <RightContent inDrawer={true} />
     </div>
   </div>;
 };

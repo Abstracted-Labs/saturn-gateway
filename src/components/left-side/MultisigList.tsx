@@ -33,15 +33,18 @@ const MultisigList = () => {
   const [multisigItems, setMultisigItems] = createSignal<MultisigItem[]>([]);
   const [originalOrder, setOriginalOrder] = createSignal([...multisigItems()]);
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
-  const multisigItemsLength = createMemo(() => multisigItems().length);
+  const [mutateButton, setMutateButton] = createSignal(false);
   // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>
-
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
   const navigate = useNavigate();
-  const selectedState = createMemo(() => selectedAccountContext.state);
   const location = useLocation();
+
+  const multisigItemsLength = createMemo(() => multisigItems().length);
+
+  const selectedState = createMemo(() => selectedAccountContext.state);
+
   const currentPage = createMemo(() => location.pathname);
 
   function handleClick(index: number) {
@@ -174,6 +177,15 @@ const MultisigList = () => {
     if (location.pathname.endsWith('/create')) return;
   });
 
+  createEffect(() => {
+    const isDrawerPresent = () => !!document.getElementById('inDrawer');
+    if (isDrawerPresent()) {
+      setMutateButton(true);
+    } else {
+      setMutateButton(false);
+    }
+  });
+
   /* createEffect(() => {
    *   const updatedItems = Array(10).fill(null).map((item, index) => {
    *     const name = `John Doe ${ index + 1 }`; // Example name for testing
@@ -254,6 +266,8 @@ const MultisigList = () => {
                 <div
                   onClick={() => handleClick(index())}
                   class={`relative p-4 mr-4 rounded-lg flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
+                  data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
+                  aria-controls={mutateButton() ? 'leftSidebar' : undefined}
                 >
                   <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
                     <Show when={item.image}>
