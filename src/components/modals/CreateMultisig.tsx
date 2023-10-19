@@ -54,6 +54,8 @@ const CreateMultisig = () => {
 
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
 
+  const lessThan1200 = createMemo(() => window.matchMedia('(max-width: 1200px)').matches);
+
   const totalSupportCount = createMemo(() => {
     // number of total members in multisig
     const party = members();
@@ -419,7 +421,7 @@ const CreateMultisig = () => {
         <div class="relative flex flex-col ml-2">
           <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
-          <input id="defaultMember" name="defaultMember" disabled type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={members()[0][0]} />
+          <input id="defaultMember" name="defaultMember" disabled type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } w-[100px] md:w-full`} value={members()[0][0]} />
         </div>
         <div>
           <label for="defaultVotes" class={`${ LIST_LABEL_STYLE } ml-5`}>Votes</label>
@@ -539,7 +541,7 @@ const CreateMultisig = () => {
                           <span class="absolute left-[-7px] top-[15px]"><img src={AyeIcon} width={12} height={12} /></span>
                         </Match>
                       </Switch>
-                      <input id={`text-${ index() }`} type="text" class={INPUT_CREATE_MULTISIG_STYLE} value={address}
+                      <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } w-[100px] md:w-full`} value={address}
                         onInput={validateMemberAddress} onBlur={validateWeb3Name} />
                     </div>
                     <SaturnNumberInput isMultisigUi label={`votes-${ index() }`} min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
@@ -650,18 +652,18 @@ const CreateMultisig = () => {
         <SaturnCrumb trail={MULTISIG_CRUMB_TRAIL} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
       </Show>
       <SaturnCard noPadding>
-        <div class="p-5 h-96">
-          <div class="grid grid-cols-4 gap-2 place-items-center h-full">
-            <div class="lg:col-span-2 col-span-1 px-3">
-              <h3 class="text-4xl md:text-[5vw] lg:text-[3vw]/none h-auto lg:h-44 font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-10">{!isLastStep() ? <span>
-                Create a new<br />Saturn Multisig
+        <div class={`p-5 ${ lessThan1200() ? 'h-auto' : 'h-96' }`}>
+          <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
+            <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
+              <h3 class={`text-2xl/tight sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>{!isLastStep() ? <span>
+                Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
               </span> : <span class="flex flex-col items-center"><img src={CheckIcon} width={80} height={80} /><span class="mt-5 break-words">You're All Set!</span></span>}</h3>
               <Show when={!isLastStep()}>
                 <h6 class="text-sm text-black dark:text-white">A Multisig is an account that is managed by one or more owners using multiple accounts.</h6>
               </Show>
             </div>
-            <div class="mx-8 lg:col-span-2 col-span-3 bg-image" style={{ 'background-image': `url(${ GradientBgImage })` }}>
-              <div class="flex flex-col justify-center bg-gray-950 p-5 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full">
+            <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>
+              <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
                 <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
                   <Match when={!isLoggedIn()}>
                     <STEP_LOGIN />
@@ -688,11 +690,11 @@ const CreateMultisig = () => {
         </div>
         <div>
           <Show when={getCurrentStep() !== MULTISIG_CRUMB_TRAIL[4]}>
-            <div class="flex flex-row items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg">
-              <div class="text-xs dark:text-white text-black text-center mx-auto px-3">{textHint()}</div>
-              <div class="flex flex-row">
-                <button disabled={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0] || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200" onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">Back</span></span></button>
-                <button disabled={disableCrumbs().includes(getNextStep()) || finishing()} type="button" class="text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center" onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex"><span class="mr-2">Next</span> &gt;</span>}</button>
+            <div class={`flex ${ lessThan1200() ? 'flex-col' : 'flex-row' } items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg`}>
+              <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
+              <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
+                <button disabled={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0] || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">Back</span></span></button>
+                <button disabled={disableCrumbs().includes(getNextStep()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
               </div>
             </div>
           </Show>

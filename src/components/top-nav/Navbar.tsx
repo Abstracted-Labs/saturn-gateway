@@ -12,15 +12,9 @@ const Navbar = (props: any) => {
     return loc.pathname === '/';
   });
 
-  const lessThanSm = createMemo(() => {
-    const width = window.innerWidth;
-    return width < 414;
-  });
+  const lessThanSm = createMemo(() => window.matchMedia('(max-width: 414px)').matches);
 
-  const lessThanLg = createMemo(() => {
-    const width = window.innerWidth;
-    return width < 992;
-  });
+  const lessThanLg = createMemo(() => window.matchMedia('(max-width: 992px)').matches);
 
   return <>
     <nav {...props} class={`${ atHome() ? 'bg-transparent backdrop-blur' : 'bg-saturn-offwhite dark:bg-saturn-black' } sticky z-50 top-0 left-0`}>

@@ -7,9 +7,11 @@ import CryptoAccounts from "../modals/CryptoAccounts";
 
 const Layout = ({ children }: { children: any; }) => {
   const location = useLocation();
+
   const showRightSide = createMemo(() => {
     return location.pathname !== '/' && !location.pathname.endsWith('create') && !location.pathname.endsWith('settings');
   });
+
   const atHome = createMemo(() => {
     return location.pathname === '/';
   });
