@@ -53,7 +53,7 @@ export default function Members() {
     }
   });
 
-  createEffect(async () => {
+  createEffect(() => {
     const saturn = saturnContext.state.saturn;
     const multisigId = saturnContext.state.multisigId;
 
