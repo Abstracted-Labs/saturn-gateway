@@ -59,9 +59,13 @@ const HomePlanet: Component = () => {
   const proposeContext = useProposeContext();
   const wcContext = useWalletConnectContext();
   const navigate = useNavigate();
+
   const saturnStateMemo = createMemo(() => saturnContext.state);
+
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
+
   const isHomepage = createMemo(() => location.pathname === '/');
+
   const getDefaultMultisigId = createMemo(() => {
     // return undefined if no multisigs
     if (!saturnContext.state.multisigItems || saturnContext.state.multisigItems.length === 0) {
@@ -71,6 +75,7 @@ const HomePlanet: Component = () => {
     const defaultMultisigId = saturnContext.state.multisigItems[0].id;
     return defaultMultisigId;
   });
+
   const getSelectedStorage = createMemo(() => selectedAccountContext.setters.getSelectedStorage());
 
   const createApis = async (): Promise<Record<string, ApiPromise>> => {
@@ -163,6 +168,7 @@ const HomePlanet: Component = () => {
         saturnContext.setters.setSaturn(sat);
       }
     };
+
     runAsync();
   });
 
@@ -190,6 +196,7 @@ const HomePlanet: Component = () => {
   createEffect(() => {
     // Init contexts for Saturn Connect
     setupSaturnConnect(saturnContext, proposeContext);
+    saturnContext.setters.setMultisigId(getDefaultMultisigId());
   });
 
   createEffect(() => {
@@ -199,7 +206,6 @@ const HomePlanet: Component = () => {
       try {
         const options = wcOptions();
         if (!options) return;
-
         const w3w = await Web3Wallet.init(options);
         timeout = setTimeout(() => {
           if (wcContext.setters.setWalletConnect && !!w3w) {
