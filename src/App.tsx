@@ -254,7 +254,7 @@ const HomePlanet: Component = () => {
             const client = wcContext.state.w3w;
             if (!client) return;
             const sessions = client.getActiveSessions();
-            const selectedAddress = getSelectedStorage().address;
+            const selectedAddress = current.address;
             const lastKnownSession = Object.entries(sessions).find((s) => {
               const sessionAddress = toWalletAccount(s[1].namespaces?.polkadot?.accounts?.[0] as WcAccount).address;
               return sessionAddress === selectedAddress;
