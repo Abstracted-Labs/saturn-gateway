@@ -32,12 +32,13 @@ export type ProposalHandlerType = (proposal: Proposal) => void;
 
 type ProposeStateType = {
   proposal?: Proposal;
+  openProposeModal?: boolean;
   currentNetwork?: NetworkEnum;
 };
 
 type ProposeSettersType = {
-  openProposal: (proposal: Proposal) => void,
-  closeProposal: () => void,
+  setProposal: (proposal: Proposal) => void,
+  setOpenProposeModal: (open: boolean) => void,
   setCurrentNetwork: (network: NetworkEnum) => void,
 };
 
@@ -51,8 +52,8 @@ const defaultState = (): ProposeContextType => ({
     currentNetwork: NetworkEnum.KUSAMA,
   },
   setters: {
-    openProposal: (proposal: Proposal) => { },
-    closeProposal: () => { },
+    setProposal: (proposal: Proposal) => { },
+    setOpenProposeModal: (open: boolean) => { },
     setCurrentNetwork: (network: NetworkEnum) => { },
   }
 });
@@ -65,11 +66,11 @@ export function ProposeProvider(props: any) {
   const value = createMemo(() => ({
     ...state,
     setters: {
-      openProposal(proposal: Proposal) {
+      setProposal(proposal: Proposal) {
         setState('state', 'proposal', proposal);
       },
-      closeProposal() {
-        setState('state', 'proposal', undefined);
+      setOpenProposeModal(open: boolean) {
+        setState('state', 'openProposeModal', open);
       },
       setCurrentNetwork(currentNetwork: NetworkEnum) {
         setState('state', 'currentNetwork', currentNetwork);

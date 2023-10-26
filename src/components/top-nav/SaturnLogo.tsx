@@ -8,8 +8,9 @@ import { A, useLocation } from "@solidjs/router";
 const SaturnLogo = () => {
   const [lightMode, setLightMode] = createSignal<boolean>(false);
   const theme = useThemeContext();
-  const colorMode = createMemo(() => theme.getColorMode());
   const loc = useLocation();
+
+  const colorMode = createMemo(() => theme.getColorMode());
   const atHome = createMemo(() => {
     return loc.pathname === '/';
   });

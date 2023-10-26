@@ -17,14 +17,10 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
   const [dropdown, setDropdown] = createSignal<DropdownInterface | null>(null);
   const [isDropdownActive, setIsDropdownActive] = createSignal(false);
   const selectedAccount = useSelectedAccountContext();
-  const isLoggedIn = createMemo(() => !!selectedAccount.state.account?.address);
-  const isInMultisig = createMemo(() => props.inMultisig);
-
   const modalOptions: ModalOptions = {
     backdrop: 'dynamic',
     closable: true,
   };
-
   const dropdownOptions: DropdownOptions = {
     placement: 'bottom',
     triggerType: 'click',
@@ -33,7 +29,10 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
     delay: 300,
   };
 
-  const openDropdown = () => {
+  const isInMultisig = createMemo(() => props.inMultisig);
+  const isLoggedIn = createMemo(() => !!selectedAccount.state.account?.address);
+
+  function openDropdown() {
     if (!isDropdownActive()) {
       dropdown()?.show();
       setIsDropdownActive(true);

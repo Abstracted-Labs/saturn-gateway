@@ -25,7 +25,6 @@ const colorFromHash = (hash: string) =>
 const rotateText = (text: string, nbChars = 0) => text.slice(nbChars) + text.slice(0, nbChars);
 
 export default function TalismanIdenticon(props: TalismanIdenticonProps) {
-
   const memo = createMemo(() => {
     const address = encodeAddress(props.value);
 

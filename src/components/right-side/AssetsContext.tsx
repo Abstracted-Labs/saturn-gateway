@@ -36,6 +36,7 @@ const AssetsContext = () => {
   const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
   const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
   const [networkFee, setNetworkFee] = createSignal<number>(0.0005);
+
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
@@ -45,17 +46,14 @@ const AssetsContext = () => {
   const FROM_DROPDOWN_ID = 'networkDropdownFrom';
   const $toggleFrom = () => document.getElementById(FROM_TOGGLE_ID);
   const $dropdownFrom = () => document.getElementById(FROM_DROPDOWN_ID);
-
   const TO_TOGGLE_ID = 'networkToggleTo';
   const TO_DROPDOWN_ID = 'networkDropdownTo';
   const $toggleTo = () => document.getElementById(TO_TOGGLE_ID);
   const $dropdownTo = () => document.getElementById(TO_DROPDOWN_ID);
-
   const ASSET_TOGGLE_ID = 'assetToggle';
   const ASSET_DROPDOWN_ID = 'assetDropdown';
   const $toggleAsset = () => document.getElementById(ASSET_TOGGLE_ID);
   const $dropdownAsset = () => document.getElementById(ASSET_DROPDOWN_ID);
-
   const options: DropdownOptions = {
     placement: 'bottom',
     triggerType: 'click',
@@ -63,14 +61,12 @@ const AssetsContext = () => {
     offsetDistance: -6,
     delay: 300,
   };
-
   const assetOptions: DropdownOptions = {
     placement: 'bottom',
     triggerType: 'click',
     offsetDistance: -6,
     delay: 300,
   };
-
   const allTheNetworks = (): Record<string, JSXElement> => ({
     [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
     [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
@@ -78,7 +74,6 @@ const AssetsContext = () => {
     [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
     [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
   });
-
   const allTheAssets = (): Record<string, JSXElement> => ({
     [AssetEnum.TNKR]: getAssetBlock(AssetEnum.TNKR),
     [AssetEnum.KSM]: getAssetBlock(AssetEnum.KSM),
@@ -93,7 +88,6 @@ const AssetsContext = () => {
     const filteredNetworks = allNetworks.filter(([name, element]) => availableNetworks.includes(name as NetworkEnum));
     return filteredNetworks;
   });
-
   const filteredAssets = createMemo(() => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
@@ -104,10 +98,19 @@ const AssetsContext = () => {
 
     return filterAssetBlocks;
   });
-
+  const forNetworks = createMemo(() => {
+    // const allNetworks = Object.entries(filteredNetworks());
+    // return allNetworks;
+    return filteredNetworks();
+  });
+  const toNetworks = createMemo(() => {
+    const balanceNetworks = balances().map(([network, assets]) => network);
+    const networks = Object.entries(allTheNetworks()).filter(([name, element]) => balanceNetworks.includes(name as NetworkEnum));
+    return networks;
+  });
   const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
 
-  const filteredAssetCount = () => {
+  function filteredAssetCount() {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
@@ -117,18 +120,6 @@ const AssetsContext = () => {
 
     return filterAssetBlocks.length;
   };
-
-  const forNetworks = createMemo(() => {
-    // const allNetworks = Object.entries(filteredNetworks());
-    // return allNetworks;
-    return filteredNetworks();
-  });
-
-  const toNetworks = createMemo(() => {
-    const balanceNetworks = balances().map(([network, assets]) => network);
-    const networks = Object.entries(allTheNetworks()).filter(([name, element]) => balanceNetworks.includes(name as NetworkEnum));
-    return networks;
-  });
 
   async function proposeTransfer() {
     const pair = finalNetworkPair();
@@ -154,12 +145,12 @@ const AssetsContext = () => {
         Rings.tinkernet.decimals,
       ));
 
-      proposeContext.setters.openProposal(
+      proposeContext.setters.setProposal(
         new Proposal(ProposalType.LocalTransfer, { chain: NetworkEnum.TINKERNET, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
 
     } else if (pair.from == NetworkEnum.TINKERNET && pair.to != NetworkEnum.TINKERNET) {
-      // Handle bridging TNKR or KSM from Tinkernet to other chains.
+      // TODO: Handle bridging TNKR or KSM from Tinkernet to other chains.
     } else if (pair.from != NetworkEnum.TINKERNET && pair.from != pair.to) {
       // Handle bridging assets between other chains.
 
@@ -167,7 +158,7 @@ const AssetsContext = () => {
         BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
       ));
 
-      proposeContext.setters.openProposal(
+      proposeContext.setters.setProposal(
         new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
       );
 
@@ -178,10 +169,13 @@ const AssetsContext = () => {
         BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
       ));
 
-      proposeContext.setters.openProposal(
+      proposeContext.setters.setProposal(
         new Proposal(ProposalType.XcmTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
     }
+
+    // Open proposal modal
+    proposeContext.setters.setOpenProposeModal(true);
   };
 
   function copySelfAddress() {

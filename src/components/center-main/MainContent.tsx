@@ -9,8 +9,10 @@ import { useSaturnContext } from "../../providers/saturnProvider";
 
 const MainContent = () => {
   const [membersCount, setMembersCount] = createSignal(0);
+
   const saturnContext = useSaturnContext();
   const location = useLocation();
+
   const currentPage = createMemo(() => location.pathname);
 
   function pageTitle() {

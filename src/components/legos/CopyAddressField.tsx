@@ -11,6 +11,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
   function copyToClipboard(e: MouseEvent) {
     // Prevent the click event from bubbling up to the parent element
     e.stopPropagation();
+    e.stopImmediatePropagation();
 
     // Copy the address to the clipboard
     navigator.clipboard.writeText(props.address ?? '--');
@@ -26,7 +27,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
 
   return <>
     <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
-      <span class="mx-2">{hasName() ? props.name : stringShorten(props.address ?? '--', props.length)}</span>
+      <span class="mx-2">{hasName() ? props.name : stringShorten(props.address ?? '--', !copied() ? props.length : 4)}</span>
       <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyToClipboard(e)}>
         {copied() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
         </span>}

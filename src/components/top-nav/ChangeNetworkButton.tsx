@@ -15,10 +15,11 @@ const ChangeNetworkButton = () => {
   const [activeNetwork, setActiveNetwork] = createSignal<NetworkEnum>(NetworkEnum.KUSAMA);
   const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
 
+  const proposeContext = useProposeContext();
+  const saturnContext = useSaturnContext();
+
   const TOGGLE_ID = 'networkToggle';
   const DROPDOWN_ID = 'networkDropdown';
-  const $toggle = () => document.getElementById(TOGGLE_ID);
-  const $dropdown = () => document.getElementById(DROPDOWN_ID);
   const networkOptions: DropdownOptions = {
     placement: 'bottom',
     triggerType: 'click',
@@ -26,14 +27,15 @@ const ChangeNetworkButton = () => {
     offsetDistance: -7,
     delay: 300,
   };
+  const $toggle = () => document.getElementById(TOGGLE_ID);
+  const $dropdown = () => document.getElementById(DROPDOWN_ID);
 
-  const proposeContext = useProposeContext();
-  const saturnContext = useSaturnContext();
-
-  const allTheNetworks = (): Record<string, JSXElement> => ({
-    [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
-    [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
-  });
+  function allTheNetworks(): Record<string, JSXElement> {
+    return ({
+      [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
+      [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+    });
+  };
 
   const filteredNetworks = createMemo(() => {
     const availableNetworks = balances().map(([network, assets]) => network);

@@ -4,6 +4,8 @@ import SidenavRight from "../right-side/SidenavRight";
 import { useLocation } from "@solidjs/router";
 import { Show, createMemo } from "solid-js";
 import CryptoAccounts from "../modals/CryptoAccounts";
+import ProposeModal from "../modals/ProposeModal";
+import { Portal } from "solid-js/web";
 
 const Layout = ({ children }: { children: any; }) => {
   const location = useLocation();
@@ -18,7 +20,12 @@ const Layout = ({ children }: { children: any; }) => {
 
   return <div>
     {/* Portal elements */}
-    <CryptoAccounts />
+    <Portal mount={document.getElementById('accountsWindow') || undefined}>
+      <CryptoAccounts />
+    </Portal>
+    <Portal mount={document.getElementById('proposeWindow') || undefined}>
+      <ProposeModal />
+    </Portal>
 
     {/* Top nav */}
     <Navbar />

@@ -1,52 +1,38 @@
-import { Match, Switch, createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
-// import { WebGLRenderer, Scene, PerspectiveCamera, Points, PointsMaterial, BufferGeometry, Float32BufferAttribute, MathUtils, Color } from 'three';
-// import HomeLogo from '../components/legos/HomeLogo';
+import { createMemo, createSignal } from 'solid-js';
 import { useThemeContext } from '../providers/themeProvider';
-import ColorSwitch, { ColorModeEnum } from '../components/left-side/ColorSwitch';
-import { WALLET_ACCOUNTS_MODAL_ID } from '../components/top-nav/ConnectWallet';
-import { Modal, initModals } from 'flowbite';
-import type { ModalOptions, ModalInterface } from 'flowbite';
+import ColorSwitch from '../components/left-side/ColorSwitch';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { useNavigate } from '@solidjs/router';
 import { useSaturnContext } from '../providers/saturnProvider';
 
 const Home = () => {
-  let modal: ModalInterface;
-  let cleanup = () => { };
-  const [container, setContainer] = createSignal<HTMLElement>();
+  // let cleanup = () => { };
+  // const [container, setContainer] = createSignal<HTMLElement>();
   const [isHovered, setHovered] = createSignal(false);
+
   const theme = useThemeContext();
   const nav = useNavigate();
   const saturnContext = useSaturnContext();
   const selectedAccount = useSelectedAccountContext();
-  const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
-  const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
-  const alreadyLoggedIn = createMemo(() => !!selectedAccount.state.account);
 
-  const modalOptions: ModalOptions = {
-    backdrop: 'dynamic',
-    closable: true,
-  };
+  const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
+  const alreadyLoggedIn = createMemo(() => !!selectedAccount.state.account);
+  const multisigId = createMemo(() => saturnContext.state.multisigId);
 
   function enterGateway() {
     setHovered(true);
-    const multisigId = saturnContext.state.multisigId;
-    if (!!multisigId) {
-      nav(`/${ multisigId }/members`);
-      return;
-    } else {
-      nav('/create');
-      return;
-    }
-    return;
-  }
 
-  onMount(() => {
-    initModals();
-    if (!$modalElement()) {
-      modal = new Modal($modalElement(), modalOptions);
+    try {
+      if (!!multisigId()) {
+        nav(`/${ multisigId() }/members`);
+      } else {
+        nav('/create');
+      }
+    } catch (error) {
+      console.error(error);
     }
-  });
+
+  }
 
   // createEffect(() => {
   //   cleanup(); // Clean up the previous scene

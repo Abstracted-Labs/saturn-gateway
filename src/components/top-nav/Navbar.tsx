@@ -8,12 +8,8 @@ const Navbar = (props: any) => {
   const [open, setOpen] = createSignal(false);
   const loc = useLocation();
 
-  const atHome = createMemo(() => {
-    return loc.pathname === '/';
-  });
-
+  const atHome = createMemo(() => loc.pathname === '/');
   const lessThanSm = createMemo(() => window.matchMedia('(max-width: 414px)').matches);
-
   const lessThanLg = createMemo(() => window.matchMedia('(max-width: 992px)').matches);
 
   return <>

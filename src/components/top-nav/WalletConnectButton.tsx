@@ -9,6 +9,7 @@ const WalletConnectButton = (props: { onClick?: () => any; }) => {
   const [isMatch, setIsMatch] = createSignal(false);
   const saContext = useSelectedAccountContext();
   const wcContext = useWalletConnectContext();
+
   const wcAccount = createMemo(() => saContext.setters.getSelectedStorage());
 
   createEffect(() => {

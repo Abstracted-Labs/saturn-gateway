@@ -88,19 +88,39 @@ const CryptoAccounts = () => {
   }
 
   async function connectUserAccount(acc: Account) {
-    if (acc) {
-      // Finesse selectedAccount to have BaseWallet properties
-      await saContext.setters.setSelected(acc, availableWallets().find((w) => {
-        return w.metadata.title === (acc as any).title;
-      }));
-
-      if (location.pathname === '/') {
-        // Redirect to multisig members page if on home page
-        saturnContext.state.multisigId ? nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false }) :
-          nav(`/create`, { resolve: false });
+    try {
+      if (!acc) {
+        throw new Error('Account is not defined');
       }
 
+      const wallets = availableWallets();
+      if (!wallets) {
+        throw new Error('No available wallets');
+      }
+
+      const selectedWallet = wallets.find((w) => w.metadata.title === (acc as any).title);
+      if (!selectedWallet) {
+        throw new Error('No matching wallet found for account');
+      }
+
+      await saContext.setters.setSelected(acc, selectedWallet);
+
+      if (!saturnContext || !saturnContext.setters || typeof saturnContext.setters.logout !== 'function') {
+        throw new Error('Saturn context is not properly defined');
+      }
+
+      saturnContext.setters.logout();
+
+      if (location.pathname === '/' && saturnContext.state.multisigId) {
+        nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false });
+      } else {
+        nav(`/create`, { resolve: false });
+      }
+    } catch (error) {
+      console.error('Error in connectUserAccount:', error);
+    } finally {
       removeModal();
+      window.location.reload();
     }
   }
 
@@ -190,8 +210,8 @@ const CryptoAccounts = () => {
     // Get the client from the context
     const client = wcContext.state.w3w;
 
-    // If there's no client, exit the effect
-    if (!client) return;
+    // If there's no client or storage, exit the effect
+    if (!client || !getSelectedStorage()) return;
 
     let lastKnownAddress: string = '';
 
@@ -228,7 +248,7 @@ const CryptoAccounts = () => {
   return (
     <>
       <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
-        <div id="modalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
+        <div id="accountsModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
         <div class={`relative h-auto px-4 bg-saturn-offwhite dark:bg-black rounded-md`}>
           <div class="flex flex-row items-start justify-between p-4">
             <h4 class="text-md font-semibold text-gray-900 dark:text-white">
@@ -249,8 +269,7 @@ const CryptoAccounts = () => {
                     return (
                       <div class={`${ !isActiveAccount(account) ? '' : 'dark:border-saturn-green' } dark:bg-gray-800 bg-gray-200 rounded-lg p-4 mb-2 border-[1.5px] border-gray-200 dark:border-gray-800 hover:border-saturn-purple dark:hover:border-saturn-purple hover:cursor-pointer`} onClick={[connectUserAccount, account]}>
                         <AvatarAndName name={account.name} avatar={(account as any).avatar} enlarge={true} />
-                        <div class="flex flex-row justify-between items-start my-3
-                    ">
+                        <div class="flex flex-row justify-between items-start my-3">
                           <WalletLabel walletType={(account as any).title} />
                           <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
                         </div>

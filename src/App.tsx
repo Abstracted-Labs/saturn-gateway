@@ -1,6 +1,6 @@
 import type { Component } from 'solid-js';
 import { createEffect, createMemo, createSignal, lazy, on, onCleanup, onMount } from 'solid-js';
-import { Routes, Route, useNavigate } from '@solidjs/router';
+import { Routes, Route, useNavigate, useLocation } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn } from '@invarch/saturn-sdk';
 import { Rings } from './data/rings';
@@ -21,7 +21,6 @@ import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wal
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
 import { WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
 import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WalletAggregator, InjectedWalletProvider, toWalletAccount, WcAccount } from './lnm/wallet-connect';
-import type { SessionTypes, SignClientTypes } from '@walletconnect/types';
 
 const Create = lazy(async () => import('./pages/Create'));
 
@@ -50,24 +49,21 @@ export const walletAggregator = new WalletAggregator([
 
 const HomePlanet: Component = () => {
   const [wcOptions, setWcOptions] = createSignal<Web3WalletTypes.Options | undefined>(undefined);
-  const [wcActiveSessions, setWcActiveSessions] = createSignal<
-    Array<[string, SessionTypes.Struct]>
-  >([]);
+
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const proposeContext = useProposeContext();
   const wcContext = useWalletConnectContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const saturnStateMemo = createMemo(() => saturnContext.state);
-
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
-
   const isHomepage = createMemo(() => location.pathname === '/');
-
   const getDefaultMultisigId = createMemo(() => {
     // return undefined if no multisigs
+    console.log('saturnContext.state.multisigItems', saturnContext.state.multisigItems);
     if (!saturnContext.state.multisigItems || saturnContext.state.multisigItems.length === 0) {
       return undefined;
     }
@@ -76,9 +72,7 @@ const HomePlanet: Component = () => {
     return defaultMultisigId;
   });
 
-  const getSelectedStorage = createMemo(() => selectedAccountContext.setters.getSelectedStorage());
-
-  const createApis = async (): Promise<Record<string, ApiPromise>> => {
+  async function createApis(): Promise<Record<string, ApiPromise>> {
     const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
       async ([chain, data]) => {
         const res: [string, ApiPromise] = [
@@ -95,7 +89,7 @@ const HomePlanet: Component = () => {
     return Object.fromEntries(await Promise.all(entries));
   };
 
-  const sessionProposalCallback = async (proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) => {
+  async function sessionProposalCallback(proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) {
     console.log('session_proposal: ', proposal);
     const address = saturnStateMemo().multisigAddress;
     if (address) {
@@ -113,7 +107,7 @@ const HomePlanet: Component = () => {
     }
   };
 
-  const sessionRequestCallback = async (event: Web3WalletTypes.SessionRequest, w3w: IWeb3Wallet) => {
+  async function sessionRequestCallback(event: Web3WalletTypes.SessionRequest, w3w: IWeb3Wallet) {
     console.log('session_request: ', event);
     const address = saturnStateMemo().multisigAddress;
     if (!address) return;
@@ -142,9 +136,11 @@ const HomePlanet: Component = () => {
 
       const proposalType = chain === "tinkernet" ? ProposalType.LocalCall : ProposalType.XcmCall;
 
-      proposeContext.setters.openProposal(
+      proposeContext.setters.setProposal(
         new Proposal(proposalType, { chain, encodedCall: hexToU8a(requestedTx.transactionPayload.method) })
       );
+
+      proposeContext.setters.setOpenProposeModal(true);
 
       const response = {
         id,
@@ -196,7 +192,18 @@ const HomePlanet: Component = () => {
   createEffect(() => {
     // Init contexts for Saturn Connect
     setupSaturnConnect(saturnContext, proposeContext);
-    saturnContext.setters.setMultisigId(getDefaultMultisigId());
+
+    if (!!getDefaultMultisigId()) {
+      console.log('getDefaultMultisigId()', getDefaultMultisigId());
+      saturnContext.setters.setMultisigId(getDefaultMultisigId());
+
+      // Update the url address with new multisigId if any
+      const currentPath = location.pathname;
+      const newUrl = currentPath.replace(/\/\d+\//, `/${ getDefaultMultisigId() }/`);
+      if (currentPath !== newUrl) {
+        navigate(newUrl, { replace: true });
+      }
+    }
   });
 
   createEffect(() => {
@@ -225,6 +232,7 @@ const HomePlanet: Component = () => {
   });
 
   createEffect(on(() => wcContext.state.w3w, () => {
+    // Set active session for WalletConnect if any
     const getSelectedStorage = () => selectedAccountContext.setters.getSelectedStorage();
 
     const runAsync = async () => {

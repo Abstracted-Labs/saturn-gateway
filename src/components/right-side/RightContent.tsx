@@ -7,6 +7,7 @@ import { initDropdowns } from 'flowbite';
 
 const RightContent = (props: { inDrawer: boolean; }) => {
   const location = useLocation();
+
   const currentPage = createMemo(() => location.pathname);
 
   return <div class="h-full px-5 py-2 overflow-y-auto bg-saturn-offwhite dark:bg-saturn-black">

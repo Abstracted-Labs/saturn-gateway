@@ -113,13 +113,13 @@ const MultisigList = () => {
   });
 
   createEffect(() => {
+    let timeout: any;
     const sat = saturnContext.state.saturn;
     const acc = selectedState().account?.address;
     const api = ringApisContext.state.tinkernet;
 
     async function load() {
       if (!sat || !acc || !api) return;
-
       let iden;
       const multisigs = await sat.getMultisigsForAccount(acc);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
@@ -131,7 +131,6 @@ const MultisigList = () => {
           blake2AsU8a(
             api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
           ), 117);
-
         iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
           info: {
             display: { Raw: string; };
@@ -145,12 +144,11 @@ const MultisigList = () => {
 
         const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
 
-
         // Defensive code to handle empty or undefined name
         const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
         const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
-
+        console.log('activeTransactions', activeTransactions, m);
         return {
           id: m.multisigId,
           image,
@@ -161,6 +159,8 @@ const MultisigList = () => {
         };
       }));
 
+      console.log('processedList', processedList);
+
       setMultisigItems(processedList);
       saturnContext.setters.setMultisigItems(processedList);
 
@@ -170,7 +170,13 @@ const MultisigList = () => {
       }
     }
 
-    load();
+    timeout = setTimeout(() => {
+      load();
+    }, 200);
+
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
   });
 
   createEffect(() => {

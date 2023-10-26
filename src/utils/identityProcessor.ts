@@ -160,7 +160,7 @@ async function getWeb3Name(address: string): Promise<Identity | undefined> {
 }
 
 async function getKusamaIdentity(address: string): Promise<Identity | undefined> {
-  const kusamaApi = await ApiPromise.create({ provider: new WsProvider("wss://kusama.api.onfinality.io/public-ws") });
+  const kusamaApi = await ApiPromise.create({ provider: new WsProvider("wss://kusama-rpc.dwellir.com") });
 
   const iden = (
     (await kusamaApi.query.identity.identityOf(address))?.toHuman() as {
@@ -202,7 +202,7 @@ async function getKusamaIdentity(address: string): Promise<Identity | undefined>
 }
 
 async function getPolkadotIdentity(address: string): Promise<Identity | undefined> {
-  const polkadotApi = await ApiPromise.create({ provider: new WsProvider("wss://polkadot.api.onfinality.io/public-ws") });
+  const polkadotApi = await ApiPromise.create({ provider: new WsProvider("wss://polkadot-rpc.dwellir.com") });
 
   const iden = (
     (await polkadotApi.query.identity.identityOf(address))?.toHuman() as {

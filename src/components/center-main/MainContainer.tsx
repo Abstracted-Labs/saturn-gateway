@@ -1,12 +1,9 @@
 import { isAddress } from "@polkadot/util-crypto";
 import { useParams } from "@solidjs/router";
 import { createSignal, createEffect } from "solid-js";
-import { Portal } from "solid-js/web";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { setSaturnConnectAccount } from "../../utils/setupSaturnConnect";
-import IdentityCardModal from "../modals/identityCard";
-import ProposeModal from "../modals/propose";
 import defaultMultisigImage from '../../assets/images/default-multisig-image.png';
 import MainContent from "./MainContent";
 
@@ -116,10 +113,6 @@ const MainContainer = () => {
   return (
     <div class="m-2">
       <MainContent />
-      <Portal>
-        <ProposeModal />
-        {/* <IdentityCardModal /> */}
-      </Portal>
     </div>
   );
 };

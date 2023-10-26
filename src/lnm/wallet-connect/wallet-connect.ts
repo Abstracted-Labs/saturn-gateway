@@ -4,7 +4,6 @@ import type { SessionTypes } from '@walletconnect/types';
 import type { BaseWallet, WalletConnectConfiguration, WcAccount } from './types';
 import { WalletType } from '@polkadot-onboard/core';
 import SignClient from '@walletconnect/sign-client';
-import { Web3Wallet } from '@walletconnect/web3wallet';
 import QRCodeModal from '@walletconnect/qrcode-modal';
 import { WalletConnectSigner } from './signer';
 import { ExtensionConfiguration, WalletExtension } from '@polkadot-onboard/injected-wallets';
