@@ -40,7 +40,7 @@ export function SaturnProvider(props: any) {
 
       logout() {
         setState({
-          saturn: undefined,
+          // saturn: undefined,
           multisigId: undefined,
           multisigAddress: undefined,
           multisigDetails: undefined,

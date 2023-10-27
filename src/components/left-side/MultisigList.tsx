@@ -1,7 +1,7 @@
 import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { stringShorten } from '@polkadot/util';
-import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy, on } from 'solid-js';
+import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy, on, Switch, Match } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import { A, useLocation, useNavigate, useParams } from '@solidjs/router';
 import { useThemeContext } from '../../providers/themeProvider';
@@ -11,6 +11,7 @@ import { Rings } from "../../data/rings";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
 import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
+import LoaderAnimation from '../legos/LoaderAnimation';
 
 const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
@@ -34,7 +35,9 @@ const MultisigList = () => {
   const [originalOrder, setOriginalOrder] = createSignal([...multisigItems()]);
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
   const [mutateButton, setMutateButton] = createSignal(false);
-  // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>
+  const [loading, setLoading] = createSignal<boolean>(true);
+  // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>;
+
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
@@ -42,9 +45,7 @@ const MultisigList = () => {
   const location = useLocation();
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
-
-  const selectedState = createMemo(() => selectedAccountContext.state);
-
+  const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
   const currentPage = createMemo(() => location.pathname);
 
   function handleClick(index: number) {
@@ -56,12 +57,11 @@ const MultisigList = () => {
     const id = multisig.id;
 
     if (activeButton() === id) {
-      // If the clicked item is already active, restore the original order
-      // setMultisigItems(originalOrder);
-      // setActiveButton(null);
-      // setSelectedItem(null); // Clear the selected item
       return; // Do nothing if the clicked item is already active
     } else {
+      console.log('MultisigList id: ', id);
+      if (id === undefined) return;
+
       setActiveButton(id);
 
       saturnContext.setters.setMultisigId(id);
@@ -73,7 +73,7 @@ const MultisigList = () => {
         }
       });
 
-      navigate(`/${ id }/members`);
+      navigate(`/${ id }/members`, { resolve: false, replace: true });
 
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];
@@ -109,19 +109,21 @@ const MultisigList = () => {
   }
 
   createEffect(() => {
+    // Make a copy of the original order of the multisig items
     setOriginalOrder([...multisigItems()]);
   });
 
   createEffect(() => {
-    let timeout: any;
+    // Load the multisig list
     const sat = saturnContext.state.saturn;
-    const acc = selectedState().account?.address;
+    const address = getAccountAddress();
     const api = ringApisContext.state.tinkernet;
 
     async function load() {
-      if (!sat || !acc || !api) return;
+      if (!sat || !address || !api) return;
+
       let iden;
-      const multisigs = await sat.getMultisigsForAccount(acc);
+      const multisigs = await sat.getMultisigsForAccount(address);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
 
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
@@ -144,11 +146,10 @@ const MultisigList = () => {
 
         const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
 
-        // Defensive code to handle empty or undefined name
         const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
         const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
-        console.log('activeTransactions', activeTransactions, m);
+
         return {
           id: m.multisigId,
           image,
@@ -159,24 +160,22 @@ const MultisigList = () => {
         };
       }));
 
-      console.log('processedList', processedList);
-
-      setMultisigItems(processedList);
-      saturnContext.setters.setMultisigItems(processedList);
-
       // Set the activeButton to the address of the first item
       if (processedList.length > 0) {
-        setActiveButton(processedList[0].id);
+        const selectedId = processedList[0].id;
+        setMultisigItems(processedList);
+        setActiveButton(selectedId);
+        saturnContext.setters.setMultisigItems(processedList);
+        saturnContext.setters.setMultisigId(selectedId);
+        setLoading(false);
+      } else {
+        setMultisigItems([]);
+        saturnContext.setters.setMultisigItems([]);
+        navigate('/create', { replace: true });
       }
     }
 
-    timeout = setTimeout(() => {
-      load();
-    }, 200);
-
-    onCleanup(() => {
-      clearTimeout(timeout);
-    });
+    load();
   });
 
   createEffect(() => {
@@ -238,7 +237,7 @@ const MultisigList = () => {
             // '-webkit-scrollbar-color': '#692EFF #ffffff',
             '-webkit-overflow-scrolling': 'touch',
           }}
-          class={`h-full saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
+          class={`h-auto saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
           {/* <div class="w-62 absolute bottom-0 inset-0 pointer-events-none">
             <div class="h-full bg-gradient-to-b from-transparent to-saturn-offwhite dark:to-saturn-black"></div>
@@ -266,31 +265,38 @@ const MultisigList = () => {
           )} */}
 
           {/* Multisig list */}
-          <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>{multisigItemsLength() === 0 ? `You don't have any multisigs yet.` : 'Loading...'}</div>}>
-            {(item: MultisigItem, index) => (
-              <>
-                <div
-                  onClick={() => handleClick(index())}
-                  class={`relative p-4 mr-4 rounded-lg flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
-                  data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
-                  aria-controls={mutateButton() ? 'leftSidebar' : undefined}
-                >
-                  <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
-                    <Show when={item.image}>
-                      <img class="rounded-full" src={item.image} />
-                    </Show>
-                  </div>
-                  <div class="grid grid-rows-2 ml-3">
-                    <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
-                    <Show when={item.address}>
-                      <CopyAddress address={item.address} length={4} />
-                    </Show>
-                  </div>
-                  {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
-                </div>
-              </>
-            )}
-          </For>
+          <Switch>
+            <Match when={loading()}>
+              <LoaderAnimation text="Loading multisig list..." />
+            </Match>
+            <Match when={!loading()}>
+              <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>
+                {(item: MultisigItem, index) => (
+                  <>
+                    <div
+                      onClick={() => handleClick(index())}
+                      class={`relative p-4 mr-4 rounded-lg flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
+                      data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
+                      aria-controls={mutateButton() ? 'leftSidebar' : undefined}
+                    >
+                      <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                        <Show when={item.image}>
+                          <img class="rounded-full" src={item.image} />
+                        </Show>
+                      </div>
+                      <div class="grid grid-rows-2 ml-3">
+                        <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
+                        <Show when={item.address}>
+                          <CopyAddress address={item.address} length={4} />
+                        </Show>
+                      </div>
+                      {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
+                    </div>
+                  </>
+                )}
+              </For>
+            </Match>
+          </Switch>
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import styles from '../../App.module.css';
 
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { BUTTON_COMMON_STYLE } from "../../utils/consts";
+import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 
 function matchIconToPage(page: string): JSXElement {
   // Assign the correct icon component to each page link
@@ -28,12 +29,14 @@ function matchIconToPage(page: string): JSXElement {
 
 const PageLinks = () => {
   const saturnContext = useSaturnContext();
+  const saContext = useSelectedAccountContext();
   const [mutateButton, setMutateButton] = createSignal(false);
 
-  const multiSigId = createMemo(() => saturnContext.state.multisigId);
+  const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
+  const multisigId = createMemo(() => saturnContext.state.multisigId);
 
   function buildHref(page: string): string {
-    if (!multiSigId()) return '';
+    if (!isLoggedIn()) return '';
     return `/${ saturnContext.state.multisigId?.toString() }/${ page }`;
   };
 
@@ -45,10 +48,9 @@ const PageLinks = () => {
       setMutateButton(false);
     }
   });
-
-  return <div class={`${ styles.pageListContainer } mb-5`}>
-    <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
-    <Show when={!!multiSigId()} fallback={<div class="text-black dark:text-white text-xs">Loading pages...</div>}>
+  return <div class={`${ !isLoggedIn() || !multisigId() ? '' : styles.pageListContainer } mb-5`}>
+    <Show when={!!isLoggedIn() && !!multisigId()}>
+      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
       <For each={pages}>
         {(page) => {
           return (

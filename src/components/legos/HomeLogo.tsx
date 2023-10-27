@@ -6,7 +6,9 @@ import lightLogo from "../../assets/icons/saturn-home-logo-light.svg";
 
 const HomeLogo = () => {
   const [lightMode, setLightMode] = createSignal<boolean>(false);
+
   const theme = useThemeContext();
+
   const colorMode = createMemo(() => theme.getColorMode());
 
   createEffect(on(colorMode, () => {

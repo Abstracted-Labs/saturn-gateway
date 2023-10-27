@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Show, createMemo, on } from 'solid-js';
+import { createSignal, For, createEffect, Show, createMemo, on, onCleanup, Switch, Match } from 'solid-js';
 import { BigNumber } from 'bignumber.js';
 import { useSaturnContext } from "../providers/saturnProvider";
 import Identity from '../components/identity/Identity';
@@ -7,6 +7,7 @@ import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE } from '../utils/consts';
 import RemoveIcon from '../assets/icons/remove-member-icon.svg';
 import SaturnNumberInput from '../components/legos/SaturnNumberInput';
 import SearchIcon from '../assets/icons/search.svg';
+import LoaderAnimation from '../components/legos/LoaderAnimation';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
@@ -14,6 +15,7 @@ export default function Members() {
   let originalMembers: MembersType[];
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [search, setSearch] = createSignal<string>('');
+  const [loading, setLoading] = createSignal<boolean>(true);
 
   const saturnContext = useSaturnContext();
 
@@ -41,20 +43,24 @@ export default function Members() {
     }
   }
 
-  createEffect(() => {
+  createEffect(on(() => saturnContext.state.multisigId, () => {
     const saturn = saturnContext.state.saturn;
     const multisigId = saturnContext.state.multisigId;
 
-    if (!saturn || typeof multisigId != "number") return;
-
     const runAsync = async () => {
+      if (!saturn || typeof multisigId !== "number" || isNaN(multisigId)) {
+        setLoading(false);
+        return;
+      };
+
       const members = await getAllMembers(multisigId, saturn);
       originalMembers = members;
       setMembers(members);
+      setLoading(false);
     };
 
     runAsync();
-  });
+  }));
 
   createEffect(on(search, () => {
     // filter members by search
@@ -71,7 +77,7 @@ export default function Members() {
   }));
 
   return (
-    <Show when={members() && members().length} fallback={<span class={FALLBACK_TEXT_STYLE}>Loading member list...</span>}>
+    <>
       <div class="flex flex-row justify-between items-center mb-3">
         <h3 class="text-sm text-saturn-black dark:text-saturn-offwhite">Members {members() && members().length > 0 ? <span class="text-xxs text-saturn-lightgrey align-top ml-1">{members().length}</span> : null}</h3>
         <div class="flex flex-row items-center gap-3">
@@ -95,40 +101,50 @@ export default function Members() {
             </tr>
           </thead>
           <tbody>
-            <For each={members()}>
-              {(member, index) => {
-                const [equals, setEquals] = createSignal<boolean>(true);
-                const [votingPower, setVotingPower] = createSignal<string>("0");
-                const hide = createMemo(() => equals());
+            <Switch fallback={<div class="mt-5"><LoaderAnimation text="Loading member list..." /></div>}>
+              <Match when={loading()}>
+                <span class={FALLBACK_TEXT_STYLE}>No members found.</span>
+              </Match>
+              <Match when={members() && members().length === 0}>
+                <span class={FALLBACK_TEXT_STYLE}>No members found.</span>
+              </Match>
+              <Match when={members() && members().length > 0}>
+                <For each={members()}>
+                  {(member, index) => {
+                    const [equals, setEquals] = createSignal<boolean>(true);
+                    const [votingPower, setVotingPower] = createSignal<string>("0");
+                    const hide = createMemo(() => equals());
 
-                function isEqual(value: string) {
-                  if (value === member.votes.div("1000000").decimalPlaces(2, 1).toString()) {
-                    setEquals(true);
-                  } else {
-                    setEquals(false);
-                    setVotingPower(value);
-                  }
-                }
+                    function isEqual(value: string) {
+                      if (value === member.votes.div("1000000").decimalPlaces(2, 1).toString()) {
+                        setEquals(true);
+                      } else {
+                        setEquals(false);
+                        setVotingPower(value);
+                      }
+                    }
 
-                return <tr class='border-b-[1px] border-gray-200 dark:border-gray-800'>
-                  <td class='py-3 px-4 h-full font-medium'>
-                    <Identity address={member.address} />
-                  </td>
-                  <td class='py-3 px-4 h-full'>
-                    <SaturnNumberInput label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
-                  </td>
-                  <td class='py-3 px-4'>
-                    {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
-                  </td>
-                  <td class='py-3 px-4 h-full'>
-                    <button type="button" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={() => removeMember(member.address)}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>
-                  </td>
-                </tr>;
-              }}
-            </For>
+                    return <tr class='border-b-[1px] border-gray-200 dark:border-gray-800'>
+                      <td class='py-3 px-4 h-full font-medium'>
+                        <Identity address={member.address} />
+                      </td>
+                      <td class='py-3 px-4 h-full'>
+                        <SaturnNumberInput label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
+                      </td>
+                      <td class='py-3 px-4'>
+                        {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
+                      </td>
+                      <td class='py-3 px-4 h-full'>
+                        <button type="button" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={() => removeMember(member.address)}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>
+                      </td>
+                    </tr>;
+                  }}
+                </For>
+              </Match>
+            </Switch>
           </tbody>
         </table>
       </div>
-    </Show >
+    </>
   );
 }

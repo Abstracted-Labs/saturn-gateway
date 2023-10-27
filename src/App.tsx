@@ -1,6 +1,6 @@
 import type { Component } from 'solid-js';
-import { createEffect, createMemo, createSignal, lazy, on, onCleanup, onMount } from 'solid-js';
-import { Routes, Route, useNavigate, useLocation } from '@solidjs/router';
+import { createEffect, createMemo, createRenderEffect, createSignal, lazy, on, onCleanup, onMount } from 'solid-js';
+import { Routes, Route, useNavigate, useLocation, useParams } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn } from '@invarch/saturn-sdk';
 import { Rings } from './data/rings';
@@ -56,20 +56,26 @@ const HomePlanet: Component = () => {
   const proposeContext = useProposeContext();
   const wcContext = useWalletConnectContext();
   const navigate = useNavigate();
-  const location = useLocation();
+  const loc = useLocation();
+  const params = useParams();
+  const hash = params.hash;
 
   const saturnStateMemo = createMemo(() => saturnContext.state);
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
-  const isHomepage = createMemo(() => location.pathname === '/');
   const getDefaultMultisigId = createMemo(() => {
+    const items = saturnStateMemo().multisigItems;
     // return undefined if no multisigs
-    console.log('saturnContext.state.multisigItems', saturnContext.state.multisigItems);
-    if (!saturnContext.state.multisigItems || saturnContext.state.multisigItems.length === 0) {
+    if (items === undefined || items.length === 0) {
+      console.log('multisig is undefined');
       return undefined;
+    } else if (items.length > 0) {
+      const defaultMultisigId = items[0].id;
+      console.log('defaultMultisigId: ', defaultMultisigId);
+      return defaultMultisigId;
+    } else {
+      console.log('nani', items);
+      return saturnStateMemo().multisigId;
     }
-
-    const defaultMultisigId = saturnContext.state.multisigItems[0].id;
-    return defaultMultisigId;
   });
 
   async function createApis(): Promise<Record<string, ApiPromise>> {
@@ -189,20 +195,10 @@ const HomePlanet: Component = () => {
     }
   });
 
-  createEffect(() => {
+  onMount(() => {
     // Init contexts for Saturn Connect
-    setupSaturnConnect(saturnContext, proposeContext);
-
-    if (!!getDefaultMultisigId()) {
-      console.log('getDefaultMultisigId()', getDefaultMultisigId());
-      saturnContext.setters.setMultisigId(getDefaultMultisigId());
-
-      // Update the url address with new multisigId if any
-      const currentPath = location.pathname;
-      const newUrl = currentPath.replace(/\/\d+\//, `/${ getDefaultMultisigId() }/`);
-      if (currentPath !== newUrl) {
-        navigate(newUrl, { replace: true });
-      }
+    if (!!saturnContext && !!proposeContext) {
+      setupSaturnConnect(saturnContext, proposeContext);
     }
   });
 
@@ -295,15 +291,22 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(on(() => isLoggedIn, () => {
-    // if logged in and on homepage, redirect to multisig members page
+  createEffect(() => {
     if (isLoggedIn()) {
-      if (!!getDefaultMultisigId() && isHomepage()) {
-        navigate(`/${ getDefaultMultisigId() }/members`, { resolve: false });
-        return;
+      const path = loc.pathname;
+      const page = path.split('/')[2];
+
+      if (page !== undefined) {
+        const multisigId = getDefaultMultisigId();
+
+        if (!!multisigId) {
+          console.log('konnichiha');
+          navigate(`/${ multisigId }/${ page }`, { replace: true });
+          return;
+        }
       }
     }
-  }));
+  });
 
   return (
     <Layout>

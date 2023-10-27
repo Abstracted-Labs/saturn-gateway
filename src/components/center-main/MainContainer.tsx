@@ -1,6 +1,6 @@
 import { isAddress } from "@polkadot/util-crypto";
-import { useParams } from "@solidjs/router";
-import { createSignal, createEffect } from "solid-js";
+import { useLocation, useParams } from "@solidjs/router";
+import { createSignal, createEffect, createMemo, on } from "solid-js";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { setSaturnConnectAccount } from "../../utils/setupSaturnConnect";
@@ -19,10 +19,14 @@ const MainContainer = () => {
     twitterUrl: undefined,
     websiteUrl: undefined,
   });
+
+  const location = useLocation();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const params = useParams();
-  const { idOrAddress } = params;
+  const hash = params.hash;
+
+  const getId = createMemo(() => hash?.split('/')[0]);
 
   createEffect(() => {
     const details = saturnContext.state.multisigDetails;
@@ -69,46 +73,46 @@ const MainContainer = () => {
     setSaturnConnectAccount(name, address);
   });
 
-  createEffect(() => {
+  createEffect(on(() => getId, () => {
     const tinkernetApi = ringApisContext.state.tinkernet;
     const sat = saturnContext.state.saturn;
+    const idOrAddress = getId();
 
     if (!tinkernetApi || !sat) return;
 
     const runAsync = async () => {
+      if (location.pathname.endsWith('create') && !idOrAddress) return;
+
+      let id;
       if (isAddress(idOrAddress)) {
-        const id = (await tinkernetApi.query.inv4.coreByAccount(idOrAddress))
-          .unwrapOr(null)
-          ?.toNumber();
-
-        if (typeof id === 'number') {
-          saturnContext.setters.setMultisigId(id);
-
-          const maybeDetails = await sat.getDetails(id);
-
-          if (maybeDetails) {
-            saturnContext.setters.setMultisigDetails(maybeDetails);
-
-            saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
-          }
+        const result = await tinkernetApi.query.inv4.coreByAccount(idOrAddress);
+        id = result.unwrapOr(null)?.toNumber();
+        // Check if id is a valid integer and is less than or equal to Number.MAX_SAFE_INTEGER
+        if (id === undefined || isNaN(id) || id > Number.MAX_SAFE_INTEGER) {
+          console.error('Invalid id:', id);
+          return;
         }
       } else {
-        const numberId = parseInt(idOrAddress);
-
-        saturnContext.setters.setMultisigId(numberId);
-
-        const maybeDetails = await sat.getDetails(numberId);
-
-        if (maybeDetails) {
-          saturnContext.setters.setMultisigDetails(maybeDetails);
-
-          saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+        id = parseInt(idOrAddress);
+        // Check if id is a valid integer
+        if (isNaN(id)) {
+          console.error('Invalid id:', id);
+          return;
         }
+      }
+      console.log('MainContainer id:', id);
+      saturnContext.setters.setMultisigId(id);
+
+      const maybeDetails = await sat.getDetails(id);
+
+      if (maybeDetails) {
+        saturnContext.setters.setMultisigDetails(maybeDetails);
+        saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
       }
     };
 
     runAsync();
-  });
+  }));
 
   return (
     <div class="m-2">

@@ -10,27 +10,33 @@ import LogoutButton from "../top-nav/LogoutButton";
 import { WALLET_ACCOUNTS_MODAL_ID } from "../top-nav/ConnectWallet";
 import { Modal, initModals } from 'flowbite';
 import type { ModalInterface } from 'flowbite';
-import { useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useWalletConnectContext } from "../../providers/walletConnectProvider";
 import { walletAggregator } from "../../App";
 import { Account, WalletType } from "@polkadot-onboard/core";
 import { BaseWallet, WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
 import { WalletNameEnum } from "../../utils/consts";
+import { pages } from "../../pages/pages";
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
+  const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
   const [availableAccounts, setAvailableAccounts] = createSignal<Account[] & { title?: string; }>([]);
+
   const saContext = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
   const wcContext = useWalletConnectContext();
   const theme = useThemeContext();
   const nav = useNavigate();
-  const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
+  const params = useParams();
+  const loc = useLocation();
 
+  const getHash = createMemo(() => params.hash);
+  const getIdFromUrl = createMemo(() => getHash()?.split('/')[0]);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
 
   function isActiveAccount(account: Account) {
@@ -89,16 +95,21 @@ const CryptoAccounts = () => {
 
   async function connectUserAccount(acc: Account) {
     try {
+      // First, logout of current multisig
+      saturnContext.setters.logout();
+
       if (!acc) {
         throw new Error('Account is not defined');
       }
 
       const wallets = availableWallets();
+
       if (!wallets) {
         throw new Error('No available wallets');
       }
 
       const selectedWallet = wallets.find((w) => w.metadata.title === (acc as any).title);
+
       if (!selectedWallet) {
         throw new Error('No matching wallet found for account');
       }
@@ -108,19 +119,10 @@ const CryptoAccounts = () => {
       if (!saturnContext || !saturnContext.setters || typeof saturnContext.setters.logout !== 'function') {
         throw new Error('Saturn context is not properly defined');
       }
-
-      saturnContext.setters.logout();
-
-      if (location.pathname === '/' && saturnContext.state.multisigId) {
-        nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false });
-      } else {
-        nav(`/create`, { resolve: false });
-      }
     } catch (error) {
       console.error('Error in connectUserAccount:', error);
     } finally {
       removeModal();
-      window.location.reload();
     }
   }
 
@@ -152,16 +154,10 @@ const CryptoAccounts = () => {
       // Also add WalletConnect account to availableAccounts
       setAvailableAccounts([...availableAccounts(), selectedAccount]);
       console.log('added WalletConnect to availableAccounts: ', availableAccounts());
-
-      // Redirect to multisig members page if on home page
-      if (location.pathname === '/') {
-        saturnContext.state.multisigId ? nav(`/${ saturnContext.state.multisigId }/members`, { resolve: false }) :
-          nav(`/create`, { resolve: false });
-      }
-
-      removeModal();
     } catch (error) {
       console.error('Error connecting to WalletConnect:', (error as any).message);
+    } finally {
+      removeModal();
     }
   }
 

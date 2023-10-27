@@ -13,7 +13,6 @@ const Layout = ({ children }: { children: any; }) => {
   const showRightSide = createMemo(() => {
     return location.pathname !== '/' && !location.pathname.endsWith('create') && !location.pathname.endsWith('settings');
   });
-
   const atHome = createMemo(() => {
     return location.pathname === '/';
   });

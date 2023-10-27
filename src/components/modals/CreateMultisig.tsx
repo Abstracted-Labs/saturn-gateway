@@ -49,19 +49,14 @@ const CreateMultisig = () => {
   const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
 
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
-
   const selectedState = createMemo(() => selectedAccountContext.state);
-
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
-
   const lessThan1200 = createMemo(() => window.matchMedia('(max-width: 1200px)').matches);
-
   const totalSupportCount = createMemo(() => {
     // number of total members in multisig
     const party = members();
     return party.length;
   });
-
   const totalApprovalCount = createMemo(() => {
     // number of votes required to approve a proposal
     const party = members();
@@ -72,7 +67,6 @@ const CreateMultisig = () => {
     }
     return total;
   });
-
   const disableCrumbs = createMemo(() => {
     // check if any fields are invalid and disable crumbs accordingly
     const party = members();
@@ -113,7 +107,6 @@ const CreateMultisig = () => {
 
     return [];
   });
-
   const inReviewStep = createMemo(() => {
     // check if on next to last crumb trail
     return getCurrentStep() === MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2];
@@ -185,7 +178,7 @@ const CreateMultisig = () => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
 
         if (status.isFinalized || status.isInBlock) {
-          navigate(`/${ multisigId }/members`, { replace: true });
+          navigate(`/${ multisigId }/members`, { resolve: false, replace: true });
 
           setTimeout(() => {
             window.location.reload();

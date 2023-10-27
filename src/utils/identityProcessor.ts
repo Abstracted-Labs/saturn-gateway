@@ -38,16 +38,36 @@ export class IdentityImage {
   }
 
   public async set() {
-    switch (this.type) {
-      case ImageType.URL:
-        break;
+    try {
+      switch (this.type) {
+        case ImageType.URL:
+          break;
 
-      case ImageType.RMRK:
-        const response = await fetch(this.temp);
-        const jsonData = await response.json();
-
-        this.value = jsonData.primaryResourceData.metadata.mediaUri;
-        this.temp = "";
+        case ImageType.RMRK:
+          const response = await fetch(this.temp);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${ response.status }`);
+          }
+          try {
+            // Check if the response's content type is application/json
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+              const json = response.clone();
+              const jsonData = await json.json();
+              // check if jsonData exists
+              if (jsonData) {
+                this.value = jsonData.primaryResourceData.metadata.mediaUri;
+                this.temp = "";
+              }
+            } else {
+              console.log('Response content type is not application/json');
+            }
+          } catch (error) {
+            console.error('An error occurred in jsonData:', error);
+          }
+      }
+    } catch (error) {
+      console.error('An error occurred:', error);
     }
   }
 };
@@ -115,7 +135,6 @@ export async function getBestIdentity(address: string): Promise<AggregatedIdenti
   return {
     address,
     otherIdentities,
-
     name: web3Name?.name || tinkernetIdentity?.name || polkadotIdentity?.name || kusamaIdentity?.name,
     legal: tinkernetIdentity?.legal || polkadotIdentity?.legal || kusamaIdentity?.legal,
     image: tinkernetIdentity?.image || polkadotIdentity?.image || kusamaIdentity?.image,
