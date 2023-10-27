@@ -66,14 +66,11 @@ const HomePlanet: Component = () => {
     const items = saturnStateMemo().multisigItems;
     // return undefined if no multisigs
     if (items === undefined || items.length === 0) {
-      console.log('multisig is undefined');
       return undefined;
     } else if (items.length > 0) {
       const defaultMultisigId = items[0].id;
-      console.log('defaultMultisigId: ', defaultMultisigId);
       return defaultMultisigId;
     } else {
-      console.log('nani', items);
       return saturnStateMemo().multisigId;
     }
   });
@@ -300,7 +297,6 @@ const HomePlanet: Component = () => {
         const multisigId = getDefaultMultisigId();
 
         if (!!multisigId) {
-          console.log('konnichiha');
           navigate(`/${ multisigId }/${ page }`, { replace: true });
           return;
         }

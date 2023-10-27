@@ -88,8 +88,6 @@ const CryptoAccounts = () => {
       }
     } catch (error) {
       console.error('error: ', error);
-    } finally {
-      console.log('connectedAccounts: ', availableAccounts());
     }
   }
 
