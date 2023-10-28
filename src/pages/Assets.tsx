@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Show } from 'solid-js';
+import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on } from 'solid-js';
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
 import { Rings } from '../data/rings';
 import { useSaturnContext } from "../providers/saturnProvider";
@@ -10,16 +10,21 @@ import { FALLBACK_TEXT_STYLE, NetworkEnum } from '../utils/consts';
 import BigNumber from 'bignumber.js';
 import { getCurrentUsdPrice } from '../utils/getCurrentUsdPrice';
 import { createStore } from 'solid-js/store';
+import LoaderAnimation from '../components/legos/LoaderAnimation';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
 };
 
 export default function Assets() {
+  const [loading, setLoading] = createSignal<boolean>(true);
   const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
   const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
+
   const saturnContext = useSaturnContext();
+
+  const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
   async function convertAssetTotalToUsd(network: NetworkEnum, total: string) {
     let currentMarketPrice = null;
@@ -47,14 +52,32 @@ export default function Assets() {
     return '';
   }
 
-  createEffect(() => {
-    const id = saturnContext.state.multisigId;
-    const address = saturnContext.state.multisigAddress;
-    if (typeof id !== 'number' || !address) {
-      return;
-    }
+  createEffect(on(getMultisigId, () => {
+    setLoading(true);
+    setBalances([]);
+    setUsdValues({});
+    setTotalValues({});
+  }));
+
+  createEffect(on(getMultisigId, () => {
+    let timeout: any;
+    const id = getMultisigId();
+
+    const delayUnload = () => {
+      timeout = setTimeout(() => {
+        console.log('done');
+        setLoading(false);
+      }, 200);
+    };
 
     const runAsync = async () => {
+      const address = saturnContext.state.multisigAddress;
+
+      if (typeof id !== 'number' || !address) {
+        delayUnload();
+        return;
+      }
+
       const nb = await getBalancesFromAllNetworks(address);
 
       const remapped = Object.entries(nb).map(([network, assets]) => {
@@ -73,10 +96,16 @@ export default function Assets() {
       });
 
       setBalances(remapped);
+
+      delayUnload();
     };
 
     runAsync();
-  });
+
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
+  }));
 
   createEffect(async () => {
     // Convert transferable balances to USD
@@ -100,82 +129,86 @@ export default function Assets() {
 
   return (
     <>
-      <Show when={balances()} fallback={<span class={FALLBACK_TEXT_STYLE}>Contacting Uranus...</span>}>
-        <div class="relative overflow-x-scroll overscroll-contain h-full flex flex-col content-stretch">
-          <table class="w-full text-sm text-left text-saturn-lightgrey">
-            <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
-              <tr>
-                <th scope="col" class='py-3 px-4 text-left w-[20%]'>Asset</th>
-                <th scope="col" class='py-3 px-4 text-left w-[30%]'>Transferable</th>
-                <th scope="col" class='py-3 px-4 text-left w-[30%]'>Total</th>
-                <th scope="col" class='w-[20%]'>Chains</th>
-              </tr>
-            </thead>
-            <For each={balances()}>{([network, assets]) =>
-              <Show when={assets.length}>
-                <tbody class="dark:text-saturn-offwhite text-saturn-black">
-                  <For each={assets}>{([asset, b]) => {
-                    return <tr class="border-b border-gray-200 dark:border-gray-800">
-                      {/* Asset */}
-                      <td class='py-3 px-4 text-left w-[20%]'>
-                        <span class="flex flex-row items-center gap-1">
-                          <span class='h-5 w-5 flex rounded-full bg-black'>
-                            <img src={getAssetIcon(asset)} class="p-1" alt={asset} />
+      <div class="relative overflow-x-scroll overscroll-contain h-full flex flex-col content-stretch">
+        <table class="w-full text-sm text-left text-saturn-lightgrey">
+          <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
+            <tr>
+              <th scope="col" class='py-3 px-4 text-left w-[20%]'>Asset</th>
+              <th scope="col" class='py-3 px-4 text-left w-[30%]'>Transferable</th>
+              <th scope="col" class='py-3 px-4 text-left w-[30%]'>Total</th>
+              <th scope="col" class='w-[20%]'>Chains</th>
+            </tr>
+          </thead>
+          <Switch fallback={<div class="mt-5">
+            {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>}
+          </div>}>
+            <Match when={balances() && balances().length > 0}>
+              <For each={balances()}>{([network, assets]) =>
+                <Show when={assets.length}>
+                  <tbody class="dark:text-saturn-offwhite text-saturn-black">
+                    <For each={assets}>{([asset, b]) => {
+                      return <tr class="border-b border-gray-200 dark:border-gray-800">
+                        {/* Asset */}
+                        <td class='py-3 px-4 text-left w-[20%]'>
+                          <span class="flex flex-row items-center gap-1">
+                            <span class='h-5 w-5 flex rounded-full bg-black'>
+                              <img src={getAssetIcon(asset)} class="p-1" alt={asset} />
+                            </span>
+                            <span>
+                              {asset}
+                            </span>
                           </span>
-                          <span>
-                            {asset}
-                          </span>
-                        </span>
-                      </td>
+                        </td>
 
-                      {/* Transferable */}
-                      <td class='py-3 px-4 text-left w-[30%]'>
-                        <span class="flex flex-row items-baseline gap-1">
-                          <span>
-                            {formatAsset(b.freeBalance, Rings[network as keyof typeof Rings].decimals)}
+                        {/* Transferable */}
+                        <td class='py-3 px-4 text-left w-[30%]'>
+                          <span class="flex flex-row items-baseline gap-1">
+                            <span>
+                              {formatAsset(b.freeBalance, Rings[network as keyof typeof Rings].decimals)}
+                            </span>
+                            <span class="text-[9px]">{asset}</span>
+                            <span class="text-saturn-lightgrey text-[8px]">
+                              {usdValues[`${ network }-${ asset }`]}
+                            </span>
                           </span>
-                          <span class="text-[9px]">{asset}</span>
-                          <span class="text-saturn-lightgrey text-[8px]">
-                            {usdValues[`${ network }-${ asset }`]}
-                          </span>
-                        </span>
-                      </td>
+                        </td>
 
-                      {/* Total */}
-                      <td class='py-3 px-4 text-left w-[30%]'>
-                        <span class="flex flex-row items-baseline gap-1">
-                          <span>
-                            {formatAsset((+b.freeBalance + +b.reservedBalance + +b.frozenBalance).toString(), Rings[network as keyof typeof Rings].decimals)}
+                        {/* Total */}
+                        <td class='py-3 px-4 text-left w-[30%]'>
+                          <span class="flex flex-row items-baseline gap-1">
+                            <span>
+                              {formatAsset((+b.freeBalance + +b.reservedBalance + +b.frozenBalance).toString(), Rings[network as keyof typeof Rings].decimals)}
+                            </span>
+                            <span class="text-[9px]">{asset}</span>
+                            <span class="text-saturn-lightgrey text-[8px]">
+                              {totalValues[`${ network }-${ asset }`]}
+                            </span>
                           </span>
-                          <span class="text-[9px]">{asset}</span>
-                          <span class="text-saturn-lightgrey text-[8px]">
-                            {totalValues[`${ network }-${ asset }`]}
+                        </td>
+
+                        {/* Chains */}
+                        <td>
+                          <span class="flex flex-row items-center gap-1">
+                            <For each={getNetworkIcon(asset)}>
+                              {icon =>
+                                <span class='h-5 w-5 flex rounded-full bg-black'>
+                                  <img src={icon} class="p-1" alt="asset-icon" />
+                                </span>
+                              }
+                            </For>
                           </span>
-                        </span>
-                      </td>
+                        </td>
 
-                      {/* Chains */}
-                      <td>
-                        <span class="flex flex-row items-center gap-1">
-                          <For each={getNetworkIcon(asset)}>
-                            {icon =>
-                              <span class='h-5 w-5 flex rounded-full bg-black'>
-                                <img src={icon} class="p-1" alt="asset-icon" />
-                              </span>
-                            }
-                          </For>
-                        </span>
-                      </td>
-
-                    </tr>;
-                  }
-                  }</For>
-                </tbody>
-              </Show>
-            }</For>
-          </table>
-        </div>
-      </Show>
+                      </tr>;
+                    }
+                    }</For>
+                  </tbody>
+                </Show>
+              }</For>
+            </Match>
+          </Switch>
+        </table>
+      </div>
     </>
   );
 }

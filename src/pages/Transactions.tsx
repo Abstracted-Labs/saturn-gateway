@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Show } from 'solid-js';
+import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
@@ -18,6 +18,7 @@ import { processCallData } from '../utils/processCallData';
 import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
 import SaturnProgress from '../components/legos/SaturnProgress';
+import LoaderAnimation from '../components/legos/LoaderAnimation';
 
 export type QueuePageProps = {
 };
@@ -26,11 +27,13 @@ export default function Transactions() {
   let accordion: AccordionInterface;
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
   const [members, setMembers] = createSignal<MembersType[]>([]);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [loading, setLoading] = createSignal<boolean>(true);
 
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
+
+  const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
   function totalVotes(records: ParsedTallyRecords): number {
     let total = 0;
@@ -203,12 +206,27 @@ export default function Transactions() {
     }
   });
 
+  createEffect(on(getMultisigId, () => {
+    // Reset the loading state when the multisig id changes
+    setLoading(true);
+    setPendingProposals([]);
+    setMembers([]);
+  }));
+
   createEffect(() => {
+    let timeout: any;
     const saturn = saturnContext.state.saturn;
-    const multisigId = saturnContext.state.multisigId;
+    const multisigId = getMultisigId();
+
+    const delayUnload = () => {
+      timeout = setTimeout(() => {
+        setLoading(false);
+      }, 200);
+    };
 
     const runAsync = async () => {
       if (!saturn || typeof multisigId !== 'number') {
+        delayUnload();
         return;
       }
 
@@ -217,83 +235,93 @@ export default function Transactions() {
 
       const members = await getAllMembers(multisigId, saturn);
       setMembers(members);
+
+      delayUnload();
     };
 
     runAsync();
+
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
   });
 
   return (
     <div>
       <div id="accordion-collapse" data-accordion="collapse" class="flex flex-col">
-        <Show when={pendingProposals().length != 0} fallback={<span class={FALLBACK_TEXT_STYLE}>Loading transaction history...</span>}>
-          <For each={pendingProposals()}>
-            {(pc: CallDetailsWithHash, index) => <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())}>
-              <div class="flex flex-row">
-                {/* Call data */}
-                <div class="max-h-[300px] w-full overflow-scroll my-2 grow">
-                  <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
-                </div>
-
-                {/* Votes history */}
-                <For each={Object.entries(pc.details.tally.records)}>
-                  {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
-                    const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
-                    return <div class='relative items-start flex shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12'>
-                      <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
-                        {vote.aye
-                          ? <img src={AyeIcon} />
-                          : <img src={NayIcon} />
-                        }
-                      </div>
-                      <div class='flex flex-col pt-2'>
-                        <div
-                          class='text-xs font-bold text-black dark:text-white'
-                        >
-                          {stringShorten(voter, 4)}
-                        </div>
-                        <div class="text-xxs text-saturn-lightgrey leading-none">
-                          {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
-                        </div>
-                      </div>
-                    </div>;
-                  }}
-                </For>
-              </div>
-              <div class="flex flex-row justify-between">
-                {/* Vote breakdown */}
-                <div class="flex flex-col rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
-                  <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
-                  <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
-                  <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
-                    <span>{totalVotes(pc.details.tally.records)}</span>
-                    <span class="text-saturn-lightgrey"> / {members().length}</span>
-                  </span>} color='bg-saturn-purple' label='Voter Turnout' />
-                </div>
-
-                {/* Support breakdown */}
-                <dl class="text-xs w-3/12 ml-3 py-2">
-                  <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
-                    <dt>Support needed:</dt>
-                    <dd class="text-black dark:text-white">
-                      {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                    </dd>
+        <Switch fallback={<div>
+          {loading() ? <LoaderAnimation text="Loading transactions..." /> : <span class={FALLBACK_TEXT_STYLE}>Nothig to display.</span>}
+        </div>}>
+          <Match when={pendingProposals().length > 0}>
+            <For each={pendingProposals()}>
+              {(pc: CallDetailsWithHash, index) => <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())}>
+                <div class="flex flex-row">
+                  {/* Call data */}
+                  <div class="max-h-[300px] w-full overflow-scroll my-2 grow">
+                    <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
                   </div>
-                  <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
-                    <dt>Approval needed:</dt>
-                    <dd class="text-black dark:text-white">
-                      {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
-                    </dd>
+
+                  {/* Votes history */}
+                  <For each={Object.entries(pc.details.tally.records)}>
+                    {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
+                      const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
+                      return <div class='relative items-start flex shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12'>
+                        <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
+                          {vote.aye
+                            ? <img src={AyeIcon} />
+                            : <img src={NayIcon} />
+                          }
+                        </div>
+                        <div class='flex flex-col pt-2'>
+                          <div
+                            class='text-xs font-bold text-black dark:text-white'
+                          >
+                            {stringShorten(voter, 4)}
+                          </div>
+                          <div class="text-xxs text-saturn-lightgrey leading-none">
+                            {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                          </div>
+                        </div>
+                      </div>;
+                    }}
+                  </For>
+                </div>
+                <div class="flex flex-row justify-between">
+                  {/* Vote breakdown */}
+                  <div class="flex flex-col rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
+                    <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
+                    <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
+                    <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
+                      <span>{totalVotes(pc.details.tally.records)}</span>
+                      <span class="text-saturn-lightgrey"> / {members().length}</span>
+                    </span>} color='bg-saturn-purple' label='Voter Turnout' />
                   </div>
-                </dl>
-              </div>
-              <div class='flex flex-row gap-3 my-3'>
-                <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
-                <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
-              </div>
-            </SaturnAccordionItem>
-            }
-          </For>
-        </Show>
+
+                  {/* Support breakdown */}
+                  <dl class="text-xs w-3/12 ml-3 py-2">
+                    <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
+                      <dt>Support needed:</dt>
+                      <dd class="text-black dark:text-white">
+                        {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
+                      </dd>
+                    </div>
+                    <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
+                      <dt>Approval needed:</dt>
+                      <dd class="text-black dark:text-white">
+                        {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                <div class='flex flex-row gap-3 my-3'>
+                  <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
+                  <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
+                </div>
+              </SaturnAccordionItem>
+              }
+            </For>
+          </Match>
+        </Switch>
       </div>
     </div>
   );

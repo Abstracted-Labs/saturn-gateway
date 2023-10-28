@@ -18,6 +18,7 @@ export default function Members() {
   const [loading, setLoading] = createSignal<boolean>(true);
 
   const saturnContext = useSaturnContext();
+  const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
   function removeMember(address: string) {
     const newMembers = members().filter((member) => member.address !== address);
@@ -43,23 +44,40 @@ export default function Members() {
     }
   }
 
-  createEffect(on(() => saturnContext.state.multisigId, () => {
+  createEffect(on(getMultisigId, () => {
+    setLoading(true);
+    setMembers([]);
+  }));
+
+  createEffect(on(getMultisigId, () => {
+    let timeout: any;
     const saturn = saturnContext.state.saturn;
-    const multisigId = saturnContext.state.multisigId;
+    const multisigId = getMultisigId();
+
+    const delayUnload = () => {
+      timeout = setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+    };
 
     const runAsync = async () => {
       if (!saturn || typeof multisigId !== "number" || isNaN(multisigId)) {
-        setLoading(false);
+        delayUnload();
         return;
       };
 
       const members = await getAllMembers(multisigId, saturn);
       originalMembers = members;
       setMembers(members);
-      setLoading(false);
+
+      delayUnload();
     };
 
     runAsync();
+
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
   }));
 
   createEffect(on(search, () => {
@@ -101,13 +119,9 @@ export default function Members() {
             </tr>
           </thead>
           <tbody>
-            <Switch fallback={<div class="mt-5"><LoaderAnimation text="Loading member list..." /></div>}>
-              <Match when={loading()}>
-                <span class={FALLBACK_TEXT_STYLE}>No members found.</span>
-              </Match>
-              <Match when={members() && members().length === 0}>
-                <span class={FALLBACK_TEXT_STYLE}>No members found.</span>
-              </Match>
+            <Switch fallback={<div class="mt-5">
+              {loading() ? <LoaderAnimation text="Loading member list..." /> : <span class={FALLBACK_TEXT_STYLE}>No members found.</span>}
+            </div>}>
               <Match when={members() && members().length > 0}>
                 <For each={members()}>
                   {(member, index) => {

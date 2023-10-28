@@ -125,7 +125,6 @@ const MultisigList = () => {
       let iden;
       const multisigs = await sat.getMultisigsForAccount(address);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
-
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
         // We calculate the address locally instead of wasting time fetching from the chain.
         // The v2 of the Saturn SDK should have a function to calculate the address.
@@ -160,26 +159,35 @@ const MultisigList = () => {
         };
       }));
 
-      // Set the activeButton to the address of the first item
       if (processedList.length > 0) {
+        // Set the activeButton to the first multisig address
         const selectedId = processedList[0].id;
-        setMultisigItems(processedList);
         setActiveButton(selectedId);
+
+        // Set local multisigItems state
+        setMultisigItems(processedList);
+
+        // Set the multisigItems state in Saturn context
         saturnContext.setters.setMultisigItems(processedList);
+
+        // Set the multisigId state in Saturn context
         saturnContext.setters.setMultisigId(selectedId);
+
+        // End local loading state
         setLoading(false);
       } else {
+        // If there are no current multisigs, reset previous state 
         setMultisigItems([]);
+
+        // Reset multisigItems state in Saturn context
         saturnContext.setters.setMultisigItems([]);
+
+        // Redirect to the create multisig page
         navigate('/create', { replace: true });
       }
     }
 
     load();
-  });
-
-  createEffect(() => {
-    if (location.pathname.endsWith('/create')) return;
   });
 
   createEffect(() => {
