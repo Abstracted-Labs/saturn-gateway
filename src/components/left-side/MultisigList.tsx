@@ -46,7 +46,7 @@ const MultisigList = () => {
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
-  const currentPage = createMemo(() => location.pathname);
+  const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
   function handleClick(index: number) {
     const sat = saturnContext.state.saturn;
@@ -108,6 +108,10 @@ const MultisigList = () => {
     }, 3000);
   }
 
+  createEffect(on(getMultisigId, () => {
+    setLoading(true);
+  }));
+
   createEffect(() => {
     // Make a copy of the original order of the multisig items
     setOriginalOrder([...multisigItems()]);
@@ -115,12 +119,23 @@ const MultisigList = () => {
 
   createEffect(() => {
     // Load the multisig list
+    let timeout: any;
     const sat = saturnContext.state.saturn;
     const address = getAccountAddress();
     const api = ringApisContext.state.tinkernet;
 
+    const delayUnload = () => {
+      timeout = setTimeout(() => {
+        setLoading(false);
+      }, 2000);
+    };
+
+
     async function load() {
-      if (!sat || !address || !api) return;
+      if (!sat || !address || !api) {
+        delayUnload();
+        return;
+      };
 
       let iden;
       const multisigs = await sat.getMultisigsForAccount(address);
@@ -172,9 +187,6 @@ const MultisigList = () => {
 
         // Set the multisigId state in Saturn context
         saturnContext.setters.setMultisigId(selectedId);
-
-        // End local loading state
-        setLoading(false);
       } else {
         // If there are no current multisigs, reset previous state 
         setMultisigItems([]);
@@ -185,9 +197,15 @@ const MultisigList = () => {
         // Redirect to the create multisig page
         navigate('/create', { replace: true });
       }
+
+      delayUnload();
     }
 
     load();
+
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
   });
 
   createEffect(() => {
@@ -273,11 +291,10 @@ const MultisigList = () => {
           )} */}
 
           {/* Multisig list */}
-          <Switch>
-            <Match when={loading()}>
-              <LoaderAnimation text="Loading multisig list..." />
-            </Match>
-            <Match when={!loading()}>
+          <Switch fallback={<div>
+            {loading() ? <LoaderAnimation text="Loading multisigs..." /> : <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
+          </div>}>
+            <Match when={multisigItems() && multisigItems().length > 0}>
               <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>
                 {(item: MultisigItem, index) => (
                   <>

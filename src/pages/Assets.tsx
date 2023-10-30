@@ -65,9 +65,8 @@ export default function Assets() {
 
     const delayUnload = () => {
       timeout = setTimeout(() => {
-        console.log('done');
         setLoading(false);
-      }, 200);
+      }, 2000);
     };
 
     const runAsync = async () => {
@@ -139,7 +138,7 @@ export default function Assets() {
               <th scope="col" class='w-[20%]'>Chains</th>
             </tr>
           </thead>
-          <Switch fallback={<div class="mt-5">
+          <Switch fallback={<div class="mt-4">
             {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>}
           </div>}>
             <Match when={balances() && balances().length > 0}>

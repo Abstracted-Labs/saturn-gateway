@@ -57,7 +57,7 @@ export default function Members() {
     const delayUnload = () => {
       timeout = setTimeout(() => {
         setLoading(false);
-      }, 1000);
+      }, 2000);
     };
 
     const runAsync = async () => {
@@ -119,7 +119,7 @@ export default function Members() {
             </tr>
           </thead>
           <tbody>
-            <Switch fallback={<div class="mt-5">
+            <Switch fallback={<div class="mt-4">
               {loading() ? <LoaderAnimation text="Loading member list..." /> : <span class={FALLBACK_TEXT_STYLE}>No members found.</span>}
             </div>}>
               <Match when={members() && members().length > 0}>

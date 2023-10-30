@@ -221,7 +221,7 @@ export default function Transactions() {
     const delayUnload = () => {
       timeout = setTimeout(() => {
         setLoading(false);
-      }, 200);
+      }, 2000);
     };
 
     const runAsync = async () => {

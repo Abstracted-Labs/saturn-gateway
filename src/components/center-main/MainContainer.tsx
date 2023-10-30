@@ -73,7 +73,7 @@ const MainContainer = () => {
     setSaturnConnectAccount(name, address);
   });
 
-  createEffect(on(() => getId, () => {
+  createEffect(on(getId, () => {
     const tinkernetApi = ringApisContext.state.tinkernet;
     const sat = saturnContext.state.saturn;
     const idOrAddress = getId();
