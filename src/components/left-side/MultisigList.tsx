@@ -73,7 +73,7 @@ const MultisigList = () => {
         }
       });
 
-      navigate(`/${ id }/members`, { resolve: false, replace: true });
+      navigate(`/${ id }/members`, { replace: true });
 
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];
@@ -138,6 +138,9 @@ const MultisigList = () => {
       };
 
       let iden;
+      const hash = window.location.hash; // Get the hash part of the URL
+      const parts = hash.split('/'); // Split the hash by '/'
+      const urlId = parts[1]; // Get the id, which is the third part of the hash
       const multisigs = await sat.getMultisigsForAccount(address);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
@@ -175,8 +178,11 @@ const MultisigList = () => {
       }));
 
       if (processedList.length > 0) {
-        // Set the activeButton to the first multisig address
-        const selectedId = processedList[0].id;
+        // Check if a multisigId matches the id from the url
+        const selectedItem = processedList.find(item => item.id === parseInt(urlId));
+        const selectedId = selectedItem ? selectedItem.id : processedList[0].id;
+
+        // Set the activeButton to the selectedId
         setActiveButton(selectedId);
 
         // Set local multisigItems state
@@ -249,7 +255,7 @@ const MultisigList = () => {
   return (
     <>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Multisigs</h5>
-      <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-40' : 'h-80' } relative mb-6`}>
+      <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-44' : 'h-80' } relative mb-6`}>
         <div
           ref={scrollContainerRef!}
           style={{

@@ -288,7 +288,7 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(() => {
+  createEffect(on(() => getDefaultMultisigId, () => {
     if (isLoggedIn()) {
       const path = loc.pathname;
       const page = path.split('/')[2];
@@ -302,7 +302,7 @@ const HomePlanet: Component = () => {
         }
       }
     }
-  });
+  }));
 
   return (
     <Layout>
