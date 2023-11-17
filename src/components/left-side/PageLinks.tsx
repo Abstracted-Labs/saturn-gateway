@@ -48,7 +48,7 @@ const PageLinks = () => {
       setMutateButton(false);
     }
   });
-  return <div class={`${ !isLoggedIn() || !multisigId() ? '' : styles.pageListContainer } mb-5`}>
+  return <div class={`${ !isLoggedIn() || !multisigId() ? '' : styles.pageListContainer } mb-5 mt-3`}>
     <Show when={!!isLoggedIn() && !!multisigId()}>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
       <For each={pages}>
