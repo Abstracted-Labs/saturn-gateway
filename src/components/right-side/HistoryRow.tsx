@@ -37,7 +37,7 @@ function parseDateTime(timestamp: string | Date): string[] {
 
 const HistoryRow = (props: HistoryRowProps) => {
   const [time, date] = createMemo<string[]>(() => parseDateTime(props.timestamp))();
-  return <div class="flex flex-col lg:w-[273.65px] border-b border-px dark:border-gray-700 border-gray-200 pb-3 mb-3">
+  return <div class="flex flex-col lg:w-[273.65px] border-b border-px dark:border-gray-800 border-gray-200 pb-3 mb-3">
     <div class="text-saturn-lightgrey text-xs w-full">
 
       {/* Time */}

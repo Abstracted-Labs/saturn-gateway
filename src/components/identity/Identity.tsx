@@ -7,7 +7,7 @@ import { stringShorten } from '@polkadot/util';
 const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
 export default function Identity(props: { address: string; }) {
-  const identityContext = useIdentityContext();
+  // const identityContext = useIdentityContext();
 
   const getAddress = createMemo(() => {
     return props.address;
@@ -21,9 +21,8 @@ export default function Identity(props: { address: string; }) {
   const openIdentityCard = () => {
     console.log('open identity card disabled');
     return;
-    const i: AggregatedIdentity = identity() || { address: getAddress(), otherIdentities: [] };
-
-    identityContext.setters.openModal(i);
+    // const i: AggregatedIdentity = identity() || { address: getAddress(), otherIdentities: [] };
+    // identityContext.setters.openModal(i);
   };
 
   return (
