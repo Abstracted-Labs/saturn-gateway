@@ -146,10 +146,14 @@ export async function getBestIdentity(address: string): Promise<AggregatedIdenti
 }
 
 async function getWeb3Name(address: string): Promise<Identity | undefined> {
-  await Kilt.connect('wss://spiritnet.kilt.io/');
+  try {
+    await Kilt.connect('wss://spiritnet.kilt.io/');
+  } catch (error) {
+    console.error('Failed to connect to Kilt Spiritnet:', error);
+    throw new Error('Connection to Kilt Spiritnet failed');
+  }
 
   const api = Kilt.ConfigService.get('api');
-
 
   try {
     const { web3Name } = Kilt.Did.linkedInfoFromChain(

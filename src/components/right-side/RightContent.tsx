@@ -2,8 +2,9 @@ import { useLocation } from "@solidjs/router";
 import { Match, Show, Switch, createMemo } from "solid-js";
 import AssetsContext from "./AssetsContext";
 import TransactionsContext from "./TransactionsContext";
-import MembersContext from "./MembersContext";
+import ManagementContext from "./ManagementContext";
 import { initDropdowns } from 'flowbite';
+import { PagesEnum } from "../../pages/pages";
 
 const RightContent = (props: { inDrawer: boolean; }) => {
   const location = useLocation();
@@ -16,14 +17,14 @@ const RightContent = (props: { inDrawer: boolean; }) => {
     </Show>
     <div class="grid grid-cols-1 gap-12 text-black dark:text-white">
       <Switch fallback="No data.">
-        <Match when={currentPage().endsWith('/assets')}>
+        <Match when={currentPage().endsWith(`/${ PagesEnum.ASSETS }`)}>
           <AssetsContext />
         </Match>
-        <Match when={currentPage().endsWith('/transactions')}>
+        <Match when={currentPage().endsWith(`/${ PagesEnum.TRANSACTIONS }`)}>
           <TransactionsContext />
         </Match>
-        <Match when={currentPage().endsWith('/members')}>
-          <MembersContext />
+        <Match when={currentPage().endsWith(`/${ PagesEnum.MANAGEMENT }`)}>
+          <ManagementContext />
         </Match>
       </Switch>
     </div>

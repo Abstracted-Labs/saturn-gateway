@@ -11,7 +11,7 @@ import LoaderAnimation from '../components/legos/LoaderAnimation';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
-export default function Members() {
+export default function Management() {
   let originalMembers: MembersType[];
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [search, setSearch] = createSignal<string>('');

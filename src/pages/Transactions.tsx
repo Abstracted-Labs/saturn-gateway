@@ -10,7 +10,7 @@ import { useSelectedAccountContext } from "../providers/selectedAccountProvider"
 import { Rings } from '../data/rings';
 import FormattedCall from '../components/legos/FormattedCall';
 import { getAllMembers } from '../utils/getAllMembers';
-import { MembersType } from './Members';
+import { MembersType } from './Management';
 import SaturnAccordionItem from '../components/legos/SaturnAccordionItem';
 import { initAccordions, AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
 import { FALLBACK_TEXT_STYLE } from '../utils/consts';

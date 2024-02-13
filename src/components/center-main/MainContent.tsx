@@ -1,11 +1,12 @@
 import { Routes, Route, useLocation } from "@solidjs/router";
-import Members from "../../pages/Members";
+import Management from "../../pages/Management";
 import Transactions from "../../pages/Transactions";
 import Assets from "../../pages/Assets";
 import { createEffect, createMemo, createSignal } from "solid-js";
 import SaturnCard from "../legos/SaturnCard";
 import { getAllMembers } from "../../utils/getAllMembers";
 import { useSaturnContext } from "../../providers/saturnProvider";
+import { PagesEnum } from "../../pages/pages";
 
 const MainContent = () => {
   const [membersCount, setMembersCount] = createSignal(0);
@@ -16,12 +17,12 @@ const MainContent = () => {
   const currentPage = createMemo(() => location.pathname);
 
   function pageTitle() {
-    if (currentPage().endsWith('/assets')) {
+    if (currentPage().endsWith(`/${ PagesEnum.ASSETS }`)) {
       return 'Assets';
-    } else if (currentPage().endsWith('/transactions')) {
+    } else if (currentPage().endsWith(`/${ PagesEnum.TRANSACTIONS }`)) {
       return 'Transactions';
-    } else if (currentPage().endsWith('/members')) {
-      return '';
+    } else if (currentPage().endsWith(`/${ PagesEnum.MANAGEMENT }`)) {
+      return ''; // Handle page title from Management.tsx
     } else {
       return '...';
     }
@@ -43,20 +44,20 @@ const MainContent = () => {
   return <SaturnCard header={pageTitle()}>
     <Routes>
       <Route
-        path="assets"
+        path={PagesEnum.ASSETS}
         element={
           <Assets />
         }
       />
       <Route
-        path="transactions"
+        path={PagesEnum.TRANSACTIONS}
         element={
           <Transactions />
         }
       />
       <Route
-        path="members"
-        element={<Members />}
+        path={PagesEnum.MANAGEMENT}
+        element={<Management />}
       />
     </Routes>
   </SaturnCard>;

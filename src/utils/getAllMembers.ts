@@ -1,5 +1,5 @@
 import { Saturn } from '@invarch/saturn-sdk';
-import { MembersType } from "../pages/Members";
+import { MembersType } from "../pages/Management";
 import BigNumber from 'bignumber.js';
 
 export async function getAllMembers(multisigId: number, saturn: Saturn) {

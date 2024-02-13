@@ -24,7 +24,7 @@ const Home = () => {
 
     try {
       if (!!multisigId()) {
-        nav(`/${ multisigId() }/members`);
+        nav(`/${ multisigId() }/management`);
       } else {
         nav('/create');
       }

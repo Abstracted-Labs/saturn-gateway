@@ -2,7 +2,7 @@ import SaturnCard from "../legos/SaturnCard";
 import ProposeModal from "../modals/ProposeModal";
 import HistoryRow from "./HistoryRow";
 
-const MembersContext = () => {
+const ManagementContext = () => {
   return <SaturnCard header="Roster History">
     <HistoryRow timestamp="1634370400000" color="green" activity={["Added new member", "Yaki"]} />
     <HistoryRow timestamp="1644370403000" color="red" user="Crane" activity={["Removed votes", "-5"]} />
@@ -12,5 +12,5 @@ const MembersContext = () => {
   </SaturnCard>;
 };
 
-MembersContext.displayName = 'MembersContext';
-export default MembersContext;
+ManagementContext.displayName = 'MembersContext';
+export default ManagementContext;

@@ -1,4 +1,4 @@
-import { pages } from "../../pages/pages";
+import { PagesEnum, pages } from "../../pages/pages";
 import { A } from "@solidjs/router";
 import { For, JSXElement, Show, createEffect, createMemo, createSignal } from "solid-js";
 import { AssetsIcon } from '../../components/svg-icons/AssetsIcon';
@@ -14,13 +14,13 @@ import { useSelectedAccountContext } from "../../providers/selectedAccountProvid
 function matchIconToPage(page: string): JSXElement {
   // Assign the correct icon component to each page link
   switch (page) {
-    case "assets":
+    case PagesEnum.ASSETS:
       return <AssetsIcon />;
-    case "transactions":
+    case PagesEnum.TRANSACTIONS:
       return <TransactionsIcon />;
-    case "members":
+    case PagesEnum.MANAGEMENT:
       return <MembersIcon />;
-    case "settings":
+    case PagesEnum.SETTINGS:
       return <SettingsIcon />;
     default:
       return null;
