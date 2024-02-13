@@ -86,10 +86,14 @@ const MainContainer = () => {
       let id;
       if (isAddress(idOrAddress)) {
         const result = await tinkernetApi.query.inv4.coreByAccount(idOrAddress);
+        if (!result) {
+          console.error('Result is null or undefined');
+          return;
+        }
         id = result.unwrapOr(null)?.toNumber();
-        // Check if id is a valid integer and is less than or equal to Number.MAX_SAFE_INTEGER
-        if (id === undefined || isNaN(id) || id > Number.MAX_SAFE_INTEGER) {
-          console.error('Invalid id:', id);
+        // Ensure id is within the safe range
+        if (id && id > Number.MAX_SAFE_INTEGER) {
+          console.error('ID exceeds safe integer range');
           return;
         }
       } else {
@@ -103,7 +107,9 @@ const MainContainer = () => {
       console.log('MainContainer id:', id);
       saturnContext.setters.setMultisigId(id);
 
-      const maybeDetails = await sat.getDetails(id);
+      // Ensure id is a number before passing it to getDetails
+      const numericId = Number(id);
+      const maybeDetails = await sat.getDetails(numericId);
 
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
