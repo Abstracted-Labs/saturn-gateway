@@ -3,7 +3,13 @@ import { createStore } from "solid-js/store";
 import { type Saturn, type MultisigDetails } from "@invarch/saturn-sdk";
 import { MultisigItem } from "../utils/consts";
 
-interface SaturnContextState { saturn?: Saturn; multisigId?: number; multisigAddress?: string; multisigDetails?: MultisigDetails, multisigItems?: MultisigItem[]; };
+interface SaturnContextState {
+  saturn?: Saturn;
+  multisigId?: number;
+  multisigAddress?: string;
+  multisigDetails?: MultisigDetails,
+  multisigItems?: MultisigItem[];
+};
 
 export type SaturnContextType = {
   state: SaturnContextState,
