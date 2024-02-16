@@ -54,15 +54,6 @@ export default function Assets() {
   }
 
   createEffect(on([getMultisigId, getMultisigAddress], () => {
-    if (getMultisigId()) {
-      setLoading(true);
-      setBalances([]);
-      setUsdValues({});
-      setTotalValues({});
-    }
-  }));
-
-  createEffect(on([getMultisigId, getMultisigAddress], () => {
     let timeout: any;
     const id = getMultisigId();
     const address = getMultisigAddress();
@@ -130,6 +121,13 @@ export default function Assets() {
         setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
       }
     }
+  });
+
+  onCleanup(() => {
+    setLoading(true);
+    setBalances([]);
+    setUsdValues({});
+    setTotalValues({});
   });
 
   return (

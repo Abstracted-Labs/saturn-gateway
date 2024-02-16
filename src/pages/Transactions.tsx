@@ -1,9 +1,9 @@
-import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on } from 'solid-js';
+import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call } from '@polkadot/types/interfaces';
-import { useSearchParams } from '@solidjs/router';
+import { useLocation } from '@solidjs/router';
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
@@ -32,6 +32,8 @@ export default function Transactions() {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
+  const loc = useLocation();
+  const multisigHashId = loc.pathname.split('/')[1];
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
@@ -206,12 +208,11 @@ export default function Transactions() {
     }
   });
 
-  createEffect(on(getMultisigId, () => {
-    // Reset the loading state when the multisig id changes
+  createEffect(() => {
     setLoading(true);
     setPendingProposals([]);
     setMembers([]);
-  }));
+  });
 
   createEffect(() => {
     let timeout: any;
