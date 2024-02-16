@@ -73,7 +73,7 @@ const MultisigList = () => {
         }
       });
 
-      navigate(`/${ id }/members`, { replace: true });
+      navigate(`/${ id }/management`, { replace: true });
 
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];

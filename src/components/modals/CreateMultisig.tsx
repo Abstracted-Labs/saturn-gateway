@@ -178,7 +178,7 @@ const CreateMultisig = () => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
 
         if (status.isFinalized || status.isInBlock) {
-          navigate(`/${ multisigId }/members`, { resolve: false, replace: true });
+          navigate(`/${ multisigId }/management`, { resolve: false, replace: true });
 
           setTimeout(() => {
             window.location.reload();
