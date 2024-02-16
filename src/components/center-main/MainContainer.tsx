@@ -20,13 +20,9 @@ const MainContainer = () => {
     websiteUrl: undefined,
   });
 
-  const location = useLocation();
+  const loc = useLocation();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
-  const params = useParams();
-  const hash = params.hash;
-
-  const getId = createMemo(() => hash?.split('/')[0]);
 
   createEffect(() => {
     const details = saturnContext.state.multisigDetails;
@@ -65,46 +61,45 @@ const MainContainer = () => {
   });
 
   createEffect(() => {
-    const name = multisigIdentity().name;
-    const address = saturnContext.state.multisigAddress;
-
-    if (!address || name === "Multisig") return;
-
-    setSaturnConnectAccount(name, address);
-  });
-
-  createEffect(on(getId, () => {
     const tinkernetApi = ringApisContext.state.tinkernet;
     const sat = saturnContext.state.saturn;
-    const idOrAddress = getId();
+    const multisigHashId = loc.pathname.split('/')[1];
 
-    if (!tinkernetApi || !sat) return;
+    if (!tinkernetApi || !sat || !multisigHashId) {
+      // console.error('Tinkernet API, Saturn instance, or idOrAddress is null or undefined, exiting early.', tinkernetApi, sat, multisigHashId);
+      return;
+    };
 
     const runAsync = async () => {
-      if (location.pathname.endsWith('create') && !idOrAddress) return;
+      if (loc.pathname.endsWith('create') && !multisigHashId) {
+        // console.error('Path ends with "create" but no ID or Address provided, exiting early.');
+        return;
+      }
 
       let id;
-      if (isAddress(idOrAddress)) {
-        const result = await tinkernetApi.query.inv4.coreByAccount(idOrAddress);
+
+      if (isAddress(multisigHashId)) {
+        const result = await tinkernetApi.query.inv4.coreByAccount(multisigHashId);
         if (!result) {
-          console.error('Result is null or undefined');
+          // console.error('Result is null or undefined for address:', multisigHashId);
           return;
         }
+
         id = result.unwrapOr(null)?.toNumber();
         // Ensure id is within the safe range
         if (id && id > Number.MAX_SAFE_INTEGER) {
-          console.error('ID exceeds safe integer range');
+          // console.error('ID exceeds safe integer range for address:', multisigHashId);
           return;
         }
       } else {
-        id = parseInt(idOrAddress);
+        id = parseInt(multisigHashId);
         // Check if id is a valid integer
         if (isNaN(id)) {
-          console.error('Invalid id:', id);
+          // console.error('Invalid id provided:', multisigHashId);
           return;
         }
       }
-      console.log('MainContainer id:', id);
+
       saturnContext.setters.setMultisigId(id);
 
       // Ensure id is a number before passing it to getDetails
@@ -114,10 +109,24 @@ const MainContainer = () => {
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
         saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+      } else {
+        console.error(`No details found for ID: ${ numericId }`);
       }
     };
 
     runAsync();
+  });
+
+  createEffect(on([() => saturnContext.state.multisigAddress, () => multisigIdentity().name], () => {
+    const name = multisigIdentity().name;
+    const address = saturnContext.state.multisigAddress;
+
+    if (!address || name === "Multisig") {
+      return;
+    };
+
+    console.log('Setting Saturn Connect Account:', name, address);
+    setSaturnConnectAccount(name, address);
   }));
 
   return (
