@@ -288,16 +288,21 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(on(getDefaultMultisigId, () => {
+  createEffect(on([() => loc.pathname], () => {
     if (isLoggedIn()) {
-      const path = loc.pathname;
-      const page = path.split('/')[2];
+      const hash = loc.pathname.split('/')[1];
+      const page = loc.pathname.split('/')[2];
+      const multisigId = hash;
 
-      if (page !== undefined) {
-        const multisigId = getDefaultMultisigId();
-
+      if (page !== undefined && page !== '') {
         if (!!multisigId) {
           navigate(`/${ multisigId }/${ page }`, { replace: true });
+          return;
+        }
+      } else {
+        if (!!multisigId) {
+          // Default to assets page
+          navigate(`/${ multisigId }/assets`, { replace: true });
           return;
         }
       }
