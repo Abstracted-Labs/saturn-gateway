@@ -10,7 +10,6 @@ import LogoutButton from "../top-nav/LogoutButton";
 import { WALLET_ACCOUNTS_MODAL_ID } from "../top-nav/ConnectWallet";
 import { Modal, initModals } from 'flowbite';
 import type { ModalInterface } from 'flowbite';
-import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useWalletConnectContext } from "../../providers/walletConnectProvider";
 import { walletAggregator } from "../../App";
@@ -31,12 +30,7 @@ const CryptoAccounts = () => {
   const saturnContext = useSaturnContext();
   const wcContext = useWalletConnectContext();
   const theme = useThemeContext();
-  const nav = useNavigate();
-  const params = useParams();
-  const loc = useLocation();
 
-  const getHash = createMemo(() => params.hash);
-  const getIdFromUrl = createMemo(() => getHash()?.split('/')[0]);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
 
   function isActiveAccount(account: Account) {
