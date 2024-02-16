@@ -1,6 +1,6 @@
 import type { Component } from 'solid-js';
-import { createEffect, createMemo, createRenderEffect, createSignal, lazy, on, onCleanup, onMount } from 'solid-js';
-import { Routes, Route, useNavigate, useLocation, useParams } from '@solidjs/router';
+import { createEffect, createMemo, createSignal, lazy, on, onCleanup, onMount } from 'solid-js';
+import { Routes, Route, useNavigate, useLocation } from '@solidjs/router';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn } from '@invarch/saturn-sdk';
 import { Rings } from './data/rings';
@@ -57,13 +57,11 @@ const HomePlanet: Component = () => {
   const wcContext = useWalletConnectContext();
   const navigate = useNavigate();
   const loc = useLocation();
-  const params = useParams();
-  const hash = params.hash;
 
-  const saturnStateMemo = createMemo(() => saturnContext.state);
+  // const saturnStateMemo = createMemo(() => saturnContext.state);
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const getDefaultMultisigId = createMemo(() => {
-    const items = saturnStateMemo().multisigItems;
+    const items = saturnContext.state.multisigItems;
     // return undefined if no multisigs
     if (items === undefined || items.length === 0) {
       return undefined;
@@ -71,7 +69,7 @@ const HomePlanet: Component = () => {
       const defaultMultisigId = items[0].id;
       return defaultMultisigId;
     } else {
-      return saturnStateMemo().multisigId;
+      return saturnContext.state.multisigId;
     }
   });
 
@@ -94,7 +92,7 @@ const HomePlanet: Component = () => {
 
   async function sessionProposalCallback(proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) {
     console.log('session_proposal: ', proposal);
-    const address = saturnStateMemo().multisigAddress;
+    const address = saturnContext.state.multisigAddress;
     if (address) {
       await w3w.approveSession({
         id: proposal.id,
@@ -112,7 +110,7 @@ const HomePlanet: Component = () => {
 
   async function sessionRequestCallback(event: Web3WalletTypes.SessionRequest, w3w: IWeb3Wallet) {
     console.log('session_request: ', event);
-    const address = saturnStateMemo().multisigAddress;
+    const address = saturnContext.state.multisigAddress;
     if (!address) return;
 
     const { topic, params, id } = event;
@@ -165,10 +163,12 @@ const HomePlanet: Component = () => {
 
         const sat = new Saturn({ api: apis.tinkernet });
         saturnContext.setters.setSaturn(sat);
+      } else {
+        console.error("No Tinkernet API found.");
       }
     };
 
-    runAsync();
+    runAsync().catch(console.error);
   });
 
   onMount(() => {
@@ -288,7 +288,7 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(on(() => getDefaultMultisigId, () => {
+  createEffect(on(getDefaultMultisigId, () => {
     if (isLoggedIn()) {
       const path = loc.pathname;
       const page = path.split('/')[2];
