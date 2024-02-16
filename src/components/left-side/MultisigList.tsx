@@ -42,7 +42,7 @@ const MultisigList = () => {
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
   const navigate = useNavigate();
-  const location = useLocation();
+  const loc = useLocation();
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
@@ -138,9 +138,8 @@ const MultisigList = () => {
       };
 
       let iden;
-      const hash = window.location.hash; // Get the hash part of the URL
-      const parts = hash.split('/'); // Split the hash by '/'
-      const urlId = parts[1]; // Get the id, which is the third part of the hash
+      const path = loc.pathname;
+      const urlId = path.split('/')[1];
       const multisigs = await sat.getMultisigsForAccount(address);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {

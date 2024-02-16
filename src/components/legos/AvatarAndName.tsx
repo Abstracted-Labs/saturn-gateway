@@ -8,11 +8,11 @@ interface IAvatarAndNameProps { name: string | undefined, avatar: string, enlarg
 const AvatarAndName = (props: IAvatarAndNameProps) => {
   const [loading, setLoading] = createSignal(true);
 
-  const location = useLocation();
   const selectedAccountContext = useSelectedAccountContext();
+  const loc = useLocation();
 
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
-  const getPath = createMemo(() => location.pathname);
+  const getPath = createMemo(() => loc.pathname);
   const atHome = createMemo(() => getPath() === '/');
 
   createEffect(on(() => props.name, () => {

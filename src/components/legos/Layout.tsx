@@ -8,13 +8,13 @@ import ProposeModal from "../modals/ProposeModal";
 import { Portal } from "solid-js/web";
 
 const Layout = ({ children }: { children: any; }) => {
-  const location = useLocation();
+  const loc = useLocation();
 
   const showRightSide = createMemo(() => {
-    return location.pathname !== '/' && !location.pathname.endsWith('create') && !location.pathname.endsWith('settings');
+    return loc.pathname !== '/' && !loc.pathname.endsWith('create') && !loc.pathname.endsWith('settings');
   });
   const atHome = createMemo(() => {
-    return location.pathname === '/';
+    return loc.pathname === '/';
   });
 
   return <div>

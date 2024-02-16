@@ -6,10 +6,10 @@ import { Show, createMemo } from "solid-js";
 import { useLocation } from "@solidjs/router";
 
 const SubNavbar = (props: any) => {
-  const location = useLocation();
+  const loc = useLocation();
 
   const showRightSide = createMemo(() => {
-    return location.pathname !== '/' && !location.pathname.endsWith('create') && !location.pathname.endsWith('settings');
+    return loc.pathname !== '/' && !loc.pathname.endsWith('create') && !loc.pathname.endsWith('settings');
   });
 
   return <div>

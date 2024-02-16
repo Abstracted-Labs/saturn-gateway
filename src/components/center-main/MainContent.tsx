@@ -12,9 +12,9 @@ const MainContent = () => {
   const [membersCount, setMembersCount] = createSignal(0);
 
   const saturnContext = useSaturnContext();
-  const location = useLocation();
+  const loc = useLocation();
 
-  const currentPage = createMemo(() => location.pathname);
+  const currentPage = createMemo(() => loc.pathname);
 
   function pageTitle() {
     if (currentPage().endsWith(`/${ PagesEnum.ASSETS }`)) {

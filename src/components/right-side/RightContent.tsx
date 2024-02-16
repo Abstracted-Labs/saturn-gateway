@@ -3,13 +3,12 @@ import { Match, Show, Switch, createMemo } from "solid-js";
 import AssetsContext from "./AssetsContext";
 import TransactionsContext from "./TransactionsContext";
 import ManagementContext from "./ManagementContext";
-import { initDropdowns } from 'flowbite';
 import { PagesEnum } from "../../pages/pages";
 
 const RightContent = (props: { inDrawer: boolean; }) => {
-  const location = useLocation();
+  const loc = useLocation();
 
-  const currentPage = createMemo(() => location.pathname);
+  const currentPage = createMemo(() => loc.pathname);
 
   return <div class="h-full px-5 py-2 overflow-y-auto bg-saturn-offwhite dark:bg-saturn-black">
     <Show when={props.inDrawer}>
