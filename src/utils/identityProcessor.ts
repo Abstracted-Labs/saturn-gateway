@@ -61,6 +61,8 @@ export class IdentityImage {
               }
             } else {
               console.log('Response content type is not application/json');
+              this.value = "";
+              this.temp = "";
             }
           } catch (error) {
             console.error('An error occurred in jsonData:', error);
@@ -108,21 +110,54 @@ export async function getBestIdentity(address: string): Promise<AggregatedIdenti
 
   const ringApisContext = useRingApisContext();
 
-  const web3NamePromise = getWeb3Name(address);
-  const tinkernetIdentityPromise = getTinkernetIdentity(address, ringApisContext?.state.tinkernet);
-  const kusamaIdentityPromise = getKusamaIdentity(address);
-  const polkadotIdentityPromise = getPolkadotIdentity(address);
+  // Wrap each identity fetch in a separate try-catch block
+  async function safeGetWeb3Name() {
+    try {
+      return await getWeb3Name(address);
+    } catch (error) {
+      console.error('Error fetching Web3Name:', error);
+      return undefined;
+    }
+  }
 
+  async function safeGetTinkernetIdentity() {
+    try {
+      return await getTinkernetIdentity(address, ringApisContext?.state.tinkernet);
+    } catch (error) {
+      console.error('Error fetching TinkernetIdentity:', error);
+      return undefined;
+    }
+  }
+
+  async function safeGetKusamaIdentity() {
+    try {
+      return await getKusamaIdentity(address);
+    } catch (error) {
+      console.error('Error fetching KusamaIdentity:', error);
+      return undefined;
+    }
+  }
+
+  async function safeGetPolkadotIdentity() {
+    try {
+      return await getPolkadotIdentity(address);
+    } catch (error) {
+      console.error('Error fetching PolkadotIdentity:', error);
+      return undefined;
+    }
+  }
+
+  // Use the safe functions with Promise.all to handle them concurrently
   const [
     web3Name,
     tinkernetIdentity,
     kusamaIdentity,
     polkadotIdentity
   ] = await Promise.all([
-    web3NamePromise,
-    tinkernetIdentityPromise,
-    kusamaIdentityPromise,
-    polkadotIdentityPromise
+    safeGetWeb3Name(),
+    safeGetTinkernetIdentity(),
+    safeGetKusamaIdentity(),
+    safeGetPolkadotIdentity()
   ]);
 
   const otherIdentities: Identity[] = [
@@ -132,6 +167,7 @@ export async function getBestIdentity(address: string): Promise<AggregatedIdenti
     polkadotIdentity
   ].filter((i): i is Identity => !!i);
 
+  // Aggregate the results, prioritizing the identities in a specific order
   return {
     address,
     otherIdentities,
@@ -175,7 +211,8 @@ async function getWeb3Name(address: string): Promise<Identity | undefined> {
 
       return;
     }
-  } catch {
+  } catch (error) {
+    console.error('Error fetching web3Name:', error);
     Kilt.disconnect();
 
     return;
