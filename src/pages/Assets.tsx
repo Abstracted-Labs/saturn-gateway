@@ -24,6 +24,7 @@ export default function Assets() {
 
   const saturnContext = useSaturnContext();
 
+  const getMultisigAddress = createMemo(() => saturnContext.state.multisigAddress);
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
   async function convertAssetTotalToUsd(network: NetworkEnum, total: string) {
@@ -52,16 +53,19 @@ export default function Assets() {
     return '';
   }
 
-  createEffect(on(getMultisigId, () => {
-    setLoading(true);
-    setBalances([]);
-    setUsdValues({});
-    setTotalValues({});
+  createEffect(on([getMultisigId, getMultisigAddress], () => {
+    if (getMultisigId()) {
+      setLoading(true);
+      setBalances([]);
+      setUsdValues({});
+      setTotalValues({});
+    }
   }));
 
-  createEffect(on(getMultisigId, () => {
+  createEffect(on([getMultisigId, getMultisigAddress], () => {
     let timeout: any;
     const id = getMultisigId();
+    const address = getMultisigAddress();
 
     const delayUnload = () => {
       timeout = setTimeout(() => {
@@ -70,8 +74,6 @@ export default function Assets() {
     };
 
     const runAsync = async () => {
-      const address = saturnContext.state.multisigAddress;
-
       if (typeof id !== 'number' || !address) {
         delayUnload();
         return;
@@ -83,19 +85,23 @@ export default function Assets() {
         const ret: [string, [string, Balances][]] = [network,
           Object.entries(assets)
             .map(([asset, assetBalances]) => {
+              console.log(`Processing asset: ${ asset }`);
               const ret: [string, Balances] = [asset, assetBalances as Balances];
 
               return ret;
             })
-            .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
-              || assetBalances.reservedBalance != '0'
-              || assetBalances.frozenBalance != '0')];
+            .filter(([_, assetBalances]) => {
+              const hasBalances = assetBalances.freeBalance != '0'
+                || assetBalances.reservedBalance != '0'
+                || assetBalances.frozenBalance != '0';
+              console.log(`Filtering asset with balances: ${ hasBalances }`);
+              return hasBalances;
+            })];
 
         return ret;
       });
 
       setBalances(remapped);
-
       delayUnload();
     };
 
