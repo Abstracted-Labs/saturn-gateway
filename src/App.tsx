@@ -299,7 +299,7 @@ const HomePlanet: Component = () => {
           navigate(`/${ multisigId }/${ page }`, { replace: true });
           return;
         }
-      } else {
+      } else if (!loc.pathname.includes('create')) {
         if (!!multisigId) {
           // Default to assets page
           navigate(`/${ multisigId }/assets`, { replace: true });

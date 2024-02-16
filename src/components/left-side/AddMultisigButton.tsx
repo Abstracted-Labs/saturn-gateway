@@ -26,7 +26,7 @@ const AddMultisigButton = () => {
       if (onCreatePage()) {
         return props.children;
       } else {
-        return <A href="/create">
+        return <A href="/create" replace>
           {props.children}
         </A>;
       }
