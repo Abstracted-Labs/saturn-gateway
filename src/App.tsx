@@ -21,6 +21,8 @@ import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wal
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
 import { WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
 import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WalletAggregator, InjectedWalletProvider, toWalletAccount, WcAccount } from './lnm/wallet-connect';
+import { initDrawers } from 'flowbite';
+import NotFound from './pages/NotFound';
 
 const Create = lazy(async () => import('./pages/Create'));
 
@@ -154,6 +156,10 @@ const HomePlanet: Component = () => {
       }
     }
   };
+
+  onMount(() => {
+    initDrawers();
+  });
 
   onMount(() => {
     const runAsync = async () => {
@@ -299,13 +305,14 @@ const HomePlanet: Component = () => {
           navigate(`/${ multisigId }/${ page }`, { replace: true });
           return;
         }
-      } else if (!loc.pathname.includes('create')) {
-        if (!!multisigId) {
-          // Default to assets page
-          navigate(`/${ multisigId }/assets`, { replace: true });
-          return;
-        }
       }
+      // else if (!loc.pathname.includes('create')) {
+      //   if (!!multisigId) {
+      //     // Default to assets page
+      //     navigate(`/${ multisigId }/assets`, { replace: true });
+      //     return;
+      //   }
+      // }
     }
   }));
 
@@ -313,8 +320,9 @@ const HomePlanet: Component = () => {
     <Layout>
       <Routes>
         <Route path="/" component={Home} />
-        <Route path="/create" component={Create} />
+        {/* <Route path="/create" component={Create} /> */}
         <Route path='/:idOrAddress/*' component={MainContainer} />
+        <Route path='/*' component={NotFound} />
       </Routes>
     </Layout>
   );
