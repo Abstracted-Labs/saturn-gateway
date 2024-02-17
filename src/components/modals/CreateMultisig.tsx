@@ -633,7 +633,7 @@ const CreateMultisig = () => {
   const STEP_5_CONFIRM = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[4]}>
       <div class={SECTION_TEXT_STYLE}>Finally, do one last spot-check.</div>
-      <dl class="mt-2 text-xs final-checklist max-h-[200px] sm:max-h-full overflow-y-scroll sm:overflow-y-hidden saturn-scrollbar pr-3">
+      <dl class="mt-2 text-xs final-checklist max-h-[200px] overflow-y-scroll saturn-scrollbar pr-3">
         <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
           <dt class="text-xxs text-right w-24 mr-5">Name <ToCrumb crumb="Choose a Name" /></dt>
           <dd class="text-black dark:text-white">{multisigName()}</dd>
