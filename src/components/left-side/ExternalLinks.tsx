@@ -2,7 +2,7 @@ import ExternalLinkIcon from '../../assets/icons/external-link-icon-16x16.svg';
 import { For } from 'solid-js';
 
 const links: [string, string][] = [
-  ["Docs", "#"],
+  ["Docs", "https://saturn-docs.invarch.network/"],
   ["Support", "#"],
   ["𝕏", "#"],
   ["Discord", "#"]
@@ -10,7 +10,7 @@ const links: [string, string][] = [
 
 function renderExternalLink(name: string, href: string) {
   return <li class="text-saturn-lightgrey hover:text-saturn-yellow">
-    <a href={href} class="flex items-center py-1.5 rounded-md">
+    <a href={href} rel='noreferrer' target='_blank' class="flex items-center py-1.5 rounded-md">
       <span class="mr-1">{name}</span>
       <img src={ExternalLinkIcon} width={12} height={12} alt="external-link-icon" />
     </a>

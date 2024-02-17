@@ -294,25 +294,21 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(on([() => loc.pathname], () => {
+  createEffect(on([() => loc.pathname, getDefaultMultisigId], () => {
     if (isLoggedIn()) {
       const hash = loc.pathname.split('/')[1];
       const page = loc.pathname.split('/')[2];
       const multisigId = hash;
 
       if (page !== undefined && page !== '') {
-        if (!!multisigId) {
+        if (multisigId !== 'undefined') { // undefined from url reads as string
           navigate(`/${ multisigId }/${ page }`, { replace: true });
+          return;
+        } else {
+          navigate(`/${ getDefaultMultisigId() }/${ page }`, { replace: true });
           return;
         }
       }
-      // else if (!loc.pathname.includes('create')) {
-      //   if (!!multisigId) {
-      //     // Default to assets page
-      //     navigate(`/${ multisigId }/assets`, { replace: true });
-      //     return;
-      //   }
-      // }
     }
   }));
 

@@ -24,9 +24,9 @@ const Home = () => {
 
     try {
       if (!!multisigId()) {
-        nav(`/${ multisigId() }/management`);
+        nav(`/${ multisigId() }/assets`);
       } else {
-        nav('/create');
+        nav(`${ undefined }/assets`);
       }
     } catch (error) {
       console.error(error);

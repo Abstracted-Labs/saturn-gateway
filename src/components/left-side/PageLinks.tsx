@@ -36,9 +36,8 @@ const PageLinks = () => {
   const multisigId = createMemo(() => saturnContext.state.multisigId);
 
   function buildHref(page: string): string {
-    if (!isLoggedIn()) return '';
-    return `/${ saturnContext.state.multisigId?.toString() }/${ page }`;
-  };
+    return `/${ saturnContext.state.multisigId?.toString() || undefined }/${ page }`;
+  }
 
   function simulateButtonClick() {
     const button = document.querySelector('button[data-drawer-hide="leftSidebar"][aria-controls="leftSidebar"]');
@@ -57,28 +56,26 @@ const PageLinks = () => {
   // });
 
   return <div class={`${ !isLoggedIn() || !multisigId() ? '' : styles.pageListContainer } mb-5 mt-3`}>
-    <Show when={!!isLoggedIn() && !!multisigId()}>
-      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
-      <For each={pages}>
-        {(page) => {
-          return (
-            <A
-              href={buildHref(page)}
-              class={styles.pageItemContainer}
-              activeClass={`${ styles.enabled } ${ BUTTON_COMMON_STYLE }`}
-              onClick={() => simulateButtonClick()}
-            // data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
-            // aria-controls={mutateButton() ? 'leftSidebar' : undefined}
-            >
-              {/* <div class={styles.selectedItemGradient} /> */}
-              <div class={styles.selectedItemIndicator} />
-              {matchIconToPage(page)}
-              <span class="ml-4 text-saturn-black dark:text-saturn-offwhite">{page}</span>
-            </A>
-          );
-        }}
-      </For>
-    </Show>
+    <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
+    <For each={pages}>
+      {(page) => {
+        return (
+          <A
+            href={buildHref(page)}
+            class={`${ styles.pageItemContainer }`}
+            activeClass={`${ styles.enabled } ${ BUTTON_COMMON_STYLE }`}
+            onClick={() => simulateButtonClick()}
+          // data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
+          // aria-controls={mutateButton() ? 'leftSidebar' : undefined}
+          >
+            {/* <div class={styles.selectedItemGradient} /> */}
+            <div class={styles.selectedItemIndicator} />
+            {matchIconToPage(page)}
+            <span class="ml-4 text-saturn-black dark:text-saturn-offwhite">{page}</span>
+          </A>
+        );
+      }}
+    </For>
   </div>;
 };
 
