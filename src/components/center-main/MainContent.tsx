@@ -24,7 +24,7 @@ const MainContent = () => {
     } else if (currentPage().endsWith(`/${ PagesEnum.MANAGEMENT }`)) {
       return ''; // Handle page title from Management.tsx
     } else {
-      return '...';
+      return 'Page not found!';
     }
   };
 
