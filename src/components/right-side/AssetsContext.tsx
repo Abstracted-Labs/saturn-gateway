@@ -31,7 +31,7 @@ const AssetsContext = () => {
   const [isToDropdownActive, setIsToDropdownActive] = createSignal(false);
   const [isAssetDropdownActive, setIsAssetDropdownActive] = createSignal(false);
   const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
-  const [maxAssetAmount, setMaxAssetAmount] = createSignal<number>(0);
+  const [maxAssetAmount, setMaxAssetAmount] = createSignal<number | null>(null);
   const [transferableAmount, setTransferableAmount] = createSignal<string>('0.00');
   const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
   const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
@@ -185,12 +185,13 @@ const AssetsContext = () => {
 
   function validateAmount(e: any) {
     const inputValue = e.currentTarget.value;
-
+    const maxAmount = maxAssetAmount();
+    if (maxAmount === null) return;
     if (!!inputValue) {
-      if (Number(inputValue) <= maxAssetAmount()) {
+      if (Number(inputValue) <= maxAmount) {
         setAmount(inputValue);
       } else {
-        setAmount(maxAssetAmount());
+        setAmount(maxAmount);
       }
     } else {
       // Clear the input value or show an error message
@@ -200,6 +201,7 @@ const AssetsContext = () => {
 
   function setMaxAmount() {
     const maxAmount = maxAssetAmount();
+    if (maxAmount === null) return;
     setAmount(maxAmount);
   }
 
@@ -396,6 +398,8 @@ const AssetsContext = () => {
       setMaxAssetAmount(transferableNumber);
       // Reset the amount when the asset changes
       setAmount(0);
+    } else {
+      setMaxAssetAmount(null);
     }
   });
 
@@ -547,7 +551,9 @@ const AssetsContext = () => {
           </div>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={!!maxAssetAmount()} fallback={<div class={FALLBACK_TEXT_STYLE}>Calculating...</div>}>
+              <Show when={maxAssetAmount() !== null} fallback={
+                <div class={FALLBACK_TEXT_STYLE}>--</div>
+              }>
                 <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount}>max</span>
                 <span class="ml-2">{maxAssetAmount()} {asset()}</span>
               </Show>
