@@ -6,6 +6,7 @@ import { Show, createMemo } from "solid-js";
 import CryptoAccounts from "../modals/CryptoAccounts";
 import ProposeModal from "../modals/ProposeModal";
 import { Portal } from "solid-js/web";
+import CreateMultisig from "../modals/CreateMultisig";
 
 const Layout = ({ children }: { children: any; }) => {
   const loc = useLocation();
@@ -24,6 +25,9 @@ const Layout = ({ children }: { children: any; }) => {
     </Portal>
     <Portal mount={document.getElementById('proposeWindow') || undefined}>
       <ProposeModal />
+    </Portal>
+    <Portal mount={document.getElementById('multisigWindow') || undefined}>
+      <CreateMultisig />
     </Portal>
 
     {/* Top nav */}

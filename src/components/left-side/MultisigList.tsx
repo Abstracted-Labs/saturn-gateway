@@ -86,6 +86,16 @@ const MultisigList = () => {
     // if (scrollContainer instanceof HTMLDivElement) {
     //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
     // }
+
+    // Close the left drawer
+    simulateButtonClick();
+  }
+
+  function simulateButtonClick() {
+    const button = document.querySelector('button[data-drawer-hide="leftSidebar"][aria-controls="leftSidebar"]');
+    if (button instanceof HTMLButtonElement) {
+      button.click();
+    }
   }
 
   function setScrollContainerRef(ref: HTMLDivElement | null) {
@@ -329,11 +339,6 @@ const MultisigList = () => {
           </Switch>
         </div>
       </div>
-
-      {/* Page nav links should not show when logged out or when multisigItems.length === 0 */}
-      {/* <Show when={multisigItemsLength() > 0}> */}
-      <PageLinks />
-      {/* </Show> */}
     </>
   );
 };

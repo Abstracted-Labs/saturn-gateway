@@ -15,7 +15,8 @@ const RightContent = (props: { inDrawer: boolean; }) => {
       <span id="inDrawer" />
     </Show>
     <div class="grid grid-cols-1 gap-12 text-black dark:text-white">
-      <Switch fallback="No data.">
+      {/* <Switch fallback="No data."> */}
+      <Switch>
         <Match when={currentPage().endsWith(`/${ PagesEnum.ASSETS }`)}>
           <AssetsContext />
         </Match>

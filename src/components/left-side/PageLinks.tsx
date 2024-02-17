@@ -30,7 +30,7 @@ function matchIconToPage(page: string): JSXElement {
 const PageLinks = () => {
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
-  const [mutateButton, setMutateButton] = createSignal(false);
+  // const [mutateButton, setMutateButton] = createSignal(false);
 
   const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
   const multisigId = createMemo(() => saturnContext.state.multisigId);
@@ -40,14 +40,22 @@ const PageLinks = () => {
     return `/${ saturnContext.state.multisigId?.toString() }/${ page }`;
   };
 
-  createEffect(() => {
-    const isDrawerPresent = () => !!document.getElementById('inDrawer');
-    if (isDrawerPresent()) {
-      setMutateButton(true);
-    } else {
-      setMutateButton(false);
+  function simulateButtonClick() {
+    const button = document.querySelector('button[data-drawer-hide="leftSidebar"][aria-controls="leftSidebar"]');
+    if (button instanceof HTMLButtonElement) {
+      button.click();
     }
-  });
+  }
+
+  // createEffect(() => {
+  //   const isDrawerPresent = () => !!document.getElementById('inDrawer');
+  //   if (isDrawerPresent()) {
+  //     setMutateButton(true);
+  //   } else {
+  //     setMutateButton(false);
+  //   }
+  // });
+
   return <div class={`${ !isLoggedIn() || !multisigId() ? '' : styles.pageListContainer } mb-5 mt-3`}>
     <Show when={!!isLoggedIn() && !!multisigId()}>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
@@ -58,8 +66,9 @@ const PageLinks = () => {
               href={buildHref(page)}
               class={styles.pageItemContainer}
               activeClass={`${ styles.enabled } ${ BUTTON_COMMON_STYLE }`}
-              data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
-              aria-controls={mutateButton() ? 'leftSidebar' : undefined}
+              onClick={() => simulateButtonClick()}
+            // data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
+            // aria-controls={mutateButton() ? 'leftSidebar' : undefined}
             >
               {/* <div class={styles.selectedItemGradient} /> */}
               <div class={styles.selectedItemIndicator} />
