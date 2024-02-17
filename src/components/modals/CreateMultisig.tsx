@@ -183,7 +183,7 @@ const CreateMultisig = () => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
 
         if (status.isFinalized || status.isInBlock) {
-          navigate(`/${ multisigId }/management`, { resolve: false, replace: true });
+          navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
 
           setTimeout(() => {
             window.location.reload();
@@ -333,6 +333,7 @@ const CreateMultisig = () => {
   function removeModal() {
     if (modal) {
       modal.hide();
+      abortUi();
     }
   }
 
@@ -459,7 +460,7 @@ const CreateMultisig = () => {
 
       {/* First row is the multisig creator's address */}
       <div class="flex flex-row items-end gap-2 mb-2">
-        <div class="relative flex flex-col ml-2 w-2/5 sm:w-auto">
+        <div class={`relative flex flex-col ml-2 ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-2/5 sm:w-auto' : '' }`}>
           <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
           <input id="defaultMember" name="defaultMember" disabled type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0][0]} />
@@ -479,7 +480,7 @@ const CreateMultisig = () => {
 
       {/* Scrollable list of additional members */}
       <Show when={members().length > 1}>
-        <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 pt-1 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+        <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 pt-1 overflow-y-auto pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
           <For each={members()}>
             {([address, weight], index) => {
               const [error, setError] = createSignal<boolean | undefined>();
@@ -584,7 +585,7 @@ const CreateMultisig = () => {
                           <span class="absolute left-[-7px] top-[15px]"><img src={AyeIcon} width={12} height={12} /></span>
                         </Match>
                       </Switch>
-                      <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } w-4/5 sm:w-auto`} value={address}
+                      <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-4/5 sm:w-auto' : '' }`} value={address}
                         onInput={validateMemberAddress} onBlur={validateWeb3Name} />
                     </div>
                     <div class="relative left-[-29px] sm:left-0">
@@ -596,7 +597,7 @@ const CreateMultisig = () => {
                         }} />
                       </Show>
                     </div>
-                    <div class="relative left-[-13px] sm:left-0">
+                    <div class={`relative ${ multisigType() === MultisigEnum.GOVERNANCE ? 'left-[-13px] sm:left-0' : '' }`}>
                       <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
                     </div>
                   </div>
@@ -632,15 +633,19 @@ const CreateMultisig = () => {
   const STEP_5_CONFIRM = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[4]}>
       <div class={SECTION_TEXT_STYLE}>Finally, do one last spot-check.</div>
-      <dl class="mt-2 text-xs">
+      <dl class="mt-2 text-xs final-checklist max-h-[200px] sm:max-h-full overflow-y-scroll sm:overflow-y-hidden saturn-scrollbar pr-3">
         <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
           <dt class="text-xxs text-right w-24 mr-5">Name <ToCrumb crumb="Choose a Name" /></dt>
           <dd class="text-black dark:text-white">{multisigName()}</dd>
         </div>
         <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
+          <dt class="text-xxs text-right w-24 mr-5">Multisig Type <ToCrumb crumb="Select Type" /></dt>
+          <dd class="text-black dark:text-white">{multisigType()}</dd>
+        </div>
+        <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
           <dt class="text-xxs text-right w-24 mr-5">Members <ToCrumb crumb="Add Members" /></dt>
-          <dd class="text-black dark:text-white border border-saturn-lightgrey rounded-md p-5">
-            <div class={`saturn-scrollbar pr-3 h-[120px] overflow-y-scroll ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+          <dd class="text-black dark:text-white border border-saturn-lightgrey rounded-md p-3 w-3/6">
+            <div class={`saturn-scrollbar pr-3 h-[120px] overflow-y-auto ${ isLightTheme() ? 'islight' : 'isdark' }`}>
               <For each={members()}>
                 {([address, weight], index) => (
                   <div class="flex flex-row items-center gap-2 mb-2 text-black dark:text-white">
@@ -677,7 +682,7 @@ const CreateMultisig = () => {
 
   const STEP_6_SUCCESS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[5]}>
-      <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to its new Members page<EllipsisAnimation /></div>
+      <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to the Assets page<EllipsisAnimation /></div>
     </div>
   );
 

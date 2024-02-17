@@ -50,6 +50,7 @@ code {
   /* Scrollbars */
   .saturn-scrollbar::-webkit-scrollbar {
     width: 5px;
+    height: 5px;
   }
 
   .saturn-scrollbar::-webkit-scrollbar-track {
