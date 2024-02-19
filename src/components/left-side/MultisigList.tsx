@@ -267,18 +267,7 @@ const MultisigList = () => {
       <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-44' : 'h-80' } relative mb-6`}>
         <div
           ref={scrollContainerRef!}
-          style={{
-            'overflow-y': 'scroll',
-            'scrollbar-width': 'thin',
-            '-webkit-scrollbar-width': 'thin',
-            '-moz-scrollbar-width': 'thin',
-            '-ms-scrollbar-width': 'thin',
-            '-o-scrollbar-width': 'thin',
-            // 'scrollbar-color': '#692EFF #000000',
-            // '-webkit-scrollbar-color': '#692EFF #ffffff',
-            '-webkit-overflow-scrolling': 'touch',
-          }}
-          class={`h-auto saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
+          class={`h-auto overflow-y-auto saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
           {/* <div class="w-62 absolute bottom-0 inset-0 pointer-events-none">
             <div class="h-full bg-gradient-to-b from-transparent to-saturn-offwhite dark:to-saturn-black"></div>

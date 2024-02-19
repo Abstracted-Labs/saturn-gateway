@@ -54,8 +54,9 @@ code {
   }
 
   .saturn-scrollbar::-webkit-scrollbar-track {
-    border-radius: 100vh;
+    border-radius: 50px;
     height: 100vh;
+    width: 100vw;
   }
 
   .saturn-scrollbar.isdark::-webkit-scrollbar-track {
@@ -68,7 +69,7 @@ code {
 
   .saturn-scrollbar::-webkit-scrollbar-thumb {
     background: #692EFF;
-    border-radius: 100vh;
+    border-radius: 50px;
   }
 
   /* adding a backdrop blur to drawers/modals */

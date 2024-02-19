@@ -14,6 +14,7 @@ import SaturnRadio from "../legos/SaturnRadio";
 import GradientBgImage from "../../assets/images/gradient-bg.svg";
 import FlagIcon from "../../assets/icons/flag-icon.svg";
 import RemoveMemberIcon from "../../assets/icons/remove-member-icon.svg";
+import AddMultisigIcon from '../../assets/icons/add-multisig-icon-15x15.svg';
 import EditDataIcon from "../../assets/icons/edit-data-icon.svg";
 import AyeIcon from "../../assets/icons/aye-icon-17x17.svg";
 import NayIcon from "../../assets/icons/nay-icon-17x17.svg";
@@ -88,14 +89,14 @@ const CreateMultisig = () => {
     //   return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[2] || crumb === MULTISIG_CRUMB_TRAIL[3]);
     // }
 
-    if (totalSupportCount() > 1) {
-      // loop through and check each party member for valid address and weight
-      for (const [address, weight] of party) {
-        if (address === '' || weight === 0) {
-          return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[2]);
-        }
-      }
-    }
+    // if (totalSupportCount() > 1) {
+    //   // loop through and check each party member for valid address and weight
+    //   for (const [address, weight] of party) {
+    //     if (address === '' || weight === 0) {
+    //       return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[2]);
+    //     }
+    //   }
+    // }
 
     // if (hasAddressError().length > 0) {
     //   return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[3] || crumb === MULTISIG_CRUMB_TRAIL[4]);
@@ -403,16 +404,21 @@ const CreateMultisig = () => {
     }
   });
 
-  createEffect(() => {
-    // When navigating away from the members step, clear members with validation errors
+  createEffect(on(members, () => {
+    // When navigating away from the members step, clear members with blank addresses
     if (getCurrentStep() !== MULTISIG_CRUMB_TRAIL[2] && members().length > 1) {
-      const filteredMembers = members().filter((_, index) => !hasAddressError().includes(index));
+      const filteredMembers = members().filter(([address, _], index) => {
+        // return !hasAddressError().includes(index) && address !== '';
+        return address !== '';
+      });
       setMembers(filteredMembers);
+
       // Reset the error state as well
       setHasAddressError([]);
       setDisableAddMember(false);
+      console.log('members: ', members());
     }
-  });
+  }));
 
   createEffect(on(inReviewStep, () => {
     // when it's the second to last crumb, log each member and their weight to the console
@@ -446,8 +452,8 @@ const CreateMultisig = () => {
   const STEP_2_SELECT_TYPE = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[1]}>
       <div class={SECTION_TEXT_STYLE}>Second, select a multisig type.</div>
-      <p class="text-xs">Traditional multisigs are used for simple, straightforward voting where 1 voter = 1 vote.</p>
-      <p class="text-xs">Governance multisigs are used for more complex voting scenarios (i.e., DAOs).</p>
+      <p class="text-xs/none">Traditional multisigs are used for simple, straightforward voting where 1 voter = 1 vote.</p>
+      <p class="text-xs/none mt-3">Governance multisigs are used for more complex voting scenarios (i.e., DAOs).</p>
       <div class="my-5">
         <SaturnRadio direction="row" selected={multisigType()} options={[MultisigEnum.TRADITIONAL, MultisigEnum.GOVERNANCE]} setSelected={(type: MultisigEnum) => handleSetMultisigType(type)} />
       </div>
@@ -460,10 +466,10 @@ const CreateMultisig = () => {
 
       {/* First row is the multisig creator's address */}
       <div class="flex flex-row items-end gap-2 mb-2">
-        <div class={`relative flex flex-col ml-2 ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-2/5 sm:w-auto' : '' }`}>
+        <div class={`relative flex flex-col ml-2 md:w-[440px] ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-2/5' : 'w-5/6' }`}>
           <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
-          <input id="defaultMember" name="defaultMember" disabled type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0][0]} />
+          <input id="defaultMember" name="defaultMember" disabled type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0] ? members()[0][0] : ''} />
         </div>
         <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
           <div>
@@ -475,42 +481,46 @@ const CreateMultisig = () => {
             }} />
           </div>
         </Show>
-        <button type="button" class="py-2 px-4 bg-saturn-purple rounded-md hover:bg-purple-600 focus:outline-purple-500 text-md" disabled={disableAddMember()} onClick={addMember}>+</button>
+        <button type="button" class="px-4 py-[12px] bg-saturn-purple rounded-md hover:bg-purple-600 focus:outline-purple-500 text-md" disabled={disableAddMember()} onClick={addMember}><img alt="Add another member" src={AddMultisigIcon} class="h-4 w-4" /></button>
       </div>
 
       {/* Scrollable list of additional members */}
       <Show when={members().length > 1}>
-        <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 pt-1 overflow-y-auto pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+        <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 overflow-y-auto pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
           <For each={members()}>
             {([address, weight], index) => {
               const [error, setError] = createSignal<boolean | undefined>();
 
               function validateMemberAddress(e: any) {
                 e.preventDefault();
+
+                if (hasAddressError().includes(index())) {
+                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
+                  setHasAddressError(newHasAddressError);
+                }
+
                 setError(undefined);
+
                 try {
                   const newMembers = members();
                   const inputValue = e.target.value;
                   const isUnique = () => newMembers.every((member) => member[0] !== inputValue);
                   const isValidAddress = isValidPolkadotAddress(inputValue);
 
-                  if (hasAddressError().includes(index())) {
-                    const newHasAddressError = hasAddressError().filter((i) => i !== index());
-                    setHasAddressError(newHasAddressError);
-                  }
-
-                  if (isUnique() && isValidAddress && error()) {
+                  if (isUnique() && isValidAddress) {
                     setError(false);
                     newMembers[index()][0] = inputValue;
                     setMembers(newMembers);
+                    updateAddressError(index(), true);
                   } else {
                     setError(true);
                     if (!hasAddressError().includes(index())) {
                       setHasAddressError([...hasAddressError(), index()]);
-                      // throw new Error('Member address is invalid or was already added.');
+                      console.error('Member address is invalid or was already added.');
                     }
                   }
                 } catch (error) {
+                  setError(true);
                   console.error(error);
                 }
               }
@@ -528,6 +538,10 @@ const CreateMultisig = () => {
                   // If the input is a valid address and there's no error, we're done
                   if (isValidAddress && error()) {
                     setError(false);
+                    newMembers[index()][0] = web3name;
+                    setMembers(newMembers);
+                    updateAddressError(index(), true);
+                    setDisableAddMember(false);
                     return;
                   }
 
@@ -539,11 +553,11 @@ const CreateMultisig = () => {
                   }
 
                   // At this point, the web3name is valid and unique. Update the member's address.
-                  setError(false);
-                  newMembers[index()][0] = web3name;
-                  setMembers(newMembers);
-                  updateAddressError(index(), true);
-                  setDisableAddMember(false);
+                  // setError(false);
+                  // newMembers[index()][0] = web3name;
+                  // setMembers(newMembers);
+                  // updateAddressError(index(), true);
+                  // setDisableAddMember(false);
                 } catch (error) {
                   console.error(error);
                 }
@@ -560,12 +574,11 @@ const CreateMultisig = () => {
               }
 
               onMount(() => {
+                setError(false);
+
                 if (hasAddressError().includes(index())) {
                   const newHasAddressError = hasAddressError().filter((i) => i !== index());
                   setHasAddressError(newHasAddressError);
-                }
-                if (address) {
-                  setError(false);
                 }
               });
 
@@ -575,8 +588,8 @@ const CreateMultisig = () => {
 
               return (
                 <Show when={address !== selectedState().account?.address}>
-                  <div class="flex flex-row items-center gap-2 mb-2">
-                    <div class="relative ml-2">
+                  <div class={`flex flex-row items-center gap-2 mb-2 w-full ${ multisigType() === MultisigEnum.GOVERNANCE ? 'max-w-[515px]' : 'max-w-[489px]' }`}>
+                    <div class="relative ml-2 flex-grow">
                       <Switch>
                         <Match when={error() === true}>
                           <span class="absolute left-[-7px] top-[15px]"><img src={NayIcon} width={12} height={12} /></span>
@@ -585,10 +598,12 @@ const CreateMultisig = () => {
                           <span class="absolute left-[-7px] top-[15px]"><img src={AyeIcon} width={12} height={12} /></span>
                         </Match>
                       </Switch>
-                      <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-4/5 sm:w-auto' : '' }`} value={address}
-                        onInput={validateMemberAddress} onBlur={validateWeb3Name} />
+                      <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } w-full`} value={address}
+                        onInput={validateMemberAddress}
+                      // onBlur={validateWeb3Name} TODO: Not working as expected
+                      />
                     </div>
-                    <div class="relative left-[-29px] sm:left-0">
+                    <div class="relative flex flex-row items-center gap-2">
                       <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
                         <SaturnNumberInput isMultisigUi label={`votes-${ index() }`} min={1} max={50} initialValue={weight.toString()} currentValue={(votes: string) => {
                           const newMembers = members();
@@ -596,9 +611,9 @@ const CreateMultisig = () => {
                           setMembers(newMembers);
                         }} />
                       </Show>
-                    </div>
-                    <div class={`relative ${ multisigType() === MultisigEnum.GOVERNANCE ? 'left-[-13px] sm:left-0' : '' }`}>
-                      <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100"><img src={RemoveMemberIcon} alt="RemoveMember" /></button>
+                      <div class={`px-2 relative top-[3px] ${ multisigType() === MultisigEnum.GOVERNANCE ? 'left-[-13px] sm:left-0' : '' }`}>
+                        <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100 h-[15px] w-[17px]"><img src={RemoveMemberIcon} alt="RemoveMember" class="h-[15px] w-[17px]" /></button>
+                      </div>
                     </div>
                   </div>
                 </Show>
@@ -613,16 +628,16 @@ const CreateMultisig = () => {
   const STEP_4_VOTE_THRESHOLD = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[3]}>
       <div class={SECTION_TEXT_STYLE}>Now, set the voting thresholds.</div>
-      <p class="text-xs">Minimum support is the minimum number of votes required to pass a proposal.</p>
-      {multisigType() === MultisigEnum.GOVERNANCE && <p class="text-xs">Required approval is the minimum number of votes required to approve a proposal.</p>}
+      <p class="text-xs/none">Minimum support is the minimum number of votes required to pass a proposal.</p>
+      {multisigType() === MultisigEnum.GOVERNANCE && <p class="text-xs/none mt-3">Required approval is the minimum number of votes required to approve a proposal.</p>}
       <div class="flex flex-row items-center justify-start gap-2 sm:gap-5 my-4">
         <div class="flex flex-row items-center gap-1">
-          <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[11.5px]/none`}>Minimum Support (%)</label>
+          <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Minimum Support (%)</label>
           <SaturnNumberInput isMultisigUi label="minimumSupport" initialValue={minimumSupportField()} currentValue={(support) => setMinimumSupportField(support)} min={1} max={100} />
         </div>
         <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
           <div class="flex flex-row items-center gap-1">
-            <label for="requiredApproval" class={`${ FALLBACK_TEXT_STYLE } text-left text-[11.5px]/none`}>Required Approval (%)</label>
+            <label for="requiredApproval" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Required Approval (%)</label>
             <SaturnNumberInput isMultisigUi label="requiredApproval" disabled={multisigType() === MultisigEnum.TRADITIONAL} initialValue={requiredApprovalField()} currentValue={(approval) => setRequiredApprovalField(approval)} min={1} max={100} />
           </div>
         </Show>
@@ -644,12 +659,13 @@ const CreateMultisig = () => {
         </div>
         <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
           <dt class="text-xxs text-right w-24 mr-5">Members <ToCrumb crumb="Add Members" /></dt>
-          <dd class="text-black dark:text-white border border-saturn-lightgrey rounded-md p-3 w-3/6">
-            <div class={`saturn-scrollbar pr-3 h-[120px] overflow-y-auto ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+          <dd class="text-black dark:text-white border border-saturn-lightgrey rounded-md p-3 w-4/6">
+            <div class={`pr-3 pb-3 h-[120px] saturn-scrollbar overflow-y-auto ${ isLightTheme() ? 'islight' : 'isdark' }`}>
               <For each={members()}>
                 {([address, weight], index) => (
-                  <div class="flex flex-row items-center gap-2 mb-2 text-black dark:text-white">
-                    {stringShorten(address, 10)}
+                  <div class="flex flex-row items-center mb-2 pr-3 text-black dark:text-white">
+                    <span class="pr-1">({weight})</span>
+                    <span class="pr-3">{address}</span>
                   </div>
                 )}
               </For>
@@ -711,7 +727,7 @@ const CreateMultisig = () => {
                       Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
                     </span> : <span class="flex flex-col items-center"><img src={CheckIcon} width={80} height={80} /><span class="mt-5 break-words">You're All Set!</span></span>}</h3>
                     <Show when={!isLastStep()}>
-                      <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners using multiple accounts.</h6>
+                      <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
                     </Show>
                   </div>
                   <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>

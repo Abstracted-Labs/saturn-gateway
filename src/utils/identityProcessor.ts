@@ -183,7 +183,7 @@ export async function getBestIdentity(address: string): Promise<AggregatedIdenti
 
 async function getWeb3Name(address: string): Promise<Identity | undefined> {
   try {
-    await Kilt.connect('wss://spiritnet.kilt.io/');
+    await Kilt.connect('wss://kilt-rpc.dwellir.com/');
   } catch (error) {
     console.error('Failed to connect to Kilt Spiritnet:', error);
     throw new Error('Connection to Kilt Spiritnet failed');
