@@ -1,11 +1,16 @@
-import { createEffect, createSignal, Switch, Match } from "solid-js";
+import { createEffect, createSignal, Switch, Match, onMount, on } from "solid-js";
 import ConnectWallet from "../components/top-nav/ConnectWallet";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import AddMultisigButton from "../components/left-side/AddMultisigButton";
+import { ModalInterface, initModals, Modal } from "flowbite";
+import { MULTISIG_LIST_MODAL_ID } from "../components/left-side/MultisigList";
 
 const Welcome = () => {
+  let modal: ModalInterface;
+  const $modalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
+
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const loc = useLocation();
@@ -13,6 +18,12 @@ const Welcome = () => {
   const [isLoggedIn, setIsLoggedIn] = createSignal(false);
   const [hasMultisigs, setHasMultisigs] = createSignal(false);
   const [isMultisigId, setIsMultisigId] = createSignal(false);
+
+  onMount(() => {
+    initModals();
+    const instance = $modalElement();
+    modal = new Modal(instance);
+  });
 
   createEffect(() => {
     setIsLoggedIn(!!selectedAccountContext.state.account?.address);
@@ -27,14 +38,20 @@ const Welcome = () => {
     setIsMultisigId(idOrAddress !== 'undefined');
   });
 
+  createEffect(on(hasMultisigs, () => {
+    if (modal && modal?.show) {
+      modal.show();
+    }
+  }));
+
   return (
     <Switch>
-      <Match when={hasMultisigs()}>
+      {/* <Match when={hasMultisigs()}>
         <div class="text-xs mx-auto text-center">
           <h2 class="text-lg font-bold">Welcome back.</h2>
           <p class="mt-1">Select a multisig to get started.</p>
         </div>
-      </Match>
+      </Match> */}
       <Match when={isLoggedIn() && !hasMultisigs() && !isMultisigId()}>
         <div class="text-xs mx-auto text-center">
           <h2 class="text-lg font-bold">Welcome aboard.</h2>

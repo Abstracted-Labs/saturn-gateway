@@ -7,6 +7,7 @@ import CryptoAccounts from "../modals/CryptoAccounts";
 import ProposeModal from "../modals/ProposeModal";
 import { Portal } from "solid-js/web";
 import CreateMultisig from "../modals/CreateMultisig";
+import MultisigListModal from "../modals/MultisigListModal";
 
 const Layout = ({ children }: { children: any; }) => {
   const loc = useLocation();
@@ -26,8 +27,11 @@ const Layout = ({ children }: { children: any; }) => {
     <Portal mount={document.getElementById('proposeWindow') || undefined}>
       <ProposeModal />
     </Portal>
-    <Portal mount={document.getElementById('multisigWindow') || undefined}>
+    <Portal mount={document.getElementById('createMultisigWindow') || undefined}>
       <CreateMultisig />
+    </Portal>
+    <Portal mount={document.getElementById('multisigListWindow') || undefined}>
+      <MultisigListModal />
     </Portal>
 
     {/* Top nav */}

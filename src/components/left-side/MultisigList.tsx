@@ -13,6 +13,8 @@ import PageLinks from './PageLinks';
 import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 import LoaderAnimation from '../legos/LoaderAnimation';
 
+export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
+
 const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
 function capitalizeFirstName(name: string): string {
@@ -26,7 +28,11 @@ function capitalizeFirstName(name: string): string {
   return capitalizedWords.join(" ");
 }
 
-const MultisigList = () => {
+interface MultisigListProps {
+  isInModal?: boolean;
+}
+
+const MultisigList = (props: MultisigListProps) => {
   let scrollContainerRef: HTMLDivElement | null = null;
   const theme = useThemeContext();
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
@@ -47,6 +53,7 @@ const MultisigList = () => {
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
+  const isInModal = createMemo(() => props.isInModal);
 
   function handleClick(index: number) {
     const sat = saturnContext.state.saturn;
@@ -263,11 +270,11 @@ const MultisigList = () => {
 
   return (
     <>
-      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Multisigs</h5>
+      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Multisigs' : 'Select a Saturn Multisig below:'}</h5>
       <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-44' : 'h-80' } relative mb-6`}>
         <div
           ref={scrollContainerRef!}
-          class={`h-auto overflow-y-auto saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
+          class={`h-auto overflow-y-auto overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
           {/* <div class="w-62 absolute bottom-0 inset-0 pointer-events-none">
             <div class="h-full bg-gradient-to-b from-transparent to-saturn-offwhite dark:to-saturn-black"></div>
@@ -304,7 +311,7 @@ const MultisigList = () => {
                   <>
                     <div
                       onClick={() => handleClick(index())}
-                      class={`relative p-4 mr-4 rounded-lg flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
+                      class={`relative p-4 mr-4 rounded-lg w-full flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
                       data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
                       aria-controls={mutateButton() ? 'leftSidebar' : undefined}
                     >
@@ -316,7 +323,7 @@ const MultisigList = () => {
                       <div class="grid grid-rows-2 ml-3">
                         <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
                         <Show when={item.address}>
-                          <CopyAddress address={item.address} length={4} />
+                          <CopyAddress address={item.address} length={4} isInModal={isInModal()} />
                         </Show>
                       </div>
                       {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
