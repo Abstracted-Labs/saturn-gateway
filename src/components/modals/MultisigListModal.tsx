@@ -1,6 +1,7 @@
 import { ModalInterface, initModals, Modal } from "flowbite";
 import { onMount } from "solid-js";
 import MultisigList, { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
+import AddMultisigButton from "../left-side/AddMultisigButton";
 
 const MultisigListModal = () => {
   let modal: ModalInterface;
@@ -36,6 +37,8 @@ const MultisigListModal = () => {
           </div>
           <div class="flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
             <MultisigList isInModal={true} />
+            <p class="py-4 text-center text-xs">OR</p>
+            <AddMultisigButton />
           </div>
         </div>
       </div>

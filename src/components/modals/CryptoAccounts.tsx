@@ -17,14 +17,19 @@ import { Account, WalletType } from "@polkadot-onboard/core";
 import { BaseWallet, WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
 import { WalletNameEnum } from "../../utils/consts";
 import { pages } from "../../pages/pages";
+import { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
+  let multisigModal: ModalInterface;
   const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
+  const $multisigModalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
   const [availableAccounts, setAvailableAccounts] = createSignal<Account[] & { title?: string; }>([]);
+  const [isLoggedIn, setIsLoggedIn] = createSignal(false);
+  const [hasMultisigs, setHasMultisigs] = createSignal(false);
 
   const saContext = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
@@ -172,6 +177,17 @@ const CryptoAccounts = () => {
     initModals();
     const instance = $modalElement();
     modal = new Modal(instance);
+
+    const multisigInstance = $multisigModalElement();
+    multisigModal = new Modal(multisigInstance);
+  });
+
+  createEffect(() => {
+    setIsLoggedIn(!!saContext.state.account?.address);
+  });
+
+  createEffect(() => {
+    setHasMultisigs(!!(saturnContext.state.multisigItems && saturnContext.state.multisigItems.length > 0));
   });
 
   createEffect(() => {
@@ -231,6 +247,12 @@ const CryptoAccounts = () => {
         setAvailableAccounts(updatedAccounts);
       }
     });
+  }));
+
+  createEffect(on([hasMultisigs, isLoggedIn], () => {
+    if (!hasMultisigs() && !isLoggedIn && multisigModal && multisigModal?.show) {
+      multisigModal.show();
+    }
   }));
 
   return (

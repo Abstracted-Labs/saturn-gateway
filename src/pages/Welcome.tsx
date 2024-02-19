@@ -38,8 +38,10 @@ const Welcome = () => {
     setIsMultisigId(idOrAddress !== 'undefined');
   });
 
-  createEffect(on(hasMultisigs, () => {
+  createEffect(on(() => hasMultisigs, () => {
+    console.log('hasMultisigs', hasMultisigs());
     if (modal && modal?.show) {
+      console.log('showing modal');
       modal.show();
     }
   }));
