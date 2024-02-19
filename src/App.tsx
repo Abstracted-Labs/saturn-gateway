@@ -316,7 +316,6 @@ const HomePlanet: Component = () => {
     <Layout>
       <Routes>
         <Route path="/" component={Home} />
-        {/* <Route path="/create" component={Create} /> */}
         <Route path='/:idOrAddress/*' component={MainContainer} />
         <Route path='/*' component={NotFound} />
       </Routes>

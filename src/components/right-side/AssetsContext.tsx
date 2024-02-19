@@ -16,6 +16,7 @@ import { Balances, getBalancesFromAllNetworks } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
 import { getCurrentUsdPrice } from "../../utils/getCurrentUsdPrice";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import { useLocation } from "@solidjs/router";
 
 const AssetsContext = () => {
   let dropdownFrom: DropdownInterface;
@@ -41,6 +42,7 @@ const AssetsContext = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
+  const loc = useLocation();
 
   const FROM_TOGGLE_ID = 'networkToggleFrom';
   const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -109,6 +111,11 @@ const AssetsContext = () => {
     return networks;
   });
   const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
+  const hasMultisigs = createMemo(() => saturnContext.state.multisigItems ? saturnContext.state.multisigItems.length > 0 : false);
+  const isMultisigId = createMemo(() => {
+    const idOrAddress = loc.pathname.split('/')[1];
+    return idOrAddress !== 'undefined';
+  });
 
   function filteredAssetCount() {
     const pair = finalNetworkPair();
@@ -588,7 +595,7 @@ const AssetsContext = () => {
         </div>
       </div>
 
-      <button type="button" class="mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800" disabled={!isLoggedIn()} onClick={proposeTransfer}>Perform Transaction</button>
+      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId()} onClick={proposeTransfer}>Perform Transaction</button>
     </div>;
   };
 

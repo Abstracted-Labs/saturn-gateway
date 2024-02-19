@@ -55,9 +55,9 @@ const AddMultisigButton = () => {
   };
 
   return <AddButton>
-    <button id="addMultisigButton" type="button" onClick={openModal} data-modal-target={MULTISIG_MODAL_ID} data-modal-show={MULTISIG_MODAL_ID} data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined} aria-controls={mutateButton() ? 'leftSidebar' : undefined} class="bg-saturn-purple hover:bg-purple-800 text-xs p-5 mb-5 w-full rounded-md flex justify-center items-center focus:outline-purple-500 disabled:opacity-25" disabled={!isLoggedIn()}>
+    <button id="addMultisigButton" type="button" onClick={openModal} data-modal-target={MULTISIG_MODAL_ID} data-modal-show={MULTISIG_MODAL_ID} data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined} aria-controls={mutateButton() ? 'leftSidebar' : undefined} class="bg-saturn-purple hover:bg-purple-800 text-xs p-5 mb-5 w-full rounded-md flex justify-center items-center focus:outline-purple-500 disabled:opacity-25 disabled:cursor-not-allowed" disabled={!isLoggedIn()}>
       <img src={AddMultisigIcon} alt="add-multisig-icon" width={12} height={12} class="mr-2" />
-      <span>Add Multisig</span>
+      <span>Create New Multisig</span>
     </button>
   </AddButton>;
 };

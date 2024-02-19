@@ -210,7 +210,7 @@ const MultisigList = () => {
         saturnContext.setters.setMultisigItems([]);
 
         // Redirect to the create multisig page
-        navigate('/create', { replace: true });
+        // navigate('/assets', { replace: true });
       }
 
       delayUnload();
