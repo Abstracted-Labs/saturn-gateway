@@ -270,7 +270,7 @@ const MultisigList = (props: MultisigListProps) => {
 
   return (
     <>
-      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Multisigs' : 'Select a Saturn Multisig below:'}</h5>
+      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Saturn Accounts' : 'Select a Saturn Account below:'}</h5>
       <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-44' : 'h-80' } relative mb-6`}>
         <div
           ref={scrollContainerRef!}
@@ -303,7 +303,7 @@ const MultisigList = (props: MultisigListProps) => {
 
           {/* Multisig list */}
           <Switch fallback={<div>
-            {loading() ? <LoaderAnimation text="Loading multisigs..." /> : <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
+            {loading() ? <LoaderAnimation text="Loading Saturn accounts..." /> : <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
           </div>}>
             <Match when={multisigItems() && multisigItems().length > 0}>
               <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>
