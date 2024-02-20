@@ -11,9 +11,9 @@ const LeftContent = (props: { inDrawer: boolean; }) => {
     <Show when={props.inDrawer}>
       <span id="inDrawer" />
     </Show>
-    <MultisigList />
+    <MultisigList isInModal={false} />
     <PageLinks />
-    <AddMultisigButton />
+    <AddMultisigButton isInModal={false} />
     <ExternalLinks />
     <ColorSwitch />
   </div >;

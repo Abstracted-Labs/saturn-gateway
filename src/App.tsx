@@ -23,6 +23,7 @@ import { WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
 import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WalletAggregator, InjectedWalletProvider, toWalletAccount, WcAccount } from './lnm/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
+import { MultisigListModalProvider } from './providers/multisigListModalProvider';
 
 const Create = lazy(async () => import('./pages/Create'));
 
@@ -331,7 +332,9 @@ const App = () => (
           <SelectedAccountProvider>
             <IdentityProvider>
               <ThemeProvider>
-                <HomePlanet />
+                <MultisigListModalProvider>
+                  <HomePlanet />
+                </MultisigListModalProvider>
               </ThemeProvider>
             </IdentityProvider>
           </SelectedAccountProvider>

@@ -1,16 +1,13 @@
-import { createEffect, createSignal, Switch, Match, onMount, on } from "solid-js";
+import { createEffect, createSignal, Switch, Match, onMount, on, onCleanup, createMemo } from "solid-js";
 import ConnectWallet from "../components/top-nav/ConnectWallet";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import AddMultisigButton from "../components/left-side/AddMultisigButton";
-import { ModalInterface, initModals, Modal } from "flowbite";
-import { MULTISIG_LIST_MODAL_ID } from "../components/left-side/MultisigList";
+import { useMultisigListModal } from "../providers/multisigListModalProvider";
 
 const Welcome = () => {
-  let modal: ModalInterface;
-  const $modalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
-
+  const modal = useMultisigListModal();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const loc = useLocation();
@@ -19,18 +16,24 @@ const Welcome = () => {
   const [hasMultisigs, setHasMultisigs] = createSignal(false);
   const [isMultisigId, setIsMultisigId] = createSignal(false);
 
-  onMount(() => {
-    initModals();
-    const instance = $modalElement();
-    modal = new Modal(instance);
-  });
-
   createEffect(() => {
     setIsLoggedIn(!!selectedAccountContext.state.account?.address);
   });
 
   createEffect(() => {
-    setHasMultisigs(!!(saturnContext.state.multisigItems && saturnContext.state.multisigItems.length > 0));
+    async function checkMultisigsExist() {
+      const sat = saturnContext.state.saturn;
+      const address = selectedAccountContext.state.account?.address;
+
+      if (!sat || !address) {
+        return;
+      }
+
+      const multisigs = await sat.getMultisigsForAccount(address);
+      setHasMultisigs(multisigs.length > 0);
+    }
+
+    checkMultisigsExist();
   });
 
   createEffect(() => {
@@ -38,13 +41,11 @@ const Welcome = () => {
     setIsMultisigId(idOrAddress !== 'undefined');
   });
 
-  createEffect(on(() => hasMultisigs, () => {
-    console.log('hasMultisigs', hasMultisigs());
-    if (modal && modal?.show) {
-      console.log('showing modal');
-      modal.show();
+  createEffect(() => {
+    if (isLoggedIn() && !hasMultisigs() && modal) {
+      modal.showModal();
     }
-  }));
+  });
 
   return (
     <Switch>
@@ -58,7 +59,7 @@ const Welcome = () => {
         <div class="text-xs mx-auto text-center">
           <h2 class="text-lg font-bold">Welcome aboard.</h2>
           <p class="mt-1 mb-2">You will first need to create a new multisig to get started.</p>
-          <AddMultisigButton />
+          <AddMultisigButton isInModal={false} />
         </div>
       </Match>
       <Match when={!isLoggedIn()}>

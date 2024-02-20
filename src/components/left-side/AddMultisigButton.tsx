@@ -4,16 +4,23 @@ import { createEffect, createMemo, createSignal, onMount } from 'solid-js';
 import { useSaturnContext } from '../../providers/saturnProvider';
 import { ModalInterface, initModals, Modal, ModalOptions } from 'flowbite';
 import { useSelectedAccountContext } from '../../providers/selectedAccountProvider';
+import { useMultisigListModal } from '../../providers/multisigListModalProvider';
 
 export const MULTISIG_MODAL_ID = 'multisigModal';
 
-const AddMultisigButton = () => {
+interface AddMultisigButtonProps {
+  isInModal?: boolean;
+}
+
+const AddMultisigButton = (props: AddMultisigButtonProps) => {
+  const multisigModal = useMultisigListModal();
   const [modal, setModal] = createSignal<ModalInterface | null>(null);
   const [mutateButton, setMutateButton] = createSignal(false);
 
   const saContext = useSelectedAccountContext();
 
   const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
+  const isInModal = createMemo(() => props.isInModal);
 
   function openModal() {
     if (modal() && modal()?.show) {
@@ -21,6 +28,10 @@ const AddMultisigButton = () => {
       if ($modalElement()) {
         modal()?.show();
       }
+    }
+
+    if (isInModal()) {
+      multisigModal.hideModal();
     }
   }
 

@@ -12,6 +12,7 @@ import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
 import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 import LoaderAnimation from '../legos/LoaderAnimation';
+import { useMultisigListModal } from '../../providers/multisigListModalProvider';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -44,6 +45,7 @@ const MultisigList = (props: MultisigListProps) => {
   const [loading, setLoading] = createSignal<boolean>(true);
   // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>;
 
+  const modal = useMultisigListModal();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
@@ -62,6 +64,10 @@ const MultisigList = (props: MultisigListProps) => {
     const multisig = multisigItems()[index];
     const selectedAddress = multisig.address;
     const id = multisig.id;
+
+    if (isInModal()) {
+      modal.hideModal();
+    }
 
     if (activeButton() === id) {
       return; // Do nothing if the clicked item is already active
@@ -95,10 +101,10 @@ const MultisigList = (props: MultisigListProps) => {
     // }
 
     // Close the left drawer
-    simulateButtonClick();
+    closeLeftDrawer();
   }
 
-  function simulateButtonClick() {
+  function closeLeftDrawer() {
     const button = document.querySelector('button[data-drawer-hide="leftSidebar"][aria-controls="leftSidebar"]');
     if (button instanceof HTMLButtonElement) {
       button.click();
@@ -150,7 +156,7 @@ const MultisigList = (props: MultisigListProps) => {
 
     async function load() {
       if (!sat || !address || !api) {
-        delayUnload();
+        // delayUnload();
         return;
       };
 
@@ -220,14 +226,14 @@ const MultisigList = (props: MultisigListProps) => {
         // navigate('/assets', { replace: true });
       }
 
-      delayUnload();
+      // delayUnload();
     }
 
     load();
 
-    onCleanup(() => {
-      clearTimeout(timeout);
-    });
+    // onCleanup(() => {
+    //   clearTimeout(timeout);
+    // });
   });
 
   createEffect(() => {
