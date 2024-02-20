@@ -5,6 +5,7 @@ import { useSelectedAccountContext } from "../providers/selectedAccountProvider"
 import { useLocation } from "@solidjs/router";
 import AddMultisigButton from "../components/left-side/AddMultisigButton";
 import { useMultisigListModal } from "../providers/multisigListModalProvider";
+import LoaderAnimation from "../components/legos/LoaderAnimation";
 
 const Welcome = () => {
   const modal = useMultisigListModal();
@@ -15,22 +16,32 @@ const Welcome = () => {
   const [isLoggedIn, setIsLoggedIn] = createSignal(false);
   const [hasMultisigs, setHasMultisigs] = createSignal(false);
   const [isMultisigId, setIsMultisigId] = createSignal(false);
+  const [isLoading, setIsLoading] = createSignal(true);
 
   createEffect(() => {
     setIsLoggedIn(!!selectedAccountContext.state.account?.address);
   });
 
   createEffect(() => {
+    setIsLoading(true);
     async function checkMultisigsExist() {
-      const sat = saturnContext.state.saturn;
-      const address = selectedAccountContext.state.account?.address;
+      try {
+        const sat = saturnContext.state.saturn;
+        const address = selectedAccountContext.state.account?.address;
 
-      if (!sat || !address) {
-        return;
+        if (!sat || !address) {
+          setIsLoading(false);
+          return;
+        }
+
+        const multisigs = await sat.getMultisigsForAccount(address);
+        setHasMultisigs(multisigs.length > 0);
+      } catch (error) {
+        console.log("No multisigs in existence:", error);
+        setHasMultisigs(false);
+      } finally {
+        setIsLoading(false);
       }
-
-      const multisigs = await sat.getMultisigsForAccount(address);
-      setHasMultisigs(multisigs.length > 0);
     }
 
     checkMultisigsExist();
@@ -38,24 +49,26 @@ const Welcome = () => {
 
   createEffect(() => {
     const idOrAddress = loc.pathname.split('/')[1];
-    setIsMultisigId(idOrAddress !== 'undefined');
+    const isDefined = idOrAddress !== 'undefined';
+    setIsMultisigId(isDefined);
   });
 
   createEffect(() => {
-    if (isLoggedIn() && hasMultisigs() && modal) {
+    if (!isLoading() && isLoggedIn() && hasMultisigs() && modal) {
       modal.showModal();
+    } else {
+      modal.hideModal();
     }
   });
 
   return (
     <Switch>
-      {/* <Match when={hasMultisigs()}>
-        <div class="text-xs mx-auto text-center">
-          <h2 class="text-lg font-bold">Welcome back.</h2>
-          <p class="mt-1">Select a multisig to get started.</p>
+      <Match when={isLoading()}>
+        <div class="flex justify-center items-center h-full">
+          <LoaderAnimation text="Loading..." />
         </div>
-      </Match> */}
-      <Match when={isLoggedIn() && !hasMultisigs() && !isMultisigId()}>
+      </Match>
+      <Match when={isLoggedIn() && !hasMultisigs()}>
         <div class="text-xs mx-auto text-center">
           <h2 class="text-lg font-bold">Welcome aboard.</h2>
           <p class="mt-1 mb-2">You will first need to create a new multisig to get started.</p>

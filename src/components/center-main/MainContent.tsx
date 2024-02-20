@@ -33,10 +33,11 @@ const MainContent = () => {
   }
 
   createEffect(() => {
-    const idOrAddress = loc.pathname.split('/')[1];
+    const hashId = loc.pathname.split('/')[1];
+    const page = loc.pathname.split('/')[2];
 
-    if (isLoggedIn() && !hasMultisigs() && !!idOrAddress) {
-      navigate(`/${ undefined }/${ loc.pathname.split('/')[2] }`, { replace: true });
+    if (isLoggedIn() && !hasMultisigs() && !!hashId) {
+      navigate(`/undefined/${ page }`, { replace: true });
     }
   });
 

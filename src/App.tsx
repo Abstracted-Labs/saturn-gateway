@@ -19,7 +19,7 @@ import { decodeAddress } from '@polkadot/util-crypto';
 import { Core } from '@walletconnect/core';
 import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wallet';
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
-import { WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
+import { MultisigItem, WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
 import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WalletAggregator, InjectedWalletProvider, toWalletAccount, WcAccount } from './lnm/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
@@ -52,6 +52,7 @@ export const walletAggregator = new WalletAggregator([
 
 const HomePlanet: Component = () => {
   const [wcOptions, setWcOptions] = createSignal<Web3WalletTypes.Options | undefined>(undefined);
+  const [hasMultisigs, setHasMultisigs] = createSignal(false);
 
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
@@ -295,23 +296,39 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(on([() => loc.pathname, getDefaultMultisigId], () => {
-    if (isLoggedIn()) {
-      const hash = loc.pathname.split('/')[1];
+  createEffect(() => {
+    async function checkMultisigsExist() {
+      const sat = saturnContext.state.saturn;
+      const address = selectedAccountContext.state.account?.address;
+
+      if (!sat || !address) {
+        return;
+      }
+
+      const multisigs = await sat.getMultisigsForAccount(address);
+      setHasMultisigs(multisigs.length > 0);
+    }
+
+    checkMultisigsExist();
+  });
+
+  createEffect(() => {
+    const loggedIn = isLoggedIn();
+    const hasItems = hasMultisigs();
+
+    if (loggedIn) {
       const page = loc.pathname.split('/')[2];
-      const multisigId = hash;
 
       if (page !== undefined && page !== '') {
-        if (multisigId !== 'undefined') { // undefined from url reads as string
-          navigate(`/${ multisigId }/${ page }`, { replace: true });
-          return;
-        } else {
-          navigate(`/${ getDefaultMultisigId() }/${ page }`, { replace: true });
+        if (!hasItems) {
+          navigate(`/undefined/${ page }`, { replace: true });
           return;
         }
+
+        navigate(`/${ getDefaultMultisigId() }/${ page }`, { replace: true });
       }
     }
-  }));
+  });
 
   return (
     <Layout>
