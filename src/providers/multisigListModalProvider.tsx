@@ -31,7 +31,6 @@ export function MultisigListModalProvider(props: { children: JSX.Element; }) {
   const showModal = () => {
     const instance = modalInstance();
     if (instance && instance !== null) {
-      console.log('showed modal');
       instance.show();
     }
     setState('isVisible', true);
@@ -40,7 +39,6 @@ export function MultisigListModalProvider(props: { children: JSX.Element; }) {
   const hideModal = () => {
     const instance = modalInstance();
     if (instance && instance !== null) {
-      console.log('hid modal');
       instance.hide();
     }
     setState('isVisible', false);
