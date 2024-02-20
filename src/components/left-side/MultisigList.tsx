@@ -226,7 +226,7 @@ const MultisigList = (props: MultisigListProps) => {
         // navigate('/assets', { replace: true });
       }
 
-      // delayUnload();
+      setLoading(false);
     }
 
     load();
@@ -309,7 +309,7 @@ const MultisigList = (props: MultisigListProps) => {
 
           {/* Multisig list */}
           <Switch fallback={<div>
-            {loading() ? <LoaderAnimation text="Loading Saturn accounts..." /> : <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
+            {loading() ? <LoaderAnimation text="Loading Saturn accounts..." /> : multisigItems().length === 0 && <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
           </div>}>
             <Match when={multisigItems() && multisigItems().length > 0}>
               <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>

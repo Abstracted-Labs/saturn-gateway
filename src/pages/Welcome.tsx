@@ -42,7 +42,7 @@ const Welcome = () => {
   });
 
   createEffect(() => {
-    if (isLoggedIn() && !hasMultisigs() && modal) {
+    if (isLoggedIn() && hasMultisigs() && modal) {
       modal.showModal();
     }
   });
