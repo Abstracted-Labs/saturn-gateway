@@ -2015,7 +2015,7 @@
   dependencies:
     tslib "1.14.1"
 
-"@walletconnect/sign-client@2.10.4":
+"@walletconnect/sign-client@2.10.4", "@walletconnect/sign-client@2.11.1":
   version "2.10.4"
   resolved "https://registry.yarnpkg.com/@walletconnect/sign-client/-/sign-client-2.10.4.tgz#4e3b14ebe900472874f4cae5f53c74a6077c85da"
   integrity sha512-C5VHkK59/DQNrJS91UXLn5OSr0drXHkKjajhl2a9hb3h6kxuSdlWbyC0yRPKT1sD0fQho8+EWZHBiV063yBePw==
@@ -2028,21 +2028,6 @@
     "@walletconnect/time" "^1.0.2"
     "@walletconnect/types" "2.10.4"
     "@walletconnect/utils" "2.10.4"
-    events "^3.3.0"
-
-"@walletconnect/sign-client@2.11.1":
-  version "2.11.1"
-  resolved "https://registry.yarnpkg.com/@walletconnect/sign-client/-/sign-client-2.11.1.tgz#c073b8d2d594e792bb783d36c8b021bd37a9d4f6"
-  integrity sha512-s3oKSx6/F5X2WmkV1jfJImBFACf9Km5HpTb+n5q+mobJVpUQw/clvoVyIrNNppLhm1V1S/ylHXh0qCrDppDpCA==
-  dependencies:
-    "@walletconnect/core" "2.11.1"
-    "@walletconnect/events" "^1.0.1"
-    "@walletconnect/heartbeat" "1.2.1"
-    "@walletconnect/jsonrpc-utils" "1.0.8"
-    "@walletconnect/logger" "^2.0.1"
-    "@walletconnect/time" "^1.0.2"
-    "@walletconnect/types" "2.11.1"
-    "@walletconnect/utils" "2.11.1"
     events "^3.3.0"
 
 "@walletconnect/time@^1.0.2":

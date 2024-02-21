@@ -5,7 +5,7 @@ import type { BaseWallet, WalletConnectConfiguration, WcAccount } from './types'
 import { WalletType } from '@polkadot-onboard/core';
 import SignClient from '@walletconnect/sign-client';
 import QRCodeModal from '@walletconnect/qrcode-modal';
-import { WalletConnectSigner } from './signer';
+import { WalletConnectSigner } from '@polkadot-onboard/wallet-connect/src/signer';
 import { ExtensionConfiguration, WalletExtension } from '@polkadot-onboard/injected-wallets';
 import type { Injected, InjectedWindow, InjectedAccount } from '@polkadot/extension-inject/types';
 import { WalletNameEnum } from '../../utils/consts';

@@ -70,7 +70,8 @@
   "resolutions": {
     "@polkadot/api": "^10.3.4",
     "@polkadot/types": "^10.11.2",
-    "@polkadot/extension-inject": "^0.46.5"
+    "@polkadot/extension-inject": "^0.46.5",
+    "@walletconnect/sign-client": "2.10.4"
   },
   "packageManager": "yarn@3.6.2"
 }

@@ -20,10 +20,17 @@ import { Core } from '@walletconnect/core';
 import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wallet';
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
 import { MultisigItem, WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
-import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WalletAggregator, InjectedWalletProvider, toWalletAccount, WcAccount } from './lnm/wallet-connect';
+import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount } from '@polkadot-onboard/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
 import { MultisigListModalProvider } from './providers/multisigListModalProvider';
+import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
+import { WalletAggregator } from '@polkadot-onboard/core';
+import { BaseWallet, toWalletAccount } from './lnm/wallet-connect';
+
+interface ExtendedWallet extends BaseWallet {
+  autoConnect: () => Promise<void>;
+}
 
 const Create = lazy(async () => import('./pages/Create'));
 
@@ -241,7 +248,8 @@ const HomePlanet: Component = () => {
       // Get all available accounts
       if (current && walletAggregator) {
         const { address, wallet } = current;
-        const matchedWallet = walletAggregator.getWallets().find((w) => {
+        const wallets = await walletAggregator.getWallets();
+        const matchedWallet = wallets.find((w) => {
           // Handle WalletConnect id differently
           if (wallet === WalletNameEnum.WALLETCONNECT) {
             return w.metadata.id === wallet;
@@ -272,9 +280,8 @@ const HomePlanet: Component = () => {
               const expireDate = new Date(lastKnownSession[1].expiry * 1000);
               const now = new Date();
               if (now < expireDate && lastKnownSession[1].acknowledged) {
-                // autoConnect to last known session on browser refresh
-                if (!matchedWallet.isConnected() && !!matchedWallet.autoConnect) {
-                  await matchedWallet.autoConnect();
+                if (!matchedWallet.isConnected() && 'autoConnect' in matchedWallet) {
+                  await (matchedWallet as ExtendedWallet).autoConnect();
                   console.log('autoConnected from lastSession');
                 }
               } else {

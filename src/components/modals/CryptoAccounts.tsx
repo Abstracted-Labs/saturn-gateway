@@ -194,7 +194,7 @@ const CryptoAccounts = () => {
     let timeout: any;
     timeout = setTimeout(async () => {
       if (walletAggregator) {
-        const allWallets = walletAggregator.getWallets();
+        const allWallets = await walletAggregator.getWallets();
         setAvailableWallets(allWallets as BaseWallet[]);
         getAllAccounts();
       }
