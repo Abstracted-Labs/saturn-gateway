@@ -19,14 +19,13 @@ import { decodeAddress } from '@polkadot/util-crypto';
 import { Core } from '@walletconnect/core';
 import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wallet';
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
-import { MultisigItem, WC_PROJECT_ID, WalletNameEnum } from './utils/consts';
-import { POLKADOT_CHAIN_ID, WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount } from '@polkadot-onboard/wallet-connect';
+import { WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
+import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount, POLKADOT_CHAIN_ID } from '@polkadot-onboard/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
 import { MultisigListModalProvider } from './providers/multisigListModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
-import { toWalletAccount } from './lnm/wallet-connect';
 
 interface ExtendedWallet extends BaseWallet {
   autoConnect: () => Promise<void>;
@@ -50,7 +49,6 @@ const walletConnectParams: WalletConnectConfiguration = {
     ],
   },
   chainIds: [CHAIN_IDS],
-  optionalChainIds: [],
   onSessionDelete: () => {
     console.log('session deleted');
   },
@@ -113,9 +111,9 @@ const HomePlanet: Component = () => {
         id: proposal.id,
         namespaces: {
           polkadot: {
-            accounts: [`${ POLKADOT_CHAIN_ID }:${ address }`],
+            accounts: [`${ CHAIN_IDS }:${ address }`],
             methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
-            chains: [POLKADOT_CHAIN_ID],
+            chains: [CHAIN_IDS],
             events: [],
           },
         },
@@ -287,6 +285,8 @@ const HomePlanet: Component = () => {
                 if (!matchedWallet.isConnected() && 'autoConnect' in matchedWallet) {
                   await (matchedWallet as ExtendedWallet).autoConnect();
                   console.log('autoConnected from lastSession');
+                } else {
+                  console.log('autoConnect does not exist');
                 }
               } else {
                 matchedWallet.disconnect();

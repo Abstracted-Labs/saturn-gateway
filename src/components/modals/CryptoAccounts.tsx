@@ -14,8 +14,7 @@ import { useSaturnContext } from "../../providers/saturnProvider";
 import { useWalletConnectContext } from "../../providers/walletConnectProvider";
 import { walletAggregator } from "../../App";
 import { Account, WalletType, BaseWallet } from "@polkadot-onboard/core";
-import { WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
-import { WalletNameEnum } from "../../utils/consts";
+import { WalletNameEnum, WcAccount, toWalletAccount } from "../../utils/consts";
 import { pages } from "../../pages/pages";
 import { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
 
