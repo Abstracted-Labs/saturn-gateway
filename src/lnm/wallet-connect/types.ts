@@ -1,5 +1,5 @@
 import { WalletMetadata, WalletType, Account } from '@polkadot-onboard/core';
-import { Signer } from '@polkadot/types/types';
+import type { Signer } from '@polkadot/types/types';
 import { SignClientTypes } from '@walletconnect/types';
 
 export interface BaseWallet {

@@ -1,8 +1,7 @@
 import { batch, createContext, createMemo, useContext } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { StorageObject, createLocalStorage } from "@solid-primitives/storage";
-import { Account } from "@polkadot-onboard/core";
-import { BaseWallet } from "../lnm/wallet-connect";
+import { Account, BaseWallet } from "@polkadot-onboard/core";
 import { WalletNameEnum } from "../utils/consts";
 
 export const SelectedAccountContext = createContext<{

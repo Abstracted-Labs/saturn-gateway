@@ -73,6 +73,7 @@ export class WalletConnectWallet implements BaseWallet {
           events: [],
         },
       },
+      optionalNamespaces: {},
     };
 
     const { uri, approval } = await client.connect(params);

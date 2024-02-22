@@ -25,8 +25,8 @@ import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
 import { MultisigListModalProvider } from './providers/multisigListModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
-import { WalletAggregator } from '@polkadot-onboard/core';
-import { BaseWallet, toWalletAccount } from './lnm/wallet-connect';
+import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
+import { toWalletAccount } from './lnm/wallet-connect';
 
 interface ExtendedWallet extends BaseWallet {
   autoConnect: () => Promise<void>;
@@ -50,6 +50,10 @@ const walletConnectParams: WalletConnectConfiguration = {
     ],
   },
   chainIds: [CHAIN_IDS],
+  optionalChainIds: [],
+  onSessionDelete: () => {
+    console.log('session deleted');
+  },
 };
 
 const wcProvider = new WcProvider(walletConnectParams, "Saturn Gateway");

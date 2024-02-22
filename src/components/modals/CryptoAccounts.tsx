@@ -13,8 +13,8 @@ import type { ModalInterface } from 'flowbite';
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useWalletConnectContext } from "../../providers/walletConnectProvider";
 import { walletAggregator } from "../../App";
-import { Account, WalletType } from "@polkadot-onboard/core";
-import { BaseWallet, WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
+import { Account, WalletType, BaseWallet } from "@polkadot-onboard/core";
+import { WcAccount, toWalletAccount } from "../../lnm/wallet-connect";
 import { WalletNameEnum } from "../../utils/consts";
 import { pages } from "../../pages/pages";
 import { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
@@ -64,11 +64,12 @@ const CryptoAccounts = () => {
             console.error('connect error: ', error);
             continue;
           }
-        } else {
-          if (!!wallet && wallet.autoConnect) {
-            await wallet.autoConnect();
-          }
         }
+        // else {
+        //   if (!!wallet && wallet.autoConnect) {
+        //     await wallet.autoConnect();
+        //   }
+        // }
 
         try {
           // Include the wallet title and name in Account object to display in UI
@@ -130,7 +131,7 @@ const CryptoAccounts = () => {
       if (!wcWallet) {
         throw new Error("WalletConnect wallet not found");
       }
-
+      console.log('connecting to WalletConnect: ', wcWallet);
       await wcWallet.connect();
 
       const accounts = await wcWallet.getAccounts();
