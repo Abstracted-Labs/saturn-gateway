@@ -36,7 +36,7 @@ const MainContent = () => {
     const hashId = loc.pathname.split('/')[1];
     const page = loc.pathname.split('/')[2];
 
-    if (isLoggedIn() && !hasMultisigs() && !!hashId) {
+    if (isLoggedIn() && !hasMultisigs()) {
       navigate(`/undefined/${ page }`, { replace: true });
     }
   });
