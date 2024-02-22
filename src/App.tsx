@@ -34,6 +34,8 @@ interface ExtendedWallet extends BaseWallet {
 const Create = lazy(async () => import('./pages/Create'));
 
 export const KUSAMA_CHAIN_ID = "polkadot:d42e9606a995dfe433dc7955dc2a70f4";
+const BASILISK_CHAIN_ID = "polkadot:a85cfb9b9fd4d622a5b28289a02347af";
+const PICASSO_CHAIN_ID = "polkadot:6811a339673c9daa897944dcdac99c6e";
 
 const injectedWalletProvider = new InjectedWalletProvider({}, 'Saturn Gateway');
 
@@ -49,7 +51,7 @@ const walletConnectParams: WalletConnectConfiguration = {
     ],
   },
   chainIds: [KUSAMA_CHAIN_ID],
-  optionalChainIds: ['polkadot:a85cfb9b9fd4d622a5b28289a02347af', 'polkadot:6811a339673c9daa897944dcdac99c6e'],
+  optionalChainIds: [BASILISK_CHAIN_ID, PICASSO_CHAIN_ID],
   onSessionDelete: () => {
     console.log('session deleted');
   },
