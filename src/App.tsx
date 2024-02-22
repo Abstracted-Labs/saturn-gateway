@@ -331,9 +331,14 @@ const HomePlanet: Component = () => {
     const hasItems = hasMultisigs();
 
     if (loggedIn) {
+      const hashId = loc.pathname.split('/')[1];
       const page = loc.pathname.split('/')[2];
 
       if (page !== undefined && page !== '') {
+        if (!Number.isNaN(Number(hashId))) {
+          return;
+        }
+
         if (!hasItems) {
           navigate(`/undefined/${ page }`, { replace: true });
           return;
