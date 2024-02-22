@@ -33,7 +33,7 @@ interface ExtendedWallet extends BaseWallet {
 
 const Create = lazy(async () => import('./pages/Create'));
 
-export const CHAIN_IDS = "polkadot:d42e9606a995dfe433dc7955dc2a70f4";
+export const KUSAMA_CHAIN_ID = "polkadot:d42e9606a995dfe433dc7955dc2a70f4";
 
 const injectedWalletProvider = new InjectedWalletProvider({}, 'Saturn Gateway');
 
@@ -48,7 +48,8 @@ const walletConnectParams: WalletConnectConfiguration = {
       'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
     ],
   },
-  chainIds: [CHAIN_IDS],
+  chainIds: [KUSAMA_CHAIN_ID],
+  optionalChainIds: ['polkadot:a85cfb9b9fd4d622a5b28289a02347af', 'polkadot:6811a339673c9daa897944dcdac99c6e'],
   onSessionDelete: () => {
     console.log('session deleted');
   },
@@ -111,9 +112,9 @@ const HomePlanet: Component = () => {
         id: proposal.id,
         namespaces: {
           polkadot: {
-            accounts: [`${ CHAIN_IDS }:${ address }`],
+            accounts: [`${ KUSAMA_CHAIN_ID }:${ address }`],
             methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
-            chains: [CHAIN_IDS],
+            chains: [KUSAMA_CHAIN_ID],
             events: [],
           },
         },

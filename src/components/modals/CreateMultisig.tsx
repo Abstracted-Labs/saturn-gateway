@@ -138,7 +138,9 @@ const CreateMultisig = () => {
 
     console.log(name, multisigParty, minimumSupport, requiredApproval, wallet.signer);
 
-    if (!name || !wallet.signer) return;
+    if (!name || !wallet.signer || Object.keys(wallet.signer).length === 0) {
+      throw new Error('Wallet name or signer is missing!');
+    };
 
     let ms = parseFloat(minimumSupport);
     let ra = parseFloat(requiredApproval);

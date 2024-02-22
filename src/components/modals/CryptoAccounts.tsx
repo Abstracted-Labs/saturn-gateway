@@ -131,26 +131,29 @@ const CryptoAccounts = () => {
         throw new Error("WalletConnect wallet not found");
       }
       console.log('connecting to WalletConnect: ', wcWallet);
-      await wcWallet.connect();
 
-      const accounts = await wcWallet.getAccounts();
-      const selectedAccount = accounts?.[0];
-      const selectedWcId = selectedAccount?.address;
-      if (!selectedWcId) {
-        throw new Error("No WalletConnect account selected");
+      if (!!wcWallet) {
+        await wcWallet.connect();
+
+        const accounts = await wcWallet.getAccounts();
+        const selectedAccount = accounts?.[0];
+        const selectedWcId = selectedAccount?.address;
+        if (!selectedWcId) {
+          throw new Error("No WalletConnect account selected");
+        }
+
+        // Finesse selectedAccount to have BaseWallet properties
+        (selectedAccount as any).title = WalletNameEnum.WALLETCONNECT;
+        (selectedAccount as any).type = "sr25519";
+        (selectedAccount as any).name = wcWallet?.metadata.title;
+
+        // Store WalletConnect session in saturn context
+        await saContext.setters.setSelected(selectedAccount, wcWallet);
+
+        // Also add WalletConnect account to availableAccounts
+        setAvailableAccounts([...availableAccounts(), selectedAccount]);
+        console.log('added WalletConnect to availableAccounts: ', availableAccounts());
       }
-
-      // Finesse selectedAccount to have BaseWallet properties
-      (selectedAccount as any).title = WalletNameEnum.WALLETCONNECT;
-      (selectedAccount as any).type = "sr25519";
-      (selectedAccount as any).name = wcWallet?.metadata.title;
-
-      // Store WalletConnect session in saturn context
-      await saContext.setters.setSelected(selectedAccount, wcWallet);
-
-      // Also add WalletConnect account to availableAccounts
-      setAvailableAccounts([...availableAccounts(), selectedAccount]);
-      console.log('added WalletConnect to availableAccounts: ', availableAccounts());
     } catch (error) {
       console.error('Error connecting to WalletConnect:', (error as any).message);
     } finally {
