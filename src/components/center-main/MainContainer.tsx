@@ -6,6 +6,7 @@ import { useSaturnContext } from "../../providers/saturnProvider";
 import { setSaturnConnectAccount } from "../../utils/setupSaturnConnect";
 import defaultMultisigImage from '../../assets/images/default-multisig-image.png';
 import MainContent from "./MainContent";
+import { Option } from '@polkadot/types';
 
 const MainContainer = () => {
   const [multisigIdentity, setMultisigIdentity] = createSignal<{
@@ -80,15 +81,15 @@ const MainContainer = () => {
 
       if (isAddress(multisigHashId)) {
         const result = await tinkernetApi.query.inv4.coreByAccount(multisigHashId);
-        if (!result) {
-          // console.error('Result is null or undefined for address:', multisigHashId);
-          return;
-        }
-
-        id = result.unwrapOr(null)?.toNumber();
-        // Ensure id is within the safe range
-        if (id && id > Number.MAX_SAFE_INTEGER) {
-          // console.error('ID exceeds safe integer range for address:', multisigHashId);
+        if (result instanceof Option && result.isSome) {
+          id = result.unwrap().toNumber();
+          // Ensure id is within the safe range
+          if (id > Number.MAX_SAFE_INTEGER) {
+            // Handle the case where id exceeds the safe integer range
+            return;
+          }
+        } else {
+          // Handle the case where result is null or undefined
           return;
         }
       } else {

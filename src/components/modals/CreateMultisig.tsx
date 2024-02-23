@@ -1,7 +1,6 @@
 import { For, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, on, onMount } from "solid-js";
 import SaturnCrumb from "../legos/SaturnCrumb";
 import { BN, formatBalance, stringShorten } from "@polkadot/util";
-import { FeeAsset } from "@invarch/saturn-sdk";
 import { useNavigate } from "@solidjs/router";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
@@ -30,6 +29,7 @@ import { Call } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import BigNumber from "bignumber.js";
 import { formatAsset } from "../../utils/formatAsset";
+import { FeeAsset } from "@invarch/saturn-sdk";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 

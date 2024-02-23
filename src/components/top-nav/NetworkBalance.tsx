@@ -27,7 +27,7 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
     try {
       if (!rings.state.tinkernet || !props.address) return;
 
-      await rings.state.tinkernet.query.system.account(props.address, (account: any) => {
+      await rings.state.tinkernet.query.system.account(props.address, (account) => {
         const balance = account.toPrimitive() as BalancePrimitiveType;
         const total = new BigNumber(balance.data.free.toString());
         const frozen = new BigNumber(balance.data.frozen.toString());
@@ -46,8 +46,8 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
     try {
       if (!rings.state.tinkernet || !props.address) return;
 
-      const ksm: AssetReturnType = await rings.state.tinkernet.query.tokens.accounts(props.address, 1);
-      const { free: total, reserved, frozen } = ksm;
+      const accountInfo = await rings.state.tinkernet.query.tokens.accounts(props.address, 1);
+      const { free: total, reserved, frozen } = accountInfo.toHuman() as unknown as AssetReturnType;
       const formatTotal = new BigNumber(total.toString());
       const formatFrozen = new BigNumber(frozen.toString());
       const formatReserve = new BigNumber(reserved.toString());
