@@ -26,6 +26,9 @@ import ConnectWallet from "../top-nav/ConnectWallet";
 import { MULTISIG_MODAL_ID } from "../left-side/AddMultisigButton";
 import { initModals, Modal, ModalInterface } from "flowbite";
 import { web3Enable, web3FromAddress } from "@polkadot/extension-dapp";
+import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
+import { Call } from "@polkadot/types/interfaces";
+import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -181,15 +184,15 @@ const CreateMultisig = () => {
       tinkernetApi.tx.balances.transferKeepAlive(multisigAddress, new BN("7000000000000")),
       saturn.buildMultisigCall({
         id: multisigId,
-        call: tinkernetApi.tx.utility.batchAll(innerCalls),
-      }).call
+        call: tinkernetApi.tx.utility.batchAll(innerCalls) as unknown as SubmittableExtrinsic<ApiTypes, ISubmittableResult>,
+      }).call as Uint8Array | Call | SubmittableExtrinsic<ApiTypes, ISubmittableResult>
     ];
 
     try {
-      tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, ({ status }) => {
+      tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
 
-        if (status.isFinalized || status.isInBlock) {
+        if (result.status.isFinalized || result.status.isInBlock) {
           navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
 
           setTimeout(() => {
