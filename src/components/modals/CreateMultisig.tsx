@@ -25,6 +25,7 @@ import LoaderAnimation from "../legos/LoaderAnimation";
 import ConnectWallet from "../top-nav/ConnectWallet";
 import { MULTISIG_MODAL_ID } from "../left-side/AddMultisigButton";
 import { initModals, Modal, ModalInterface } from "flowbite";
+import { web3Enable, web3FromAddress } from "@polkadot/extension-dapp";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -122,8 +123,8 @@ const CreateMultisig = () => {
     // create multisig
     setFinishing(true);
 
-    const wallet = selectedState().wallet;
     const account = selectedState().account;
+    const wallet = selectedState().wallet;
     const saturn = saturnContext.state.saturn;
     const tinkernetApi = ringApisContext.state.tinkernet;
 
@@ -131,15 +132,18 @@ const CreateMultisig = () => {
 
     wallet.connect();
 
+    await web3Enable('Saturn Gateway');
+    const injector = await web3FromAddress(account.address);
+    console.log('injector: ', injector, wallet);
     const name = multisigName();
     const requiredApproval = requiredApprovalField();
     const minimumSupport = minimumSupportField();
     const multisigParty = members();
 
-    console.log(name, multisigParty, minimumSupport, requiredApproval, wallet.signer);
+    console.log(name, multisigParty, minimumSupport, requiredApproval, injector.signer);
 
-    if (!name || !wallet.signer || Object.keys(wallet.signer).length === 0) {
-      throw new Error('Wallet name or signer is missing!');
+    if (!name) {
+      return;
     };
 
     let ms = parseFloat(minimumSupport);
@@ -154,7 +158,7 @@ const CreateMultisig = () => {
       minimumSupport: new BN(ms),
       requiredApproval: new BN(ra),
       creationFeeAsset: FeeAsset.TNKR
-    }).signAndSend(account.address, wallet.signer);
+    }).signAndSend(account.address, injector.signer);
 
     console.log("createMultisigResult: ", createMultisigResult);
 
