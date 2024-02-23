@@ -172,7 +172,7 @@ const MultisigList = (props: MultisigListProps) => {
           blake2AsU8a(
             api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
           ), 117);
-        iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+        iden = await api.query.identity.identityOf(address).then((i: { toHuman: () => { info?: { display?: { Raw: string; }; image?: { Raw: string; }; }; }; }) => (i.toHuman() as {
           info: {
             display: { Raw: string; };
             image: { Raw: string; };
