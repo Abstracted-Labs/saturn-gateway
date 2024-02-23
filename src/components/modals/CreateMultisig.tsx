@@ -58,15 +58,9 @@ const CreateMultisig = () => {
   const [hasAddressError, setHasAddressError] = createSignal<number[]>([]);
   const [finishing, setFinishing] = createSignal<boolean>(false);
   const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
-  const [coreCreationFee, setCoreCreationFee] = createSignal<string>('100');
-  const [tnkrBalance, setTnkrBalance] = createSignal<string>('0');
+  const [coreCreationFee, setCoreCreationFee] = createSignal<string>("100");
+  const [tnkrBalance, setTnkrBalance] = createSignal<string>("0");
 
-  const notEnoughBalance = createMemo(() => {
-    const balance = parseFloat(tnkrBalance());
-    const fee = parseFloat(coreCreationFee());
-    console.debug("[CreateMultisig] Checking balance:", balance, "against fee:", fee);
-    return tnkrBalance() && balance < fee;
-  });
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const selectedState = createMemo(() => selectedAccountContext.state);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
@@ -129,6 +123,13 @@ const CreateMultisig = () => {
   const inReviewStep = createMemo(() => {
     // check if on next to last crumb trail
     return getCurrentStep() === MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2];
+  });
+  const notEnoughBalance = createMemo(() => {
+    // check if user has enough balance to create multisig
+    if (coreCreationFee() && tnkrBalance()) {
+      return new BigNumber(coreCreationFee()).gt(new BigNumber(tnkrBalance()));
+    }
+    return false;
   });
 
   async function createMultisig() {
@@ -360,8 +361,18 @@ const CreateMultisig = () => {
   });
 
   onMount(() => {
+    abortUi();
+  });
+
+  createEffect(() => {
+    // set self address as first member
+    setSelfAddress();
+  });
+
+  createEffect(() => {
+    const tinkernetApi = ringApisContext.state.tinkernet;
+
     const getCreationFee = async () => {
-      const tinkernetApi = ringApisContext.state.tinkernet;
       if (tinkernetApi) {
         const fee = tinkernetApi.consts.inv4.coreCreationFee;
         const formattedFee = formatBalance(fee.toString(), { decimals: 12, withUnit: false });
@@ -369,15 +380,6 @@ const CreateMultisig = () => {
       }
     };
     getCreationFee();
-  });
-
-  onMount(() => {
-    abortUi();
-  });
-
-  createEffect(() => {
-    // set self address as first member
-    setSelfAddress();
   });
 
   createEffect(() => {
@@ -394,9 +396,8 @@ const CreateMultisig = () => {
           const frozen = new BigNumber(balance.data.frozen.toString());
           const reserved = new BigNumber(balance.data.reserved.toString());
           const transferable = total.minus(frozen).minus(reserved);
-          const formattedBalance = formatAsset(transferable.toString(), 12, 2);
-
-          setTnkrBalance(formattedBalance);
+          const formattedBalance = transferable.div(new BigNumber(10).pow(12));
+          setTnkrBalance(formattedBalance.toString());
         });
       } catch (error) {
         console.error(error);
@@ -468,14 +469,6 @@ const CreateMultisig = () => {
       // Reset the error state as well
       setHasAddressError([]);
       setDisableAddMember(false);
-      console.log('members: ', members());
-    }
-  }));
-
-  createEffect(on(inReviewStep, () => {
-    // when it's the second to last crumb, log each member and their weight to the console
-    if (inReviewStep()) {
-      console.log('member vote weights: ', members());
     }
   }));
 
