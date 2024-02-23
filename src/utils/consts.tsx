@@ -79,3 +79,5 @@ export const toWalletAccount = (wcAccount: WcAccount) => {
   let address = wcAccount.split(':')[2];
   return { address };
 };
+
+export type ApiTypes = 'promise' | 'rxjs';

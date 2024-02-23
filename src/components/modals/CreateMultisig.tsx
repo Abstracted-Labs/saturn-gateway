@@ -1,13 +1,13 @@
 import { For, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, on, onMount } from "solid-js";
 import SaturnCrumb from "../legos/SaturnCrumb";
-import { BN, stringShorten } from "@polkadot/util";
+import { BN, formatBalance, stringShorten } from "@polkadot/util";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import { useNavigate } from "@solidjs/router";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
-import { FALLBACK_TEXT_STYLE, INPUT_CREATE_MULTISIG_STYLE, MultisigEnum } from "../../utils/consts";
+import { ApiTypes, FALLBACK_TEXT_STYLE, INPUT_CREATE_MULTISIG_STYLE, MultisigEnum } from "../../utils/consts";
 import SaturnCard from "../legos/SaturnCard";
 import SaturnNumberInput from "../legos/SaturnNumberInput";
 import SaturnRadio from "../legos/SaturnRadio";
@@ -25,10 +25,11 @@ import LoaderAnimation from "../legos/LoaderAnimation";
 import ConnectWallet from "../top-nav/ConnectWallet";
 import { MULTISIG_MODAL_ID } from "../left-side/AddMultisigButton";
 import { initModals, Modal, ModalInterface } from "flowbite";
-import { web3Enable, web3FromAddress } from "@polkadot/extension-dapp";
-import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
+import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { Call } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
+import BigNumber from "bignumber.js";
+import { formatAsset } from "../../utils/formatAsset";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -57,7 +58,15 @@ const CreateMultisig = () => {
   const [hasAddressError, setHasAddressError] = createSignal<number[]>([]);
   const [finishing, setFinishing] = createSignal<boolean>(false);
   const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
+  const [coreCreationFee, setCoreCreationFee] = createSignal<string>('100');
+  const [tnkrBalance, setTnkrBalance] = createSignal<string>('0');
 
+  const notEnoughBalance = createMemo(() => {
+    const balance = parseFloat(tnkrBalance());
+    const fee = parseFloat(coreCreationFee());
+    console.debug("[CreateMultisig] Checking balance:", balance, "against fee:", fee);
+    return tnkrBalance() && balance < fee;
+  });
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const selectedState = createMemo(() => selectedAccountContext.state);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
@@ -135,17 +144,14 @@ const CreateMultisig = () => {
 
     wallet.connect();
 
-    await web3Enable('Saturn Gateway');
-    const injector = await web3FromAddress(account.address);
-    console.log('injector: ', injector, wallet);
     const name = multisigName();
     const requiredApproval = requiredApprovalField();
     const minimumSupport = minimumSupportField();
     const multisigParty = members();
 
-    console.log(name, multisigParty, minimumSupport, requiredApproval, injector.signer);
+    console.log(name, multisigParty, minimumSupport, requiredApproval, wallet.signer);
 
-    if (!name) {
+    if (!name || !wallet.signer) {
       return;
     };
 
@@ -161,7 +167,7 @@ const CreateMultisig = () => {
       minimumSupport: new BN(ms),
       requiredApproval: new BN(ra),
       creationFeeAsset: FeeAsset.TNKR
-    }).signAndSend(account.address, injector.signer);
+    }).signAndSend(account.address, wallet.signer);
 
     console.log("createMultisigResult: ", createMultisigResult);
 
@@ -353,6 +359,17 @@ const CreateMultisig = () => {
     modal = new Modal(instance);
   });
 
+  onMount(() => {
+    const getCreationFee = async () => {
+      const tinkernetApi = ringApisContext.state.tinkernet;
+      if (tinkernetApi) {
+        const fee = tinkernetApi.consts.inv4.coreCreationFee;
+        const formattedFee = formatBalance(fee.toString(), { decimals: 12, withUnit: false });
+        setCoreCreationFee(formattedFee);
+      }
+    };
+    getCreationFee();
+  });
 
   onMount(() => {
     abortUi();
@@ -361,6 +378,32 @@ const CreateMultisig = () => {
   createEffect(() => {
     // set self address as first member
     setSelfAddress();
+  });
+
+  createEffect(() => {
+    const rings = ringApisContext;
+    const address = selectedAccountContext.state.account?.address;
+
+    const getBalance = async () => {
+      try {
+        if (!rings.state.tinkernet || !address) return;
+
+        await rings.state.tinkernet.query.system.account(address, (account: any) => {
+          const balance = account.toPrimitive();
+          const total = new BigNumber(balance.data.free.toString());
+          const frozen = new BigNumber(balance.data.frozen.toString());
+          const reserved = new BigNumber(balance.data.reserved.toString());
+          const transferable = total.minus(frozen).minus(reserved);
+          const formattedBalance = formatAsset(transferable.toString(), 12, 2);
+
+          setTnkrBalance(formattedBalance);
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    getBalance();
   });
 
   createEffect(() => {
@@ -401,7 +444,7 @@ const CreateMultisig = () => {
         setTextHint('Vote thresholds are the minimum number of votes required to pass a proposal.');
         break;
       case MULTISIG_CRUMB_TRAIL[4]:
-        setTextHint('Review your multisig details and confirm.');
+        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } TNKR in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } TNKR required).`);
         break;
       case MULTISIG_CRUMB_TRAIL[5]:
         setFinishing(false);
@@ -773,7 +816,7 @@ const CreateMultisig = () => {
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
                     <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === MULTISIG_CRUMB_TRAIL[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+                    <button disabled={disableCrumbs().includes(getNextStep()) || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
                   </div>
                 </div>
               </Show>
