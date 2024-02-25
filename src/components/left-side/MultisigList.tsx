@@ -13,6 +13,7 @@ import PageLinks from './PageLinks';
 import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 import LoaderAnimation from '../legos/LoaderAnimation';
 import { useMultisigListModal } from '../../providers/multisigListModalProvider';
+import { getMultisigsForAccount } from '../../utils/getMultisigs';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -163,7 +164,7 @@ const MultisigList = (props: MultisigListProps) => {
       let iden;
       const path = loc.pathname;
       const urlId = path.split('/')[1];
-      const multisigs = await sat.getMultisigsForAccount(address);
+      const multisigs = await getMultisigsForAccount(address, api);
       const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
         // We calculate the address locally instead of wasting time fetching from the chain.
