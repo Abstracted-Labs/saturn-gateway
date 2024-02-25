@@ -3,23 +3,12 @@ import { AccountId } from "@polkadot/types/interfaces";
 import { BN } from "@polkadot/util";
 
 export const getMultisigsForAccount = async (
-  account: string,
-  api: ApiPromise
-): Promise<{ multisigId: number; tokens: BN; }[]> => {
-  const entries = await api.query.coreAssets.accounts.entries(account);
+    account: string,
+    api: ApiPromise
+): Promise<number[]> => {
+    const entries = await api.query.coreAssets.accounts.keys(account);
 
-  const mapped = entries.map(
-    ([
-      {
-        args: [_, coreId],
-      },
-      tokens,
-    ]) => {
-      const id = coreId.toNumber();
-      const free = tokens.free;
-      return { multisigId: id, tokens: free };
-    }
-  );
+    const mapped = entries.map(([_, coreId]) => coreId);
 
-  return mapped;
+    return mapped;
 };
