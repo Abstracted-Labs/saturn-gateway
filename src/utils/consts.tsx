@@ -38,8 +38,8 @@ export enum NetworkEnum {
 // export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
 // export const WSS_TINKERNET = 'wss://invarch-tinkernet.api.onfinality.io/public-ws';
 // export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/invarch-bootstrap';
-// export const WSS_TINKERNET = 'ws://localhost:8000';
-export const WSS_TINKERNET = 'wss://tinkernet-rpc.dwellir.com';
+export const WSS_TINKERNET = 'ws://localhost:8000';
+// export const WSS_TINKERNET = 'wss://tinkernet-rpc.dwellir.com';
 // export const WSS_TINKERNET = 'ws://localhost:9944';
 
 export const WC_PROJECT_ID = '04b924c5906edbafa51c651573628e23';

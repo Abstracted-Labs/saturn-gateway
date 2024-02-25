@@ -2,7 +2,7 @@ import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, create
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
 import { Rings } from '../data/rings';
 import { useSaturnContext } from "../providers/saturnProvider";
-import type { Balances } from "../utils/getBalances";
+import type { BalanceType, NetworkBalances, ResultBalances } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
 import { getAssetIcon } from '../utils/getAssetIcon';
 import { getNetworkIcon } from '../utils/getNetworkIcon';
@@ -16,9 +16,13 @@ const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
 };
 
+export type NetworkAssetBalance = [string, BalanceType[]];
+
+export type NetworkBalancesArray = [string, NetworkAssetBalance[]];
+
 export default function Assets() {
   const [loading, setLoading] = createSignal<boolean>(true);
-  const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
+  const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
   const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
 
@@ -66,33 +70,31 @@ export default function Assets() {
 
     const runAsync = async () => {
       if (typeof id !== 'number' || !address) {
+        console.log('Invalid multisig id or address');
         delayUnload();
         return;
       }
 
       const nb = await getBalancesFromAllNetworks(address);
-
       const remapped = Object.entries(nb).map(([network, assets]) => {
-        const ret: [string, [string, Balances][]] = [network,
+        const ret: [string, [string, NetworkBalancesArray][]] = [network,
           Object.entries(assets)
             .map(([asset, assetBalances]) => {
-              console.log(`Processing asset: ${ asset }`);
-              const ret: [string, Balances] = [asset, assetBalances as Balances];
-
+              const ret: [string, NetworkBalancesArray] = [asset, assetBalances as unknown as NetworkBalancesArray];
               return ret;
             })
-            .filter(([_, assetBalances]) => {
+            .filter(([_, allBalances]) => {
+              const assetBalances = allBalances as unknown as BalanceType;
+              const totalLockAmount = assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
               const hasBalances = assetBalances.freeBalance != '0'
                 || assetBalances.reservedBalance != '0'
-                || assetBalances.frozenBalance != '0';
-              console.log(`Filtering asset with balances: ${ hasBalances }`);
+                || (+totalLockAmount !== 0);
               return hasBalances;
             })];
-
         return ret;
       });
 
-      setBalances(remapped);
+      setBalances(remapped as unknown as NetworkAssetBalance[]);
       delayUnload();
     };
 
@@ -103,24 +105,41 @@ export default function Assets() {
     });
   }));
 
-  createEffect(async () => {
+  createEffect(() => {
     // Convert transferable balances to USD
-    for (const [network, assets] of balances()) {
-      for (const [asset, b] of assets) {
-        const value = await convertAssetTotalToUsd(network as NetworkEnum, b.freeBalance);
-        setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+    const loadTransferableBalances = async () => {
+      for (const [network, assets] of balances()) {
+        for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
+          const balances = b as unknown as BalanceType;
+          const value = await convertAssetTotalToUsd(network as NetworkEnum, balances.freeBalance);
+          setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+        }
       }
-    }
+    };
+
+    loadTransferableBalances();
   });
 
   createEffect(async () => {
     // Convert total balances to USD
-    for (const [network, assets] of balances()) {
-      for (const [asset, b] of assets) {
-        const value = await convertAssetTotalToUsd(network as NetworkEnum, (new BigNumber(b.freeBalance).plus(b.reservedBalance).plus(b.frozenBalance)).toString());
-        setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
+    const loadTotalBalances = async () => {
+      for (const [network, assets] of balances()) {
+        const assetsCopy = assets;
+        for (const [asset, balanceDetails] of assetsCopy as unknown as NetworkBalancesArray) {
+          const balance = balanceDetails[1] as BalanceType[];
+          if (balance && Array.isArray(balance)) {
+            for (const b of balance) {
+              const value = await convertAssetTotalToUsd(network as NetworkEnum, b.freeBalance);
+              setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+            }
+          }
+
+          return;
+        }
       }
-    }
+    };
+
+    loadTotalBalances();
   });
 
   onCleanup(() => {
@@ -146,10 +165,11 @@ export default function Assets() {
             {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>}
           </div>}>
             <Match when={balances() && balances().length > 0}>
-              <For each={balances()}>{([network, assets]) =>
-                <Show when={assets.length}>
+              <For each={balances()}>{([network, assets]) => {
+                return <Show when={assets.length}>
                   <tbody class="dark:text-saturn-offwhite text-saturn-black">
-                    <For each={assets}>{([asset, b]) => {
+                    <For each={assets as unknown as [string, BalanceType][]}>{([asset, b]) => {
+                      const totalLockAmount = b.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
                       return <tr class="border-b border-gray-200 dark:border-gray-800">
                         {/* Asset */}
                         <td class='py-3 px-4 text-left w-[20%]'>
@@ -180,7 +200,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {formatAsset((+b.freeBalance + +b.reservedBalance + +b.frozenBalance).toString(), Rings[network as keyof typeof Rings].decimals)}
+                              {formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network as keyof typeof Rings].decimals)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
@@ -206,7 +226,8 @@ export default function Assets() {
                     }
                     }</For>
                   </tbody>
-                </Show>
+                </Show>;
+              }
               }</For>
             </Match>
           </Switch>

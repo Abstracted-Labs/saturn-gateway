@@ -5,15 +5,15 @@ import SaturnSelectItem from '../legos/SaturnSelectItem';
 import { getNetworkBlock } from '../../utils/getNetworkBlock';
 import SaturnSelect from '../legos/SaturnSelect';
 import { Dropdown, type DropdownInterface, type DropdownOptions, initDropdowns } from 'flowbite';
-import { balances } from '@polkadot/types/interfaces/definitions';
-import { Balances, getBalancesFromAllNetworks } from '../../utils/getBalances';
+import { BalanceType, getBalancesFromAllNetworks } from '../../utils/getBalances';
 import { useSaturnContext } from '../../providers/saturnProvider';
+import { NetworkAssetBalance, NetworkBalancesArray } from '../../pages/Assets';
 
 const ChangeNetworkButton = () => {
   let dropdown: DropdownInterface;
   const [isDropdownActive, setIsDropdownActive] = createSignal(false);
   const [activeNetwork, setActiveNetwork] = createSignal<NetworkEnum>(NetworkEnum.KUSAMA);
-  const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>([]);
+  const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
 
   const proposeContext = useProposeContext();
   const saturnContext = useSaturnContext();
@@ -84,21 +84,24 @@ const ChangeNetworkButton = () => {
     const runAsync = async () => {
       const nb = await getBalancesFromAllNetworks(address);
       const remapped = Object.entries(nb).map(([network, assets]) => {
-        const ret: [string, [string, Balances][]] = [network,
+        const ret: [string, [string, NetworkBalancesArray][]] = [network,
           Object.entries(assets)
             .map(([asset, assetBalances]) => {
-              const ret: [string, Balances] = [asset, assetBalances as Balances];
-
+              const ret: [string, NetworkBalancesArray] = [asset, assetBalances as unknown as NetworkBalancesArray];
               return ret;
             })
-            .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
-              || assetBalances.reservedBalance != '0'
-              || assetBalances.frozenBalance != '0')];
-
+            .filter(([_, allBalances]) => {
+              const assetBalances = allBalances as unknown as BalanceType;
+              const totalLockAmount = assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
+              const hasBalances = assetBalances.freeBalance != '0'
+                || assetBalances.reservedBalance != '0'
+                || (+totalLockAmount !== 0);
+              return hasBalances;
+            })];
         return ret;
       });
 
-      setBalances(remapped);
+      setBalances(remapped as unknown as NetworkAssetBalance[]);
     };
 
     runAsync();

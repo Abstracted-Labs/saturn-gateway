@@ -1,13 +1,11 @@
 import { PagesEnum, pages } from "../../pages/pages";
-import { A } from "@solidjs/router";
-import { For, JSXElement, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { A, useLocation } from "@solidjs/router";
+import { For, JSXElement, createMemo } from "solid-js";
 import { AssetsIcon } from '../../components/svg-icons/AssetsIcon';
 import { TransactionsIcon } from '../../components/svg-icons/TransactionsIcon';
 import { MembersIcon } from '../../components/svg-icons/MembersIcon';
 import { SettingsIcon } from '../../components/svg-icons/SettingsIcon';
 import styles from '../../App.module.css';
-
-import { useSaturnContext } from "../../providers/saturnProvider";
 import { BUTTON_COMMON_STYLE } from "../../utils/consts";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 
@@ -28,15 +26,14 @@ function matchIconToPage(page: string): JSXElement {
 }
 
 const PageLinks = () => {
-  const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
-  // const [mutateButton, setMutateButton] = createSignal(false);
+  const loc = useLocation();
 
   const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
-  const multisigId = createMemo(() => saturnContext.state.multisigId);
+  const multisigId = createMemo(() => loc.pathname.split('/')[1]);
 
-  function buildHref(page: string): string {
-    return `/${ saturnContext.state.multisigId?.toString() || undefined }/${ page }`;
+  function navTo(page: string): string {
+    return `/${ multisigId() }/${ page }`;
   }
 
   function simulateButtonClick() {
@@ -46,22 +43,13 @@ const PageLinks = () => {
     }
   }
 
-  // createEffect(() => {
-  //   const isDrawerPresent = () => !!document.getElementById('inDrawer');
-  //   if (isDrawerPresent()) {
-  //     setMutateButton(true);
-  //   } else {
-  //     setMutateButton(false);
-  //   }
-  // });
-
   return <div class={`${ !isLoggedIn() || !multisigId() ? '' : styles.pageListContainer } mb-5 mt-3`}>
     <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">Menu</h5>
     <For each={pages}>
       {(page) => {
         return (
           <A
-            href={buildHref(page)}
+            href={navTo(page)}
             class={`${ styles.pageItemContainer }`}
             activeClass={`${ styles.enabled } ${ BUTTON_COMMON_STYLE }`}
             onClick={() => simulateButtonClick()}

@@ -21,7 +21,7 @@ export type RingsType = {
 export const Rings: RingsType = {
   tinkernet: {
     wcNamespace: 'polkadot:d42e9606a995dfe433dc7955dc2a70f4',
-    polkaholicId: 'tinkernet',
+    polkaholicId: 'invArch',
     decimals: 12,
     icon: TinkernetIcon,
     websocket: WSS_TINKERNET,

@@ -1,55 +1,49 @@
 import { Rings } from '../data/rings';
 
-const PolkaholicStartUrl = "https://api.polkaholic.io/account/realtime/";
+const SUB_ID_START_URL = 'https://sub.id/api/v1/';
 
-const AllChainsUrl = Object.values(Rings).map((r) => r.polkaholicId).reduce((prev, pId) => { return `${ prev }${ pId },`; }, "?chainfilters=");
-
-export type AssetsBalances = Record<string, Balances>;
-
-export type Balances = {
+export interface BalanceType {
   freeBalance: string;
   reservedBalance: string;
-  frozenBalance: string;
+  frozenFee: string;
+  totalBalance: string;
+  locks: {
+    id: string;
+    amount: string;
+    reasons: string;
+  }[];
 };
 
-export type ResultBalancesWithNetwork = Record<string, AssetsBalances>;
+export type ResultBalances = Record<string, BalanceType>;
+
+export type ResultBalancesWithNetwork = Record<string, ResultBalances>;
 
 export type NetworkBalances = {
-  [Property in keyof typeof Rings]: AssetsBalances;
+  [Property in keyof typeof Rings]: ResultBalances;
 };
 
-export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
-  return fetch(
-    PolkaholicStartUrl + address + AllChainsUrl + "&decrate=f",
-  ).then(async response => {
-    return response.json().then(res => {
-      const newRes = (res as { state: { free_raw?: string, reserved_raw?: string, frozen_raw?: string, id: string, symbol: string; }; }[]);
-
-      const balances: NetworkBalances = Array.isArray(newRes) ? newRes
-        .map((asset) => {
-          return {
-            [asset.state.id as keyof typeof Rings]: {
-              [asset.state.symbol]: {
-                freeBalance: asset.state.free_raw || "0",
-                reservedBalance: asset.state.reserved_raw || "0",
-                frozenBalance: asset.state.frozen_raw || "0",
-              }
-            }
-          } as NetworkBalances;
-        })
-        .reduce((prev: NetworkBalances, asset) => {
-          let newPrev = prev;
-          let assets = prev[Object.keys(asset)[0] as keyof typeof Rings] || {};
-
-          assets[Object.keys(Object.values(asset)[0])[0]] = Object.values(Object.values(asset)[0])[0];
-
-          newPrev[Object.keys(asset)[0] as keyof typeof Rings] = assets;
-
-          return newPrev;
-        }, {} as NetworkBalances) : {} as NetworkBalances;
-
-      return balances;
-    });
-  });
+export async function getBalancesFromNetwork(address: string, balancesUrl: string, network: string): Promise<ResultBalancesWithNetwork> {
+  return fetch('https://corsproxy.org/?' + encodeURIComponent(SUB_ID_START_URL + address + `/balances/${ balancesUrl }`)).then(async response => response.json().then(res => {
+    const balances = (res as ResultBalances);
+    // filter out zero balances
+    for (const [key, value] of Object.entries(balances)) {
+      if (value.totalBalance === '0') {
+        delete balances[key];
+      }
+    }
+    console.log('balances', res);
+    return ({ [network]: res as ResultBalances });
+  }));
 }
 
+export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
+  const promises = [];
+
+  for (const [network, networkData] of Object.entries(Rings)) {
+    promises.push(getBalancesFromNetwork(address, networkData.polkaholicId, network));
+  }
+  const results: ResultBalancesWithNetwork[] = await Promise.all(promises);
+  const allBalances: NetworkBalances = Object.assign({}, ...results);
+
+  return allBalances;
+}

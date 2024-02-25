@@ -82,9 +82,9 @@ const MainContainer = () => {
       if (isAddress(multisigHashId)) {
         const result = await tinkernetApi.query.inv4.coreByAccount(multisigHashId);
         if (result instanceof Option && result.isSome) {
-          id = result.unwrap().toNumber();
+          id = result.unwrapOr(null)?.toNumber();
           // Ensure id is within the safe range
-          if (id > Number.MAX_SAFE_INTEGER) {
+          if (id && id > Number.MAX_SAFE_INTEGER) {
             // Handle the case where id exceeds the safe integer range
             return;
           }
@@ -94,9 +94,10 @@ const MainContainer = () => {
         }
       } else {
         id = parseInt(multisigHashId);
+        const result = await sat.getDetails(multisigHashId);
         // Check if id is a valid integer
         if (isNaN(id)) {
-          // console.error('Invalid id provided:', multisigHashId);
+          console.error('Invalid id provided:', multisigHashId);
           return;
         }
       }
@@ -126,7 +127,6 @@ const MainContainer = () => {
       return;
     };
 
-    console.log('Setting Saturn Connect Account:', name, address);
     setSaturnConnectAccount(name, address);
   }));
 

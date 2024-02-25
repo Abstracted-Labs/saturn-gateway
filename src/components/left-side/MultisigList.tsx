@@ -73,7 +73,6 @@ const MultisigList = (props: MultisigListProps) => {
     if (activeButton() === id) {
       return; // Do nothing if the clicked item is already active
     } else {
-      console.log('MultisigList id: ', id);
       if (id === undefined) return;
 
       setActiveButton(id);
@@ -87,7 +86,7 @@ const MultisigList = (props: MultisigListProps) => {
         }
       });
 
-      navigate(`/${ id }/management`, { replace: true });
+      // navigate(`/${ id }/management`, { replace: true });
 
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];
@@ -165,13 +164,13 @@ const MultisigList = (props: MultisigListProps) => {
       const path = loc.pathname;
       const urlId = path.split('/')[1];
       const multisigs = await getMultisigsForAccount(address, api);
-      const sortedByDescendingId = multisigs.sort((a, b) => b.multisigId - a.multisigId);
+      const sortedByDescendingId = multisigs.sort((a, b) => b - a);
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
         // We calculate the address locally instead of wasting time fetching from the chain.
         // The v2 of the Saturn SDK should have a function to calculate the address.
         const address = encodeAddress(
           blake2AsU8a(
-            api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m.multisigId]).toU8a(), 256
+            api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m]).toU8a(), 256
           ), 117);
         iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
           info: {
@@ -180,7 +179,7 @@ const MultisigList = (props: MultisigListProps) => {
           };
         })?.info);
 
-        const name = iden?.display?.Raw || `Multisig ${ m.multisigId }`;
+        const name = iden?.display?.Raw || `Multisig ${ m }`;
 
         const image = iden?.image?.Raw;
 
@@ -188,10 +187,10 @@ const MultisigList = (props: MultisigListProps) => {
 
         const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
-        const activeTransactions = (await sat.getPendingCalls(m.multisigId)).length;
+        const activeTransactions = (await sat.getPendingCalls(m)).length;
 
         return {
-          id: m.multisigId,
+          id: m,
           image,
           address,
           capitalizedFirstName,

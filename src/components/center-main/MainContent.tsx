@@ -36,9 +36,9 @@ const MainContent = () => {
     const hashId = loc.pathname.split('/')[1];
     const page = loc.pathname.split('/')[2];
 
-    if (isLoggedIn() && !hasMultisigs()) {
-      navigate(`/undefined/${ page }`, { replace: true });
-    }
+    // if (isLoggedIn() && !hasMultisigs()) {
+    //   navigate(`/undefined/${ page }`, { replace: true });
+    // }
   });
 
   return <SaturnCard header={pageTitle()}>

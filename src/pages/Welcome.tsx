@@ -6,6 +6,7 @@ import { useLocation } from "@solidjs/router";
 import AddMultisigButton from "../components/left-side/AddMultisigButton";
 import { useMultisigListModal } from "../providers/multisigListModalProvider";
 import LoaderAnimation from "../components/legos/LoaderAnimation";
+import { getMultisigsForAccount } from "../utils/getMultisigs";
 
 const Welcome = () => {
   const modal = useMultisigListModal();
@@ -34,7 +35,7 @@ const Welcome = () => {
           return;
         }
 
-        const multisigs = await sat.getMultisigsForAccount(address);
+        const multisigs = await getMultisigsForAccount(address, sat.api);
         setHasMultisigs(multisigs.length > 0);
       } catch (error) {
         console.log("No multisigs available for this account");

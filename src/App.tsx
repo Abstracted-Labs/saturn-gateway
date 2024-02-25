@@ -26,6 +26,7 @@ import NotFound from './pages/NotFound';
 import { MultisigListModalProvider } from './providers/multisigListModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
+import { getMultisigsForAccount } from './utils/getMultisigs';
 
 interface ExtendedWallet extends BaseWallet {
   autoConnect: () => Promise<void>;
@@ -78,10 +79,7 @@ const HomePlanet: Component = () => {
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const getDefaultMultisigId = createMemo(() => {
     const items = saturnContext.state.multisigItems;
-    // return undefined if no multisigs
-    if (items === undefined || items.length === 0) {
-      return undefined;
-    } else if (items.length > 0) {
+    if (items && items.length > 0) {
       const defaultMultisigId = items[0].id;
       return defaultMultisigId;
     } else {
@@ -319,7 +317,7 @@ const HomePlanet: Component = () => {
         return;
       }
 
-      const multisigs = await sat.getMultisigsForAccount(address);
+      const multisigs = await getMultisigsForAccount(address, sat.api);
       setHasMultisigs(multisigs.length > 0);
     }
 
@@ -339,10 +337,10 @@ const HomePlanet: Component = () => {
           return;
         }
 
-        if (!hasItems) {
-          navigate(`/undefined/${ page }`, { replace: true });
-          return;
-        }
+        // if (!hasItems) {
+        //   navigate(`/undefined/${ page }`, { replace: true });
+        //   return;
+        // }
 
         navigate(`/${ getDefaultMultisigId() }/${ page }`, { replace: true });
       }
