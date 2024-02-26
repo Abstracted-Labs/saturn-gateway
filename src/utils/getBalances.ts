@@ -27,11 +27,12 @@ export async function getBalancesFromNetwork(address: string, balancesUrl: strin
     const balances = (res as ResultBalances);
     // filter out zero balances
     for (const [key, value] of Object.entries(balances)) {
+      // console.log(key, value);
       if (value.totalBalance === '0') {
         delete balances[key];
       }
     }
-    console.log('balances', res);
+
     return ({ [network]: res as ResultBalances });
   }));
 }

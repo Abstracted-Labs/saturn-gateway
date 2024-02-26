@@ -187,7 +187,7 @@ const AssetsContext = () => {
   };
 
   function copySelfAddress() {
-    if (!isLoggedIn()) return;
+    if (!isLoggedIn() || !maxAssetAmount()) return;
     setBridgeToSelf(!bridgeToSelf());
   }
 
@@ -394,7 +394,7 @@ const AssetsContext = () => {
     });
   });
 
-  createEffect(() => {
+  createEffect(on([() => finalNetworkPair().from, balances, asset], () => {
     // Setting the max asset amount based on the selected asset
     const currentNetwork = finalNetworkPair().from;
     const currentAsset = asset();
@@ -405,6 +405,7 @@ const AssetsContext = () => {
       const assetBalances = (balanceArray as unknown as [string, BalanceType][]).find(([token, balances]) => token === currentAsset);
       if (assetBalances) {
         const freeBalance = assetBalances?.[1].freeBalance;
+        console.log('freeBalance', freeBalance);
         if (freeBalance) {
           const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings].decimals);
           // remove commas from transferable string
@@ -415,86 +416,92 @@ const AssetsContext = () => {
         } else {
           setMaxAssetAmount(null);
         }
-      }
-    }
-  });
-
-  createEffect(async () => {
-    // Setting My Balance amounts across all balances from current network
-    let currentMarketPrice = null;
-    const currentNetwork = finalNetworkPair().from;
-    const allBalances = balances();
-
-    const networkBalances: NetworkAssetBalance | undefined = allBalances.find(([network, assets]) => network == currentNetwork);
-    if (!networkBalances || !Array.isArray(networkBalances[1])) {
-      return;
-    }
-
-    const balanceArray = networkBalances[1];
-
-    // Get current market price for token
-    const assetInUsd = await getCurrentUsdPrice(currentNetwork);
-    if (assetInUsd) {
-      currentMarketPrice = new BigNumber(assetInUsd.market_data.current_price.usd);
-    } else {
-      // If token doesn't exist, use as default conversion
-      currentMarketPrice = null;
-    }
-
-    // Calculate transferable amount
-    const transferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
-      const transferable = new BigNumber(balances.freeBalance);
-      return acc.plus(transferable);
-    }, new BigNumber(0));
-    if (transferable) {
-      let renderedString = '';
-      let transferableNumber = '';
-      if (currentMarketPrice !== null) {
-        transferableNumber = formatAsset(new BigNumber(transferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-        renderedString = `$ ${ transferableNumber }`;
       } else {
-        transferableNumber = formatAsset(transferable.toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-        renderedString = `${ transferableNumber } ${ asset() }`;
+        setMaxAssetAmount(null);
+      }
+    }
+  }));
+
+  createEffect(on([() => finalNetworkPair().from, balances], () => {
+    const loadAllBalances = async () => {
+      // Setting My Balance amounts across all balances from current network
+      let currentMarketPrice = null;
+      const currentNetwork = finalNetworkPair().from;
+      const allBalances = balances();
+
+      const networkBalances: NetworkAssetBalance | undefined = allBalances.find(([network, assets]) => network == currentNetwork);
+      if (!networkBalances || !Array.isArray(networkBalances[1])) {
+        return;
       }
 
-      setTransferableAmount(renderedString);
-    }
+      const balanceArray = networkBalances[1];
 
-    // Calculate non-transferable amount
-    const nonTransferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
-      const totalLockAmount = balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
-      const nonTransferable = new BigNumber(balances.reservedBalance).plus(new BigNumber(totalLockAmount));
-      return acc.plus(nonTransferable);
-    }, new BigNumber(0));
-    if (nonTransferable) {
-      let renderedString = '';
-      let nonTransferableNumber = '';
-      if (currentMarketPrice !== null) {
-        nonTransferableNumber = formatAsset(new BigNumber(nonTransferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-        renderedString = `$ ${ nonTransferableNumber }`;
+      // Get current market price for token
+      const assetInUsd = await getCurrentUsdPrice(currentNetwork);
+      if (assetInUsd) {
+        currentMarketPrice = new BigNumber(assetInUsd.market_data.current_price.usd);
       } else {
-        nonTransferableNumber = formatAsset(nonTransferable.toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-        renderedString = `${ nonTransferableNumber } ${ asset() }`;
+        // If token doesn't exist, use as default conversion
+        currentMarketPrice = null;
       }
 
-      setNonTransferableAmount(renderedString);
-    }
+      // Calculate transferable amount
+      const transferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
+        const transferable = new BigNumber(balances.freeBalance);
+        return acc.plus(transferable);
+      }, new BigNumber(0));
+      if (transferable) {
+        let renderedString = '';
+        let transferableNumber = '';
+        if (currentMarketPrice !== null) {
+          transferableNumber = formatAsset(new BigNumber(transferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
+          renderedString = `$ ${ transferableNumber }`;
+        } else {
+          transferableNumber = formatAsset(transferable.toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
+          renderedString = `${ transferableNumber } ${ asset() }`;
+        }
 
-    // Calculate total portfolio value
-    if (transferable && nonTransferable) {
-      let renderedString = '';
-      let totalPortfolioNumber = '';
-      if (currentMarketPrice !== null) {
-        totalPortfolioNumber = formatAsset(new BigNumber(transferable).plus(nonTransferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-        renderedString = `$ ${ totalPortfolioNumber }`;
-      } else {
-        totalPortfolioNumber = formatAsset(new BigNumber(transferable).plus(nonTransferable).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-        renderedString = `${ totalPortfolioNumber } ${ asset() }`;
+        setTransferableAmount(renderedString);
       }
 
-      setTotalPortfolioValue(renderedString);
-    }
-  });
+      // Calculate non-transferable amount
+      const nonTransferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
+        const totalLockAmount = balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
+        const nonTransferable = new BigNumber(balances.reservedBalance).plus(new BigNumber(totalLockAmount));
+        return acc.plus(nonTransferable);
+      }, new BigNumber(0));
+      if (nonTransferable) {
+        let renderedString = '';
+        let nonTransferableNumber = '';
+        if (currentMarketPrice !== null) {
+          nonTransferableNumber = formatAsset(new BigNumber(nonTransferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
+          renderedString = `$ ${ nonTransferableNumber }`;
+        } else {
+          nonTransferableNumber = formatAsset(nonTransferable.toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
+          renderedString = `${ nonTransferableNumber } ${ asset() }`;
+        }
+
+        setNonTransferableAmount(renderedString);
+      }
+
+      // Calculate total portfolio value
+      if (transferable && nonTransferable) {
+        let renderedString = '';
+        let totalPortfolioNumber = '';
+        if (currentMarketPrice !== null) {
+          totalPortfolioNumber = formatAsset(new BigNumber(transferable).plus(nonTransferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
+          renderedString = `$ ${ totalPortfolioNumber }`;
+        } else {
+          totalPortfolioNumber = formatAsset(new BigNumber(transferable).plus(nonTransferable).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
+          renderedString = `${ totalPortfolioNumber } ${ asset() }`;
+        }
+
+        setTotalPortfolioValue(renderedString);
+      }
+    };
+
+    loadAllBalances();
+  }));
 
   const MyBalance = () => {
     return <dl class="mt-2 text-xs w-full">
@@ -592,7 +599,7 @@ const AssetsContext = () => {
               onInput={validateAmount}
               max={Number(maxAssetAmount())}
               min={0}
-              disabled={!isLoggedIn()}
+              disabled={!isLoggedIn() || !maxAssetAmount()}
             />
           </div>
         </div>
@@ -611,7 +618,7 @@ const AssetsContext = () => {
         </div>
       </div>
 
-      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId()} onClick={proposeTransfer}>Perform Transaction</button>
+      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount()} onClick={proposeTransfer}>Perform Transaction</button>
     </div>;
   };
 
