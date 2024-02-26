@@ -97,9 +97,7 @@ const AssetsContext = () => {
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
     const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
     const networksFromBalances = balances().find(([network, assets]) => network == pair.from);
-    const filterAssetBlocks = filteredAssets.filter(([name, element]) =>
-      Object.keys(networksFromBalances?.[1] || {}).includes(name as AssetEnum)
-    );
+    const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
 
     return filterAssetBlocks;
   });
@@ -126,9 +124,7 @@ const AssetsContext = () => {
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
     const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
     const networksFromBalances = balances().find(([network, assets]) => network == pair.from);
-    const filterAssetBlocks = filteredAssets.filter(([name, element]) =>
-      Object.keys(networksFromBalances?.[1] || {}).includes(name as AssetEnum)
-    );
+    const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
 
     return filterAssetBlocks.length;
   };
@@ -344,19 +340,20 @@ const AssetsContext = () => {
     runAsync();
   }));
 
-  createEffect(on(() => finalNetworkPair().from, () => {
+  createEffect(on([() => finalNetworkPair().from, balances, asset], () => {
     // Updating the From/To dropdowns when the current network changes
-    const a = asset();
+    const currentAsset = asset();
+    const balance = balances();
     const currentNetwork = finalNetworkPair().from;
-
-    if (a && NetworksByAsset[a]) {
-      if (currentNetwork) {
-        // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
-        const filterNetworksFromBalances = balances().find(([network, _]) => network == currentNetwork);
-        const filterAssetsFromNetwork = filterNetworksFromBalances ? Object.entries(filterNetworksFromBalances[1]).map(([asset, _]) => asset) : [];
+    if (currentAsset && currentNetwork && NetworksByAsset[currentAsset]) {
+      // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
+      const filterNetworksFromBalances = balance.find(([network, _]) => network == currentNetwork);
+      if (filterNetworksFromBalances && Array.isArray(filterNetworksFromBalances[1])) {
+        const filterAssetsFromNetwork: BalanceType[] = filterNetworksFromBalances[1];
         if (filterAssetsFromNetwork.length > 0) {
           const asset = filterAssetsFromNetwork[0];
-          setAsset(asset as AssetEnum);
+          const balances = asset as unknown as [string, BalanceType];
+          setAsset(balances[0] as AssetEnum);
         }
       }
     }
@@ -402,18 +399,23 @@ const AssetsContext = () => {
     const currentNetwork = finalNetworkPair().from;
     const currentAsset = asset();
     const allBalances = balances();
-    const networkBalances = allBalances.find(([network, _]) => network === currentNetwork);
-    const assetBalances = networkBalances ? networkBalances[1][currentAsset as unknown as keyof typeof networkBalances[1]] : undefined;
-    const freeBalance = assetBalances ? (assetBalances as BalanceType).freeBalance : undefined;
-    if (freeBalance) {
-      const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings].decimals);
-      // remove commas from transferable string
-      const transferableNumber = Number(transferable.replace(/,/g, ''));
-      setMaxAssetAmount(transferableNumber);
-      // Reset the amount when the asset changes
-      setAmount(0);
-    } else {
-      setMaxAssetAmount(null);
+    const networkBalances: NetworkAssetBalance | undefined = allBalances.find(([network, assets]) => network == currentNetwork);
+    if (networkBalances && Array.isArray(networkBalances[1])) {
+      const balanceArray = networkBalances[1];
+      const assetBalances = (balanceArray as unknown as [string, BalanceType][]).find(([token, balances]) => token === currentAsset);
+      if (assetBalances) {
+        const freeBalance = assetBalances?.[1].freeBalance;
+        if (freeBalance) {
+          const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings].decimals);
+          // remove commas from transferable string
+          const transferableNumber = Number(transferable.replace(/,/g, ''));
+          setMaxAssetAmount(transferableNumber);
+          // Reset the amount when the asset changes
+          setAmount(0);
+        } else {
+          setMaxAssetAmount(null);
+        }
+      }
     }
   });
 
@@ -422,7 +424,13 @@ const AssetsContext = () => {
     let currentMarketPrice = null;
     const currentNetwork = finalNetworkPair().from;
     const allBalances = balances();
-    const networkBalances = allBalances.find(([network, assets]) => network == currentNetwork);
+
+    const networkBalances: NetworkAssetBalance | undefined = allBalances.find(([network, assets]) => network == currentNetwork);
+    if (!networkBalances || !Array.isArray(networkBalances[1])) {
+      return;
+    }
+
+    const balanceArray = networkBalances[1];
 
     // Get current market price for token
     const assetInUsd = await getCurrentUsdPrice(currentNetwork);
@@ -434,9 +442,9 @@ const AssetsContext = () => {
     }
 
     // Calculate transferable amount
-    const transferable = Object.values(networkBalances?.[1] || {}).reduce((acc, balances) => {
-      const transferableBalance = new BigNumber(balances.freeBalance);
-      return acc.plus(transferableBalance);
+    const transferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
+      const transferable = new BigNumber(balances.freeBalance);
+      return acc.plus(transferable);
     }, new BigNumber(0));
     if (transferable) {
       let renderedString = '';
@@ -453,10 +461,10 @@ const AssetsContext = () => {
     }
 
     // Calculate non-transferable amount
-    const nonTransferable = Object.entries(networkBalances?.[1] || {}).reduce((acc, [token, balances]) => {
+    const nonTransferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
       const totalLockAmount = balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
-      const nonTransferableBalance = new BigNumber(balances.reservedBalance).plus(+totalLockAmount);
-      return acc.plus(nonTransferableBalance);
+      const nonTransferable = new BigNumber(balances.reservedBalance).plus(new BigNumber(totalLockAmount));
+      return acc.plus(nonTransferable);
     }, new BigNumber(0));
     if (nonTransferable) {
       let renderedString = '';
