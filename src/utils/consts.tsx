@@ -60,6 +60,11 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   DOT: [PolkadotIcon],
 };
 
+export enum KusamaFeeAssetEnum {
+  TNKR = "TNKR",
+  KSM = "KSM",
+}
+
 export enum MultisigEnum {
   TRADITIONAL = "Traditional",
   GOVERNANCE = "Governance",
