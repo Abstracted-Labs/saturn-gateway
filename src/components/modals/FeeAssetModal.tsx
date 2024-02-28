@@ -14,7 +14,6 @@ const dropdownOptions: DropdownOptions = {
   triggerType: 'click',
   offsetSkidding: 0,
   offsetDistance: 20,
-  ignoreClickOutsideClass: true,
   delay: 300,
 };
 
