@@ -23,7 +23,7 @@ import { WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
 import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount, POLKADOT_CHAIN_ID } from '@polkadot-onboard/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
-import { MultisigListModalProvider } from './providers/multisigListModalProvider';
+import { MegaModalProvider } from './providers/multisigListModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
 import { getMultisigsForAccount } from './utils/getMultisigs';
@@ -366,9 +366,9 @@ const App = () => (
           <SelectedAccountProvider>
             <IdentityProvider>
               <ThemeProvider>
-                <MultisigListModalProvider>
+                <MegaModalProvider>
                   <HomePlanet />
-                </MultisigListModalProvider>
+                </MegaModalProvider>
               </ThemeProvider>
             </IdentityProvider>
           </SelectedAccountProvider>

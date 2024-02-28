@@ -12,7 +12,7 @@ import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
 import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 import LoaderAnimation from '../legos/LoaderAnimation';
-import { useMultisigListModal } from '../../providers/multisigListModalProvider';
+import { useMegaModal } from '../../providers/multisigListModalProvider';
 import { getMultisigsForAccount } from '../../utils/getMultisigs';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
@@ -46,7 +46,7 @@ const MultisigList = (props: MultisigListProps) => {
   const [loading, setLoading] = createSignal<boolean>(true);
   // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>;
 
-  const modal = useMultisigListModal();
+  const modal = useMegaModal();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
@@ -67,7 +67,7 @@ const MultisigList = (props: MultisigListProps) => {
     const id = multisig.id;
 
     if (isInModal()) {
-      modal.hideModal();
+      modal.hideMultisigListModal();
     }
 
     if (activeButton() === id) {

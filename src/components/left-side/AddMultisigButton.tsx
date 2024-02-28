@@ -4,7 +4,7 @@ import { createEffect, createMemo, createSignal, onMount } from 'solid-js';
 import { useSaturnContext } from '../../providers/saturnProvider';
 import { ModalInterface, initModals, Modal, ModalOptions } from 'flowbite';
 import { useSelectedAccountContext } from '../../providers/selectedAccountProvider';
-import { useMultisigListModal } from '../../providers/multisigListModalProvider';
+import { useMegaModal } from '../../providers/multisigListModalProvider';
 
 export const MULTISIG_MODAL_ID = 'multisigModal';
 
@@ -13,7 +13,7 @@ interface AddMultisigButtonProps {
 }
 
 const AddMultisigButton = (props: AddMultisigButtonProps) => {
-  const multisigModal = useMultisigListModal();
+  const multisigModal = useMegaModal();
   const [modal, setModal] = createSignal<ModalInterface | null>(null);
   const [mutateButton, setMutateButton] = createSignal(false);
 

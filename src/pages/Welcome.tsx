@@ -4,12 +4,12 @@ import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import AddMultisigButton from "../components/left-side/AddMultisigButton";
-import { useMultisigListModal } from "../providers/multisigListModalProvider";
+import { useMegaModal } from "../providers/multisigListModalProvider";
 import LoaderAnimation from "../components/legos/LoaderAnimation";
 import { getMultisigsForAccount } from "../utils/getMultisigs";
 
 const Welcome = () => {
-  const modal = useMultisigListModal();
+  const modal = useMegaModal();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const loc = useLocation();
@@ -56,9 +56,9 @@ const Welcome = () => {
 
   createEffect(() => {
     if (!isLoading() && isLoggedIn() && hasMultisigs() && modal) {
-      modal.showModal();
+      modal.showMultisigListModal();
     } else {
-      modal.hideModal();
+      modal.hideMultisigListModal();
     }
   });
 
