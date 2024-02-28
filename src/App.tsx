@@ -102,7 +102,7 @@ const HomePlanet: Component = () => {
     );
 
     return Object.fromEntries(await Promise.all(entries));
-  };
+  }
 
   async function sessionProposalCallback(proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) {
     console.log('session_proposal: ', proposal);
@@ -120,7 +120,7 @@ const HomePlanet: Component = () => {
         },
       });
     }
-  };
+  }
 
   async function sessionRequestCallback(event: Web3WalletTypes.SessionRequest, w3w: IWeb3Wallet) {
     console.log('session_request: ', event);
@@ -167,7 +167,7 @@ const HomePlanet: Component = () => {
         await w3w.respondSessionRequest({ topic, response });
       }
     }
-  };
+  }
 
   onMount(() => {
     initDrawers();
