@@ -20,9 +20,9 @@ import { useLocation } from "@solidjs/router";
 import { NetworkAssetBalance, NetworkBalancesArray } from "../../pages/Assets";
 
 const AssetsContext = () => {
-  let dropdownFrom: DropdownInterface;
-  let dropdownTo: DropdownInterface;
-  let dropdownAsset: DropdownInterface;
+  const [dropdownFrom, setDropdownFrom] = createSignal<DropdownInterface>();
+  const [dropdownTo, setDropdownTo] = createSignal<DropdownInterface>();
+  const [dropdownAsset, setDropdownAsset] = createSignal<DropdownInterface>();
   const [amount, setAmount] = createSignal<number>(0);
   const [asset, setAsset] = createSignal<AssetEnum>(AssetEnum.TNKR);
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
@@ -213,9 +213,9 @@ const AssetsContext = () => {
   }
 
   function openAssets() {
-    if (dropdownAsset) {
+    if (dropdownAsset()) {
       if (!isAssetDropdownActive()) {
-        dropdownAsset.show();
+        dropdownAsset()?.show();
         setIsAssetDropdownActive(true);
       } else {
         closeAssetDropdown();
@@ -224,9 +224,9 @@ const AssetsContext = () => {
   }
 
   function openFrom() {
-    if (dropdownFrom) {
+    if (dropdownFrom()) {
       if (!isFromDropdownActive()) {
-        dropdownFrom.show();
+        dropdownFrom()?.show();
         setIsFromDropdownActive(true);
       } else {
         closeFromDropdown();
@@ -235,9 +235,9 @@ const AssetsContext = () => {
   }
 
   function openTo() {
-    if (dropdownTo) {
+    if (dropdownTo()) {
       if (!isToDropdownActive()) {
-        dropdownTo.show();
+        dropdownTo()?.show();
         setIsToDropdownActive(true);
       } else {
         closeToDropdown();
@@ -246,22 +246,22 @@ const AssetsContext = () => {
   }
 
   function closeFromDropdown() {
-    if (dropdownFrom) {
-      dropdownFrom.hide();
+    if (dropdownFrom()) {
+      dropdownFrom()?.hide();
       setIsFromDropdownActive(false);
     }
   }
 
   function closeToDropdown() {
-    if (dropdownTo) {
-      dropdownTo.hide();
+    if (dropdownTo()) {
+      dropdownTo()?.hide();
       setIsToDropdownActive(false);
     }
   }
 
   function closeAssetDropdown() {
-    if (dropdownAsset) {
-      dropdownAsset.hide();
+    if (dropdownAsset()) {
+      dropdownAsset()?.hide();
       setIsAssetDropdownActive(false);
     }
   }
@@ -304,9 +304,24 @@ const AssetsContext = () => {
   onMount(() => {
     // Initializing the dropdowns
     initDropdowns();
-    dropdownFrom = new Dropdown($dropdownFrom(), $toggleFrom(), options);
-    dropdownTo = new Dropdown($dropdownTo(), $toggleTo(), options);
-    dropdownAsset = new Dropdown($dropdownAsset(), $toggleAsset(), assetOptions);
+  });
+
+  createEffect(() => {
+    if ($dropdownFrom() && $toggleFrom()) {
+      setDropdownFrom(new Dropdown($dropdownFrom(), $toggleFrom(), options));
+    }
+  });
+
+  createEffect(() => {
+    if ($dropdownTo() && $toggleTo()) {
+      setDropdownTo(new Dropdown($dropdownTo(), $toggleTo(), options));
+    }
+  });
+
+  createEffect(() => {
+    if ($dropdownAsset() && $toggleAsset()) {
+      setDropdownAsset(new Dropdown($dropdownAsset(), $toggleAsset(), assetOptions));
+    }
   });
 
   createEffect(on(() => saturnContext.state.multisigAddress, () => {
@@ -482,17 +497,17 @@ const AssetsContext = () => {
       const dropdownAssetEl = $dropdownAsset();
 
       if (toggleToEl && dropdownToEl && !toggleToEl.contains(event.target) && !dropdownToEl.contains(event.target)) {
-        dropdownTo.hide();
+        dropdownTo()?.hide();
         setIsToDropdownActive(false);
       }
 
       if (toggleFromEl && dropdownFromEl && !toggleFromEl.contains(event.target) && !dropdownFromEl.contains(event.target)) {
-        dropdownFrom.hide();
+        dropdownFrom()?.hide();
         setIsFromDropdownActive(false);
       }
 
       if (toggleAssetEl && dropdownAssetEl && !toggleAssetEl.contains(event.target) && !dropdownAssetEl.contains(event.target)) {
-        dropdownAsset.hide();
+        dropdownAsset()?.hide();
         setIsAssetDropdownActive(false);
       }
     };
