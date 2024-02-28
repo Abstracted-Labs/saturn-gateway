@@ -19,10 +19,56 @@ import { useSelectedAccountContext } from "../../providers/selectedAccountProvid
 import { useLocation } from "@solidjs/router";
 import { NetworkAssetBalance, NetworkBalancesArray } from "../../pages/Assets";
 
+const FROM_TOGGLE_ID = 'networkToggleFrom';
+const FROM_DROPDOWN_ID = 'networkDropdownFrom';
+const TO_TOGGLE_ID = 'networkToggleTo';
+const TO_DROPDOWN_ID = 'networkDropdownTo';
+const ASSET_TOGGLE_ID = 'assetToggle';
+const ASSET_DROPDOWN_ID = 'assetDropdown';
+
+const options: DropdownOptions = {
+  placement: 'bottom',
+  triggerType: 'click',
+  offsetSkidding: 0,
+  offsetDistance: -6,
+  delay: 300,
+};
+
+const assetOptions: DropdownOptions = {
+  placement: 'bottom',
+  triggerType: 'click',
+  offsetSkidding: 0,
+  offsetDistance: -6,
+  delay: 300,
+};
+
+const allTheNetworks = (): Record<string, JSXElement> => ({
+  [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
+  [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+  [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
+  [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
+  [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
+});
+
+const allTheAssets = (): Record<string, JSXElement> => ({
+  [AssetEnum.TNKR]: getAssetBlock(AssetEnum.TNKR),
+  [AssetEnum.KSM]: getAssetBlock(AssetEnum.KSM),
+  [AssetEnum.DOT]: getAssetBlock(AssetEnum.DOT),
+  [AssetEnum.BSX]: getAssetBlock(AssetEnum.BSX),
+  [AssetEnum.PICA]: getAssetBlock(AssetEnum.PICA),
+});
+
 const AssetsContext = () => {
-  const [dropdownFrom, setDropdownFrom] = createSignal<DropdownInterface>();
-  const [dropdownTo, setDropdownTo] = createSignal<DropdownInterface>();
-  const [dropdownAsset, setDropdownAsset] = createSignal<DropdownInterface>();
+  const fromToggleElement = () => document.getElementById(FROM_TOGGLE_ID);
+  const fromDropdownElement = () => document.getElementById(FROM_DROPDOWN_ID);
+  const toToggleElement = () => document.getElementById(TO_TOGGLE_ID);
+  const toDropdownElement = () => document.getElementById(TO_DROPDOWN_ID);
+  const assetToggleElement = () => document.getElementById(ASSET_TOGGLE_ID);
+  const assetDropdownElement = () => document.getElementById(ASSET_DROPDOWN_ID);
+
+  const [dropdownFrom, setDropdownFrom] = createSignal<DropdownInterface | null>(null);
+  const [dropdownTo, setDropdownTo] = createSignal<DropdownInterface | null>(null);
+  const [dropdownAsset, setDropdownAsset] = createSignal<DropdownInterface | null>(null);
   const [amount, setAmount] = createSignal<number>(0);
   const [asset, setAsset] = createSignal<AssetEnum>(AssetEnum.TNKR);
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
@@ -37,52 +83,13 @@ const AssetsContext = () => {
   const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
   const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
   const [networkFee, setNetworkFee] = createSignal<number>(0.0005);
+  const [isLoggedIn, setIsLoggedIn] = createSignal<boolean>(false);
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
   const loc = useLocation();
-
-  const FROM_TOGGLE_ID = 'networkToggleFrom';
-  const FROM_DROPDOWN_ID = 'networkDropdownFrom';
-  const $toggleFrom = () => document.getElementById(FROM_TOGGLE_ID);
-  const $dropdownFrom = () => document.getElementById(FROM_DROPDOWN_ID);
-  const TO_TOGGLE_ID = 'networkToggleTo';
-  const TO_DROPDOWN_ID = 'networkDropdownTo';
-  const $toggleTo = () => document.getElementById(TO_TOGGLE_ID);
-  const $dropdownTo = () => document.getElementById(TO_DROPDOWN_ID);
-  const ASSET_TOGGLE_ID = 'assetToggle';
-  const ASSET_DROPDOWN_ID = 'assetDropdown';
-  const $toggleAsset = () => document.getElementById(ASSET_TOGGLE_ID);
-  const $dropdownAsset = () => document.getElementById(ASSET_DROPDOWN_ID);
-  const options: DropdownOptions = {
-    placement: 'bottom',
-    triggerType: 'click',
-    offsetSkidding: 0,
-    offsetDistance: -6,
-    delay: 300,
-  };
-  const assetOptions: DropdownOptions = {
-    placement: 'bottom',
-    triggerType: 'click',
-    offsetDistance: -6,
-    delay: 300,
-  };
-  const allTheNetworks = (): Record<string, JSXElement> => ({
-    [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
-    [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
-    [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
-    [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
-    [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
-  });
-  const allTheAssets = (): Record<string, JSXElement> => ({
-    [AssetEnum.TNKR]: getAssetBlock(AssetEnum.TNKR),
-    [AssetEnum.KSM]: getAssetBlock(AssetEnum.KSM),
-    [AssetEnum.DOT]: getAssetBlock(AssetEnum.DOT),
-    [AssetEnum.BSX]: getAssetBlock(AssetEnum.BSX),
-    [AssetEnum.PICA]: getAssetBlock(AssetEnum.PICA),
-  });
 
   const filteredNetworks = createMemo(() => {
     const availableNetworks = balances().map(([network, assets]) => network);
@@ -110,14 +117,13 @@ const AssetsContext = () => {
     const networks = Object.entries(allTheNetworks()).filter(([name, element]) => balanceNetworks.includes(name as NetworkEnum));
     return networks;
   });
-  const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
   const hasMultisigs = createMemo(() => saturnContext.state.multisigItems ? saturnContext.state.multisigItems.length > 0 : false);
   const isMultisigId = createMemo(() => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
 
-  function filteredAssetCount() {
+  const filteredAssetCount = () => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
@@ -128,7 +134,7 @@ const AssetsContext = () => {
     return filterAssetBlocks.length;
   };
 
-  async function proposeTransfer() {
+  const proposeTransfer = () => {
     const pair = finalNetworkPair();
 
     if (!isLoggedIn()) {
@@ -185,10 +191,10 @@ const AssetsContext = () => {
     proposeContext.setters.setOpenProposeModal(true);
   };
 
-  function copySelfAddress() {
+  const copySelfAddress = () => {
     if (!isLoggedIn() || !maxAssetAmount()) return;
     setBridgeToSelf(!bridgeToSelf());
-  }
+  };
 
   function validateAmount(e: any) {
     const inputValue = e.currentTarget.value;
@@ -206,122 +212,110 @@ const AssetsContext = () => {
     }
   }
 
-  function setMaxAmount() {
+  const setMaxAmount = () => {
     const maxAmount = maxAssetAmount();
     if (maxAmount === null || maxAmount <= 1) return;
     setAmount(maxAmount - 1);
-  }
+  };
 
-  function openAssets() {
-    if (dropdownAsset()) {
-      if (!isAssetDropdownActive()) {
-        dropdownAsset()?.show();
-        setIsAssetDropdownActive(true);
-      } else {
-        closeAssetDropdown();
-      }
+  const openAssets = () => {
+    if (!isAssetDropdownActive()) {
+      dropdownAsset()?.show();
+      setIsAssetDropdownActive(true);
+    } else {
+      closeAssetDropdown();
     }
-  }
+  };
 
-  function openFrom() {
-    if (dropdownFrom()) {
-      if (!isFromDropdownActive()) {
-        dropdownFrom()?.show();
-        setIsFromDropdownActive(true);
-      } else {
-        closeFromDropdown();
-      }
+  const openFrom = () => {
+    console.log('dropdownFrom');
+    if (!isFromDropdownActive()) {
+      dropdownFrom()?.show();
+      setIsFromDropdownActive(true);
+    } else {
+      closeFromDropdown();
     }
-  }
 
-  function openTo() {
-    if (dropdownTo()) {
-      if (!isToDropdownActive()) {
-        dropdownTo()?.show();
-        setIsToDropdownActive(true);
-      } else {
-        closeToDropdown();
-      }
+  };
+
+  const openTo = () => {
+    console.log('dropdownTo');
+    if (!isToDropdownActive()) {
+      dropdownTo()?.show();
+      setIsToDropdownActive(true);
+    } else {
+      closeToDropdown();
     }
-  }
+  };
 
-  function closeFromDropdown() {
-    if (dropdownFrom()) {
-      dropdownFrom()?.hide();
-      setIsFromDropdownActive(false);
-    }
-  }
+  const closeFromDropdown = () => {
+    dropdownFrom()?.hide();
+    setIsFromDropdownActive(false);
+  };
 
-  function closeToDropdown() {
-    if (dropdownTo()) {
-      dropdownTo()?.hide();
-      setIsToDropdownActive(false);
-    }
-  }
+  const closeToDropdown = () => {
+    dropdownTo()?.hide();
+    setIsToDropdownActive(false);
+  };
 
-  function closeAssetDropdown() {
-    if (dropdownAsset()) {
-      dropdownAsset()?.hide();
-      setIsAssetDropdownActive(false);
-    }
-  }
+  const closeAssetDropdown = () => {
+    dropdownAsset()?.hide();
+    setIsAssetDropdownActive(false);
+  };
 
-  function handleAssetOptionClick(asset: AssetEnum) {
+  const handleAssetOptionClick = (asset: AssetEnum) => {
     setAsset(asset);
     closeAssetDropdown();
-  }
+  };
 
-  function handleFromOptionClick(from: NetworkEnum) {
+  const handleFromOptionClick = (from: NetworkEnum) => {
     setFinalNetworkPair({ from, to: finalNetworkPair().to });
     // proposeContext.setters.setCurrentNetwork(from);
     closeFromDropdown();
-  }
+  };
 
-  function handleToOptionClick(to: NetworkEnum) {
+  const handleToOptionClick = (to: NetworkEnum) => {
     setFinalNetworkPair({ from: finalNetworkPair().from, to });
     closeToDropdown();
-  }
+  };
 
-  function renderSelectedOption(network: NetworkEnum) {
+  const renderSelectedOption = (network: NetworkEnum) => {
     return getNetworkBlock(network);
-  }
+  };
 
-  function renderAssetOption(asset: AssetEnum) {
+  const renderAssetOption = (asset: AssetEnum) => {
     return getAssetBlock(asset);
-  }
+  };
 
-  function clearAddress() {
+  const clearAddress = () => {
     if (!isLoggedIn() || !maxAssetAmount()) return;
     setTargetAddress('');
     setBridgeToSelf(false);
-  }
+  };
 
-  function getPaymentInfo(amount: number) {
+  const getPaymentInfo = (amount: number) => {
     // TODO: collect transaction fee
     console.log('getPaymentInfo', amount);
-  }
+  };
 
   onMount(() => {
     // Initializing the dropdowns
     initDropdowns();
   });
 
-  createEffect(() => {
-    if ($dropdownFrom() && $toggleFrom()) {
-      setDropdownFrom(new Dropdown($dropdownFrom(), $toggleFrom(), options));
-    }
+  onMount(() => {
+    const instance = new Dropdown(fromDropdownElement(), fromToggleElement(), options);
+    setDropdownFrom(instance);
   });
 
-  createEffect(() => {
-    if ($dropdownTo() && $toggleTo()) {
-      setDropdownTo(new Dropdown($dropdownTo(), $toggleTo(), options));
-    }
+  onMount(() => {
+    const instance = new Dropdown(toDropdownElement(), toToggleElement(), options);
+    setDropdownTo(instance);
   });
 
-  createEffect(() => {
-    if ($dropdownAsset() && $toggleAsset()) {
-      setDropdownAsset(new Dropdown($dropdownAsset(), $toggleAsset(), assetOptions));
-    }
+  onMount(() => {
+    const instance = new Dropdown(assetDropdownElement(), assetToggleElement(), assetOptions);
+    setDropdownAsset(instance);
   });
 
   createEffect(on(() => saturnContext.state.multisigAddress, () => {
@@ -405,6 +399,10 @@ const AssetsContext = () => {
     }
   }));
 
+  createEffect(() => {
+    setIsLoggedIn(!!saContext.state.account?.address);
+  });
+
   createEffect(on([() => finalNetworkPair().from, balances], () => {
     const loadAllBalances = async () => {
       // Setting My Balance amounts across all balances from current network
@@ -487,32 +485,48 @@ const AssetsContext = () => {
   }));
 
   createEffect(() => {
-    // Closing the dropdowns when clicking outside of them
     const handleClickOutside = (event: any) => {
-      const toggleToEl = $toggleTo();
-      const dropdownToEl = $dropdownTo();
-      const toggleFromEl = $toggleFrom();
-      const dropdownFromEl = $dropdownFrom();
-      const toggleAssetEl = $toggleAsset();
-      const dropdownAssetEl = $dropdownAsset();
-
-      if (toggleToEl && dropdownToEl && !toggleToEl.contains(event.target) && !dropdownToEl.contains(event.target)) {
+      if (toToggleElement() && toDropdownElement() && !toToggleElement()?.contains(event.target) && !toDropdownElement()?.contains(event.target)) {
         dropdownTo()?.hide();
         setIsToDropdownActive(false);
       }
+    };
 
-      if (toggleFromEl && dropdownFromEl && !toggleFromEl.contains(event.target) && !dropdownFromEl.contains(event.target)) {
+    if (isToDropdownActive()) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    onCleanup(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
+  });
+
+  createEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (fromToggleElement() && fromDropdownElement() && !fromToggleElement()?.contains(event.target) && !fromDropdownElement()?.contains(event.target)) {
         dropdownFrom()?.hide();
         setIsFromDropdownActive(false);
       }
+    };
 
-      if (toggleAssetEl && dropdownAssetEl && !toggleAssetEl.contains(event.target) && !dropdownAssetEl.contains(event.target)) {
+    if (isFromDropdownActive()) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    onCleanup(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
+  });
+
+  createEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (assetToggleElement() && assetDropdownElement() && !assetToggleElement()?.contains(event.target) && !assetDropdownElement()?.contains(event.target)) {
         dropdownAsset()?.hide();
         setIsAssetDropdownActive(false);
       }
     };
 
-    if (isToDropdownActive() || isFromDropdownActive() || isAssetDropdownActive()) {
+    if (isAssetDropdownActive()) {
       document.addEventListener('click', handleClickOutside);
     }
 
@@ -547,7 +561,7 @@ const AssetsContext = () => {
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
-          <SaturnSelect disabled={!isLoggedIn()} isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
+          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
             <For each={forNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleFromOptionClick(name as NetworkEnum);
@@ -557,7 +571,7 @@ const AssetsContext = () => {
             </For>
           </SaturnSelect>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
-          <SaturnSelect disabled={!isLoggedIn()} isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
+          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
             <For each={toNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
                 {element}
