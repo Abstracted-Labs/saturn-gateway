@@ -151,7 +151,7 @@ export default function Assets() {
 
   return (
     <>
-      <div class="relative saturn-scrollbar overflow-x-scroll overscroll-contain h-full flex flex-col content-stretch">
+      <div class="relative saturn-scrollbar overflow-x-scroll overscroll-contain min-h-64 h-full flex flex-col content-stretch">
         <table class="w-full text-sm text-left text-saturn-lightgrey">
           <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
             <tr>

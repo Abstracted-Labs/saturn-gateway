@@ -1,6 +1,6 @@
 import MultisigList, { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
 import AddMultisigButton from "../left-side/AddMultisigButton";
-import { useMegaModal } from "../../providers/multisigListModalProvider";
+import { useMegaModal } from "../../providers/megaModalProvider";
 
 const MultisigListModal = () => {
   const modal = useMegaModal();
@@ -8,7 +8,7 @@ const MultisigListModal = () => {
   return (
     <div id={MULTISIG_LIST_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
       <div id="multisigModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1 w-full" />
-      <div class={`relative h-auto px-4 bg-saturn-offwhite dark:bg-black border border-gray-900  rounded-md w-full max-w-[1200px]`}>
+      <div class={`relative h-auto px-4 bg-saturn-offwhite dark:bg-black border border-gray-900  rounded-md w-full max-w-[1200px] m-5 md:m-auto`}>
         <div class="flex flex-row items-start justify-between gap-10 pt-4 px-2">
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">
             Welcome back, traveler!

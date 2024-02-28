@@ -12,7 +12,7 @@ import { useRingApisContext } from "../../providers/ringApisProvider";
 import PageLinks from './PageLinks';
 import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 import LoaderAnimation from '../legos/LoaderAnimation';
-import { useMegaModal } from '../../providers/multisigListModalProvider';
+import { useMegaModal } from '../../providers/megaModalProvider';
 import { getMultisigsForAccount } from '../../utils/getMultisigs';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';

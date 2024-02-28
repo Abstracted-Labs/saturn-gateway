@@ -2,21 +2,39 @@ import { batch, createContext, createMemo, useContext } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { StorageObject, createLocalStorage } from "@solid-primitives/storage";
 import { Account, BaseWallet } from "@polkadot-onboard/core";
-import { WalletNameEnum } from "../utils/consts";
+import { KusamaFeeAssetEnum, WalletNameEnum } from "../utils/consts";
+
+interface SelectedAccountState { account?: Account; wallet?: BaseWallet; feeAsset?: KusamaFeeAssetEnum; }
 
 export const SelectedAccountContext = createContext<{
-  state: { account?: Account; wallet?: BaseWallet; },
+  state: SelectedAccountState,
   setters: any,
 }>({ state: {}, setters: {} });
 
 export function SelectedAccountProvider(props: any) {
-  let previousStorageState: StorageObject<string>;
-  const [state, setState] = createStore<{ account?: Account; wallet?: BaseWallet; }>({});
+  const [state, setState] = createStore<SelectedAccountState>({});
   const [storageState, setStorageState, { remove }] = createLocalStorage();
 
   const value = createMemo(() => ({
     state,
     setters: {
+      setFeeAsset(feeAsset: KusamaFeeAssetEnum) {
+        setState("feeAsset", feeAsset);
+        setStorageState("feeAsset", feeAsset);
+      },
+
+      getFeeAsset() {
+        const storageData = storageState;
+        if (storageData && storageData.feeAsset) {
+          setState("feeAsset", storageData.feeAsset as KusamaFeeAssetEnum);
+          return storageData.feeAsset as KusamaFeeAssetEnum;
+        } else {
+          const defaultAsset = KusamaFeeAssetEnum.TNKR;
+          setState("feeAsset", defaultAsset);
+          return defaultAsset;
+        }
+      },
+
       setSelected(account: Account, wallet: BaseWallet) {
         try {
           if (account && wallet) {

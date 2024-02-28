@@ -4,7 +4,7 @@ import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import AddMultisigButton from "../components/left-side/AddMultisigButton";
-import { useMegaModal } from "../providers/multisigListModalProvider";
+import { useMegaModal } from "../providers/megaModalProvider";
 import LoaderAnimation from "../components/legos/LoaderAnimation";
 import { getMultisigsForAccount } from "../utils/getMultisigs";
 

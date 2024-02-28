@@ -1,4 +1,4 @@
-import { createMemo, createSignal, Match, onMount, Switch } from 'solid-js';
+import { createEffect, createMemo, createSignal, Match, onMount, Switch } from 'solid-js';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import type { Call } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
@@ -51,6 +51,8 @@ function CallProposal(props: CallProposalProps) {
 export type ProposeModalProps = {};
 
 export default function ProposeModal() {
+  const $modalElement = () => document.getElementById(PROPOSE_MODAL_ID);
+
   const [message, setMessage] = createSignal<string>('');
   const [feeAsset, setFeeAsset] = createSignal<FeeAsset>(FeeAsset.TNKR);
   const [modal, setModal] = createSignal<ModalInterface | null>(null);
@@ -203,16 +205,13 @@ export default function ProposeModal() {
   const networkName = createMemo(() => proposeContext.state.proposal?.data.chain);
 
   onMount(() => {
-    const $modalElement = () => document.getElementById(PROPOSE_MODAL_ID);
+    initModals();
+  });
 
-    const runAsync = async () => {
-      initModals();
-      if (!$modalElement()) {
-        setModal(new Modal($modalElement()));
-      }
-    };
-
-    runAsync();
+  createEffect(() => {
+    if (!$modalElement()) {
+      setModal(new Modal($modalElement()));
+    }
   });
 
   const ModalBody = () => <div class='h-auto flex flex-col gap-1 text-xs'>
@@ -277,7 +276,7 @@ export default function ProposeModal() {
     {/* <ConnectButton /> */}
     <div id={PROPOSE_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
       <div id="proposeModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
-      <div class={`relative px-4 bg-saturn-offwhite dark:bg-black rounded-md`}>
+      <div class={`relative px-4 bg-saturn-offwhite dark:bg-black rounded-md m-5 md:m-auto`}>
         <div class="flex flex-row grow-1 items-start justify-between p-4">
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">
             Propose Multisig {processHeader()}

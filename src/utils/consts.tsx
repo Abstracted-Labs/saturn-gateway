@@ -13,6 +13,8 @@ export const INPUT_CREATE_MULTISIG_STYLE = "rounded-md border-0 outline-0 focus:
 
 export const MINI_TEXT_LINK_STYLE = "text-saturn-purple text-xxs font-bold hover:cursor-pointer hover:text-purple-500 inline-flex shrink";
 
+export const TEXT_LINK_STYLE = "text-saturn-purple text-sm font-bold hover:cursor-pointer hover:text-purple-500 inline-flex shrink";
+
 export const FALLBACK_TEXT_STYLE = "text-saturn-black dark:text-saturn-offwhite text-xs";
 
 export const CRUMB_STYLE = "text-xxs font-medium py-3 rounded-md focus:outline-none text-center w-[150px] crumb-btn disabled:cursor-not-allowed";

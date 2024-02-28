@@ -25,7 +25,6 @@ const AssetsContext = () => {
   let dropdownAsset: DropdownInterface;
   const [amount, setAmount] = createSignal<number>(0);
   const [asset, setAsset] = createSignal<AssetEnum>(AssetEnum.TNKR);
-  const [initialNetwork, setInitialNetwork] = createSignal<NetworkEnum>(NetworkEnum.TINKERNET);
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
   const [targetAddress, setTargetAddress] = createSignal<string>('');
   const [bridgeToSelf, setBridgeToSelf] = createSignal<boolean>(false);
@@ -292,9 +291,14 @@ const AssetsContext = () => {
   }
 
   function clearAddress() {
-    if (!isLoggedIn()) return;
+    if (!isLoggedIn() || !maxAssetAmount()) return;
     setTargetAddress('');
     setBridgeToSelf(false);
+  }
+
+  function getPaymentInfo(amount: number) {
+    // TODO: collect transaction fee
+    console.log('getPaymentInfo', amount);
   }
 
   onMount(() => {
@@ -359,41 +363,6 @@ const AssetsContext = () => {
     }
   }));
 
-  createEffect(() => {
-    // Closing the dropdowns when clicking outside of them
-    const handleClickOutside = (event: any) => {
-      const toggleToEl = $toggleTo();
-      const dropdownToEl = $dropdownTo();
-      const toggleFromEl = $toggleFrom();
-      const dropdownFromEl = $dropdownFrom();
-      const toggleAssetEl = $toggleAsset();
-      const dropdownAssetEl = $dropdownAsset();
-
-      if (toggleToEl && dropdownToEl && !toggleToEl.contains(event.target) && !dropdownToEl.contains(event.target)) {
-        dropdownTo.hide();
-        setIsToDropdownActive(false);
-      }
-
-      if (toggleFromEl && dropdownFromEl && !toggleFromEl.contains(event.target) && !dropdownFromEl.contains(event.target)) {
-        dropdownFrom.hide();
-        setIsFromDropdownActive(false);
-      }
-
-      if (toggleAssetEl && dropdownAssetEl && !toggleAssetEl.contains(event.target) && !dropdownAssetEl.contains(event.target)) {
-        dropdownAsset.hide();
-        setIsAssetDropdownActive(false);
-      }
-    };
-
-    if (isToDropdownActive() || isFromDropdownActive() || isAssetDropdownActive()) {
-      document.addEventListener('click', handleClickOutside);
-    }
-
-    onCleanup(() => {
-      document.removeEventListener('click', handleClickOutside);
-    });
-  });
-
   createEffect(on([() => finalNetworkPair().from, balances, asset], () => {
     // Setting the max asset amount based on the selected asset
     const currentNetwork = finalNetworkPair().from;
@@ -405,7 +374,6 @@ const AssetsContext = () => {
       const assetBalances = (balanceArray as unknown as [string, BalanceType][]).find(([token, balances]) => token === currentAsset);
       if (assetBalances) {
         const freeBalance = assetBalances?.[1].freeBalance;
-        console.log('freeBalance', freeBalance);
         if (freeBalance) {
           const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings].decimals);
           // remove commas from transferable string
@@ -503,6 +471,41 @@ const AssetsContext = () => {
     loadAllBalances();
   }));
 
+  createEffect(() => {
+    // Closing the dropdowns when clicking outside of them
+    const handleClickOutside = (event: any) => {
+      const toggleToEl = $toggleTo();
+      const dropdownToEl = $dropdownTo();
+      const toggleFromEl = $toggleFrom();
+      const dropdownFromEl = $dropdownFrom();
+      const toggleAssetEl = $toggleAsset();
+      const dropdownAssetEl = $dropdownAsset();
+
+      if (toggleToEl && dropdownToEl && !toggleToEl.contains(event.target) && !dropdownToEl.contains(event.target)) {
+        dropdownTo.hide();
+        setIsToDropdownActive(false);
+      }
+
+      if (toggleFromEl && dropdownFromEl && !toggleFromEl.contains(event.target) && !dropdownFromEl.contains(event.target)) {
+        dropdownFrom.hide();
+        setIsFromDropdownActive(false);
+      }
+
+      if (toggleAssetEl && dropdownAssetEl && !toggleAssetEl.contains(event.target) && !dropdownAssetEl.contains(event.target)) {
+        dropdownAsset.hide();
+        setIsAssetDropdownActive(false);
+      }
+    };
+
+    if (isToDropdownActive() || isFromDropdownActive() || isAssetDropdownActive()) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    onCleanup(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
+  });
+
   const MyBalance = () => {
     return <dl class="mt-2 text-xs w-full">
       <div class="flex place-items-stretch pb-4 text-saturn-lightgrey">
@@ -531,7 +534,9 @@ const AssetsContext = () => {
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
           <SaturnSelect disabled={!isLoggedIn()} isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
             <For each={forNetworks()}>
-              {([name, element]) => <SaturnSelectItem onClick={() => handleFromOptionClick(name as NetworkEnum)}>
+              {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
+                handleFromOptionClick(name as NetworkEnum);
+              }}>
                 {element}
               </SaturnSelectItem>}
             </For>
@@ -539,7 +544,7 @@ const AssetsContext = () => {
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
           <SaturnSelect disabled={!isLoggedIn()} isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
             <For each={toNetworks()}>
-              {([name, element]) => <SaturnSelectItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
+              {([name, element]) => element !== null && <SaturnSelectItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
                 {element}
               </SaturnSelectItem>}
             </For>
@@ -556,7 +561,7 @@ const AssetsContext = () => {
               placeholder="Destination address"
               value={bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()}
               class={`rounded-l-md rounded-r-none grow ${ INPUT_COMMON_STYLE }`}
-              disabled={bridgeToSelf() || !isLoggedIn()}
+              disabled={bridgeToSelf() || !isLoggedIn() || !maxAssetAmount()}
               onInput={e => setTargetAddress(e.currentTarget.value)}
             />
             <span onClick={clearAddress} class="inline-flex items-center px-3 text-xxs text-saturn-lightgrey bg-gray-200 rounded-r-md dark:bg-gray-800 hover:cursor-pointer opacity-50 hover:opacity-100">
@@ -597,6 +602,7 @@ const AssetsContext = () => {
               value={Number(amount())}
               class={`${ INPUT_COMMON_STYLE } mt-1`}
               onInput={validateAmount}
+              onBlur={[getPaymentInfo, Number(amount())]}
               max={Number(maxAssetAmount())}
               min={0}
               disabled={!isLoggedIn() || !maxAssetAmount()}

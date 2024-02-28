@@ -1,99 +1,109 @@
-import { Show, createEffect, createMemo, createRenderEffect, createSignal, onCleanup, onMount } from "solid-js";
-import { BUTTON_COMMON_STYLE } from "../../utils/consts";
+import { Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { BUTTON_COMMON_STYLE, KusamaFeeAssetEnum, TEXT_LINK_STYLE } from "../../utils/consts";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import WalletLabel from "./WalletLabel";
 import AvatarAndName from "../legos/AvatarAndName";
 import NetworkBalance from "../top-nav/NetworkBalance";
 import CopyAddressField from "../legos/CopyAddressField";
-import { Modal, initModals, Dropdown, initDropdowns } from 'flowbite';
+import { Modal, initModals, Dropdown } from 'flowbite';
 import type { ModalOptions, DropdownOptions, ModalInterface, DropdownInterface } from 'flowbite';
+import { FEE_ASSET_MODAL_ID } from "../modals/FeeAssetModal";
+import { useMegaModal } from "../../providers/megaModalProvider";
 
 export const WALLET_TOGGLE_ID = 'walletToggle';
 export const WALLET_DROPDOWN_ID = 'walletDropdown';
 export const WALLET_ACCOUNTS_MODAL_ID = 'walletAccountsModal';
+export const FEE_TOGGLE_ID = 'feeToggle';
+export const FEE_DROPDOWN_ID = 'feeDropdown';
+
+export const dropdownOptions: DropdownOptions = {
+  placement: 'bottom',
+  triggerType: 'click',
+  offsetSkidding: 0,
+  offsetDistance: -7,
+  delay: 300,
+};
+
+const modalOptions: ModalOptions = {
+  backdrop: 'dynamic',
+  closable: true,
+};
 
 const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) => void; }) => {
-  const [modal, setModal] = createSignal<ModalInterface | null>(null);
-  const [dropdown, setDropdown] = createSignal<DropdownInterface | null>(null);
-  const [isDropdownActive, setIsDropdownActive] = createSignal(false);
+  const walletModalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
+  const walletToggleElement = () => document.getElementById(WALLET_TOGGLE_ID);
+  const walletDropdownElement = () => document.getElementById(WALLET_DROPDOWN_ID);
+
+  const [accountSelectorModal, setAccountSelectorModal] = createSignal<ModalInterface | null>(null);
+  const [connectDropdown, setConnectDropdown] = createSignal<DropdownInterface | null>(null);
+  const [isConnectDropdownActive, setIsConnectDropdownActive] = createSignal(false);
+  const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>();
+
   const selectedAccount = useSelectedAccountContext();
-  const modalOptions: ModalOptions = {
-    backdrop: 'dynamic',
-    closable: true,
-  };
-  const dropdownOptions: DropdownOptions = {
-    placement: 'bottom',
-    triggerType: 'click',
-    offsetSkidding: 0,
-    offsetDistance: -7,
-    delay: 300,
-  };
+  const megaModal = useMegaModal();
 
   const isInMultisig = createMemo(() => props.inMultisig);
   const isLoggedIn = createMemo(() => !!selectedAccount.state.account?.address);
 
-  function openDropdown() {
-    if (!isDropdownActive()) {
-      dropdown()?.show();
-      setIsDropdownActive(true);
+  const openConnectDropdown = () => {
+    if (!isConnectDropdownActive()) {
+      connectDropdown()?.show();
+      setIsConnectDropdownActive(true);
     } else {
-      dropdown()?.hide();
-      setIsDropdownActive(false);
+      connectDropdown()?.hide();
+      setIsConnectDropdownActive(false);
     }
 
     if (props.isOpen) {
-      props.isOpen(isDropdownActive());
+      props.isOpen(isConnectDropdownActive());
     }
   };
 
-  function openModal() {
-    if (modal()) {
-      if (modal()?.isHidden()) {
-        modal()?.show();
+  const openAccountSelectorModal = () => {
+    if (!accountSelectorModal()) return;
+    if (accountSelectorModal()) {
+      if (accountSelectorModal()?.isHidden()) {
+        accountSelectorModal()?.show();
       }
     }
-  }
+  };
+
+  const openFeeAssetModal = () => {
+    megaModal.showFeeAssetModal();
+  };
 
   onMount(() => {
-    let timeout: any;
-    const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
-    const $toggleElement = () => document.getElementById(WALLET_TOGGLE_ID);
-    const $dropdownElement = () => document.getElementById(WALLET_DROPDOWN_ID);
-
-    const runAsync = async () => {
-      initModals();
-      if (!$modalElement()) {
-        setModal(new Modal($modalElement(), modalOptions));
-      }
-
-      initDropdowns();
-      if (!$dropdownElement()) {
-        setDropdown(new Dropdown($toggleElement(), $dropdownElement(), dropdownOptions));
-      }
-    };
-
-    timeout = setTimeout(() => {
-      runAsync();
-    }, 100);
-
-    onCleanup(() => {
-      clearTimeout(timeout);
-    });
+    initModals();
   });
 
   createEffect(() => {
-    // This effect is for closing the dropdowns when clicking outside of them
-    const $toggleElement = () => document.getElementById(WALLET_TOGGLE_ID);
-    const $dropdownElement = () => document.getElementById(WALLET_DROPDOWN_ID);
+    const selectedAsset = selectedAccount.setters.getFeeAsset() as KusamaFeeAssetEnum;
+    setFeeAsset(selectedAsset);
+  });
 
+  createEffect(() => {
+    if (walletModalElement()) {
+      const instance = new Modal(walletModalElement(), modalOptions);
+      setAccountSelectorModal(instance);
+    }
+  });
+
+  createEffect(() => {
+    if (walletToggleElement() && walletDropdownElement()) {
+      const instance = new Dropdown(walletToggleElement(), walletDropdownElement(), dropdownOptions);
+      setConnectDropdown(instance);
+    }
+  });
+
+  createEffect(() => {
     const handleClickOutside = (event: any) => {
-      if (event && $toggleElement() && $dropdownElement() && !$toggleElement()?.contains(event.target) && !$dropdownElement()?.contains(event.target)) {
-        setIsDropdownActive(false);
-        dropdown()?.hide();
+      if (event && walletToggleElement() && walletDropdownElement() && !walletToggleElement()?.contains(event.target) && !walletDropdownElement()?.contains(event.target) && connectDropdown()) {
+        setIsConnectDropdownActive(false);
+        connectDropdown()?.hide();
       }
     };
 
-    if (isDropdownActive()) {
+    if (isConnectDropdownActive()) {
       document.addEventListener('click', handleClickOutside);
     }
 
@@ -104,21 +114,21 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
 
   const ConnectButton = () => {
     return <div class={isInMultisig() ? "my-3" : "mx-4 my-3"}>
-      <button type="button" onClick={openModal} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>{selectedAccount.state.account ? 'Change Account' : 'Connect Wallet'}</button>
+      <button type="button" onClick={openAccountSelectorModal} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>{selectedAccount.state.account ? 'Change Account' : 'Connect Wallet'}</button>
     </div>;
   };
 
   return <div class="relative">
     <Show when={!isInMultisig()}>
       <button
-        onClick={openDropdown}
+        onClick={openConnectDropdown}
         data-dropdown-offset-distance="-6"
         id={WALLET_DROPDOWN_ID}
         data-dropdown-toggle={WALLET_TOGGLE_ID}
-        class={`${ BUTTON_COMMON_STYLE } ${ isDropdownActive() ? 'w-60' : '' } text-sm text-saturn-black dark:text-saturn-offwhite h-10 justify-between pl-4 z-30 flex items-center focus:outline-none`}
+        class={`${ BUTTON_COMMON_STYLE } ${ isConnectDropdownActive() ? 'w-60' : '' } text-sm text-saturn-black dark:text-saturn-offwhite h-10 justify-between pl-4 z-30 flex items-center focus:outline-none`}
         type="button">
-        <AvatarAndName hide={!isDropdownActive()} enlarge={false} name={selectedAccount.state.account?.name || selectedAccount.state.wallet?.metadata.title} avatar={(selectedAccount.state.account as any)?.avatar} />
-        <svg data-accordion-icon class={`transition-all w-3 h-3 ${ isDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+        <AvatarAndName hide={!isConnectDropdownActive()} enlarge={false} name={selectedAccount.state.account?.name || selectedAccount.state.wallet?.metadata.title} avatar={(selectedAccount.state.account as any)?.avatar} />
+        <svg data-accordion-icon class={`transition-all w-3 h-3 ${ isConnectDropdownActive() ? 'rotate-0' : 'rotate-180' } text-saturn-purple relative right-4`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5 5 1 1 5" />
         </svg>
       </button>
@@ -135,6 +145,14 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
             <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
               <dt>Wallet</dt>
               <dd class="font-bold"><WalletLabel walletType={selectedAccount.state.wallet?.metadata.title} /></dd>
+            </div>
+            <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
+              <dt>Fees paid in</dt>
+              <dd class="font-bold text-white">
+                <button type="button" class={TEXT_LINK_STYLE} onClick={openFeeAssetModal} data-modal-target={FEE_ASSET_MODAL_ID} data-modal-show={FEE_ASSET_MODAL_ID}>
+                  {feeAsset()}
+                </button>
+              </dd>
             </div>
           </dl>
         </Show>

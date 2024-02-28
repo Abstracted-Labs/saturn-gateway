@@ -4,7 +4,7 @@ import { createEffect, createMemo, createSignal, onMount } from 'solid-js';
 import { useSaturnContext } from '../../providers/saturnProvider';
 import { ModalInterface, initModals, Modal, ModalOptions } from 'flowbite';
 import { useSelectedAccountContext } from '../../providers/selectedAccountProvider';
-import { useMegaModal } from '../../providers/multisigListModalProvider';
+import { useMegaModal } from '../../providers/megaModalProvider';
 
 export const MULTISIG_MODAL_ID = 'multisigModal';
 
@@ -31,7 +31,7 @@ const AddMultisigButton = (props: AddMultisigButtonProps) => {
     }
 
     if (isInModal()) {
-      multisigModal.hideModal();
+      multisigModal.hideMultisigListModal();
     }
   }
 

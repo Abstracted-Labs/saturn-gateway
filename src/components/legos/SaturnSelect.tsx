@@ -21,7 +21,7 @@ const SaturnSelect = (props: SaturnSelectType) => {
   const kids = children(() => mergedProps.children);
   const isDisabled = createMemo(() => mergedProps.disabled);
 
-  return <div class={`relative flex-grow ${ mergedProps.isMini ? 'w-auto' : 'w-full' }`}>
+  return <div class={`relative grow ${ mergedProps.isMini ? 'w-auto' : 'w-full' }`}>
     <button
       disabled={isDisabled()}
       onClick={isDisabled() ? () => null : mergedProps.onClick}

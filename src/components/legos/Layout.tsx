@@ -8,6 +8,7 @@ import ProposeModal from "../modals/ProposeModal";
 import { Portal } from "solid-js/web";
 import CreateMultisig from "../modals/CreateMultisig";
 import MultisigListModal from "../modals/MultisigListModal";
+import FeeAssetModal from "../modals/FeeAssetModal";
 
 const Layout = ({ children }: { children: any; }) => {
   const loc = useLocation();
@@ -32,6 +33,9 @@ const Layout = ({ children }: { children: any; }) => {
     </Portal>
     <Portal mount={document.getElementById('multisigListWindow') || undefined}>
       <MultisigListModal />
+    </Portal>
+    <Portal mount={document.getElementById('feeAssetWindow') || undefined}>
+      <FeeAssetModal />
     </Portal>
 
     {/* Top nav */}
