@@ -7,6 +7,7 @@ import { setSaturnConnectAccount } from "../../utils/setupSaturnConnect";
 import defaultMultisigImage from '../../assets/images/default-multisig-image.png';
 import MainContent from "./MainContent";
 import { Option } from '@polkadot/types';
+import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 
 const MainContainer = () => {
   const [multisigIdentity, setMultisigIdentity] = createSignal<{
@@ -24,63 +25,65 @@ const MainContainer = () => {
   const loc = useLocation();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
+  const saContext = useSelectedAccountContext();
+
+  const selectedAddress = createMemo(() => saContext.state.account?.address);
+  const ringsApiState = createMemo(() => ringApisContext.state);
+  const saturnState = createMemo(() => saturnContext.state);
+  const tinkernetApi = createMemo(() => ringsApiState().tinkernet);
+  const saturnApi = createMemo(() => saturnState().saturn);
+  const multisigId = createMemo(() => saturnState().multisigId);
+  const details = createMemo(() => saturnState().multisigDetails);
 
   createEffect(() => {
-    const details = saturnContext.state.multisigDetails;
-    const ra = ringApisContext.state;
-    const mid = saturnContext.state.multisigId;
+    const acc = details()?.account;
 
-    if (details && ra?.tinkernet && typeof mid === "number") {
-      const acc = details.account;
+    if (!acc) return;
 
-      const runAsync = async () => {
-        const iden = (
-          (await ra.tinkernet.query.identity.identityOf(acc))?.toHuman() as {
-            info: {
-              display: { Raw: string; };
-              image: { Raw: string; };
-              twitter: { Raw: string; };
-              web: { Raw: string; };
-            };
-          }
-        )?.info;
+    const runAsync = async () => {
+      const iden = (
+        (await ringsApiState().tinkernet.query.identity.identityOf(acc))?.toHuman() as {
+          info: {
+            display: { Raw: string; };
+            image: { Raw: string; };
+            twitter: { Raw: string; };
+            web: { Raw: string; };
+          };
+        }
+      )?.info;
 
-        const name = iden?.display?.Raw ? iden.display.Raw : `Multisig ${ mid }`;
-        const imageUrl = iden?.image?.Raw
-          ? iden.image.Raw
-          : multisigIdentity().imageUrl;
-        const twitterUrl = iden?.twitter?.Raw
-          ? `https://twitter.com/${ iden.twitter.Raw }`
-          : undefined;
-        const websiteUrl = iden?.web?.Raw || undefined;
+      const name = iden?.display?.Raw ? iden.display.Raw : `Multisig ${ multisigId() }`;
+      const imageUrl = iden?.image?.Raw
+        ? iden.image.Raw
+        : multisigIdentity().imageUrl;
+      const twitterUrl = iden?.twitter?.Raw
+        ? `https://twitter.com/${ iden.twitter.Raw }`
+        : undefined;
+      const websiteUrl = iden?.web?.Raw || undefined;
 
-        setMultisigIdentity({ name, imageUrl, twitterUrl, websiteUrl });
-      };
+      setMultisigIdentity({ name, imageUrl, twitterUrl, websiteUrl });
+    };
 
-      runAsync();
-    }
+    runAsync();
   });
 
   createEffect(() => {
-    const tinkernetApi = ringApisContext.state.tinkernet;
-    const sat = saturnContext.state.saturn;
     const multisigHashId = loc.pathname.split('/')[1];
 
-    if (!tinkernetApi || !sat || !multisigHashId) {
-      // console.error('Tinkernet API, Saturn instance, or idOrAddress is null or undefined, exiting early.', tinkernetApi, sat, multisigHashId);
+    if (!multisigHashId) {
+      console.error('No multisigHashId provided, exiting early.');
       return;
     };
 
-    const runAsync = async () => {
-      if (loc.pathname.endsWith('create') && !multisigHashId) {
-        // console.error('Path ends with "create" but no ID or Address provided, exiting early.');
-        return;
-      }
+    if (!selectedAddress()) {
+      return;
+    }
 
+    const runAsync = async () => {
       let id;
 
       if (isAddress(multisigHashId)) {
-        const result = await tinkernetApi.query.inv4.coreByAccount(multisigHashId);
+        const result = await tinkernetApi().query.inv4.coreByAccount(multisigHashId);
         if (result instanceof Option && result.isSome) {
           id = result.unwrapOr(null)?.toNumber();
           // Ensure id is within the safe range
@@ -94,8 +97,6 @@ const MainContainer = () => {
         }
       } else {
         id = parseInt(multisigHashId);
-        const result = await sat.getDetails(multisigHashId);
-        // Check if id is a valid integer
         if (isNaN(id)) {
           console.error('Invalid id provided:', multisigHashId);
           return;
@@ -106,7 +107,7 @@ const MainContainer = () => {
 
       // Ensure id is a number before passing it to getDetails
       const numericId = Number(id);
-      const maybeDetails = await sat.getDetails(numericId);
+      const maybeDetails = await saturnApi()?.getDetails(numericId);
 
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
@@ -119,16 +120,16 @@ const MainContainer = () => {
     runAsync();
   });
 
-  createEffect(on([() => saturnContext.state.multisigAddress, () => multisigIdentity().name], () => {
+  createEffect(() => {
     const name = multisigIdentity().name;
-    const address = saturnContext.state.multisigAddress;
+    const address = details()?.account.toHuman();
 
     if (!address || name === "Multisig") {
       return;
     };
 
     setSaturnConnectAccount(name, address);
-  }));
+  });
 
   return (
     <div class="m-5 lg:m-2">

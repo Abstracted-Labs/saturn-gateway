@@ -1,16 +1,18 @@
-import { createEffect, createMemo, createSignal, Match, onMount, Switch } from 'solid-js';
+import { Accessor, createEffect, createMemo, createSignal, Match, onMount, Switch } from 'solid-js';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import type { Call } from '@polkadot/types/interfaces';
-import { u8aToHex, BN } from "@polkadot/util";
+import { u8aToHex, BN, formatBalance } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
-import { useProposeContext, ProposalType } from "../../providers/proposeProvider";
-import { useSaturnContext } from "../../providers/saturnProvider";
-import { useRingApisContext } from "../../providers/ringApisProvider";
-import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import { useProposeContext, ProposalType, ProposeContextType } from "../../providers/proposeProvider";
+import { SaturnContextType, useSaturnContext } from "../../providers/saturnProvider";
+import { IRingsContext, useRingApisContext } from "../../providers/ringApisProvider";
+import { SelectedAccountState, useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import FormattedCall from '../legos/FormattedCall';
 import { RingAssets } from "../../data/rings";
 import LogoutButton from '../top-nav/LogoutButton';
 import { initModals, Modal, ModalInterface } from 'flowbite';
+import { formatAsset } from '../../utils/formatAsset';
+import { NetworkEnum } from '../../utils/consts';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -20,7 +22,25 @@ type TransferProposalProps = {
   to: string;
 };
 
-function TransferProposal(props: TransferProposalProps) {
+type CallProposalProps = {
+  encodedCall: Uint8Array;
+  chain: string;
+};
+
+export type IProposalProps = {
+  preview: boolean;
+  selectedAccountContext: {
+    state: SelectedAccountState;
+    setters: any;
+  };
+  saturnContext: SaturnContextType;
+  proposeContext: ProposeContextType;
+  ringApisContext: IRingsContext;
+  message: Accessor<string>;
+  feeAsset: Accessor<FeeAsset>;
+};
+
+const TransferProposal = (props: TransferProposalProps) => {
   return (
     <div>
       <p>Amount: {
@@ -33,55 +53,40 @@ function TransferProposal(props: TransferProposalProps) {
       <p>To: {props.to}</p>
     </div>
   );
-}
-
-type CallProposalProps = {
-  encodedCall: Uint8Array;
-  chain: string;
 };
 
-function CallProposal(props: CallProposalProps) {
+const CallProposal = (props: CallProposalProps) => {
   const ringApisContext = useRingApisContext();
 
   return <FormattedCall
     call={ringApisContext.state[props.chain].createType("Call", props.encodedCall) as unknown as Call}
   />;
-}
+};
 
-export type ProposeModalProps = {};
+export const proposeCall = async (props: IProposalProps) => {
+  const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, message, feeAsset } = props;
+  const selected = selectedAccountContext?.state;
 
-export default function ProposeModal() {
-  const $modalElement = () => document.getElementById(PROPOSE_MODAL_ID);
+  if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
+    return;
+  }
 
-  const [message, setMessage] = createSignal<string>('');
-  const [feeAsset, setFeeAsset] = createSignal<FeeAsset>(FeeAsset.TNKR);
-  const [modal, setModal] = createSignal<ModalInterface | null>(null);
+  const msg = message();
 
-  const ringApisContext = useRingApisContext();
-  const proposeContext = useProposeContext();
-  const saturnContext = useSaturnContext();
-  const selectedAccountContext = useSelectedAccountContext();
+  let proposalMetadata;
+  if (msg) {
+    proposalMetadata = JSON.stringify({ message: msg });
+  }
 
-  async function propose() {
-    const selected = selectedAccountContext.state;
+  const proposalData = proposeContext.state.proposal.data;
+  const proposalType = proposeContext.state.proposal.proposalType;
 
-    if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
-      return;
-    }
+  console.log("data, type: ", proposalData, proposalType);
 
-    const msg = message();
-
-    let proposalMetadata;
-    if (msg) {
-      proposalMetadata = JSON.stringify({ message: msg });
-    }
-
-    const proposalData = proposeContext.state.proposal.data;
-    const proposalType = proposeContext.state.proposal.proposalType;
-
-    console.log("data, type: ", proposalData, proposalType);
-
+  try {
     if (proposalType === ProposalType.LocalCall && (proposalData as { encodedCall: Uint8Array; }).encodedCall) {
+      console.log("in LocalCall");
+
       await saturnContext.state.saturn
         .buildMultisigCall({
           id: saturnContext.state.multisigId,
@@ -95,8 +100,7 @@ export default function ProposeModal() {
       (proposalData as { encodedCall: Uint8Array; }).encodedCall &&
       (proposalData as { chain: string; }).chain
     ) {
-
-      console.log("in xcmcall");
+      console.log("in XcmCall");
 
       const chain = (proposalData as { chain: string; }).chain;
       const callData = (proposalData as { encodedCall: Uint8Array; }).encodedCall;
@@ -125,24 +129,30 @@ export default function ProposeModal() {
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
     } else if (
       proposalType === ProposalType.XcmTransfer &&
-      (proposalData as { amount: BN | BigNumber | string; }).amount &&
-      (proposalData as { to: string; }).to &&
-      (proposalData as { asset: string; }).asset &&
-      (proposalData as { chain: string; }).chain
+      (proposalData as { chain: string; }).chain &&
+      (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET && (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET
     ) {
+      console.log("in XcmTransfer");
 
       const chain = (proposalData as { chain: string; }).chain;
-      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
+      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount || '0';
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
 
       const xcmAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
+      console.log("Found xcmAsset: ", xcmAsset);
+
+      if (!xcmAsset) {
+        console.error("xcmAsset is undefined. Check chain and asset names for typos or case sensitivity issues.");
+      }
 
       if (!xcmAsset || !saturnContext.state.multisigAddress) return;
 
       const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
 
-      await saturnContext.state.saturn
+      const transferCall = saturnContext.state.saturn
         .transferXcmAsset({
           id: saturnContext.state.multisigId,
           asset: xcmAsset,
@@ -151,42 +161,130 @@ export default function ProposeModal() {
           xcmFeeAsset: xcmAsset,
           xcmFee: new BN(partialFee).mul(new BN("2")),
           proposalMetadata,
-        })
-        .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        });
+
+      if (!preview) {
+        await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+      } else {
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
+        console.log("partialFeePreview: ", partialFeePreview);
+        return partialFeePreview;
+      }
+    } else if (
+      proposalType === ProposalType.LocalTransfer &&
+      (proposalData as { chain: string; }).chain &&
+      (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET && (proposalData as { destinationChain: string; }).destinationChain === NetworkEnum.TINKERNET
+    ) {
+      console.log("in LocalTransfer");
+
+      const chain = (proposalData as { chain: string; }).chain;
+      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
+      const to = (proposalData as { to: string; }).to;
+      const asset = (proposalData as { asset: string; }).asset;
+
+      if (!saturnContext.state.multisigAddress) {
+        console.error("Multisig address is undefined. Exiting early.");
+        return;
+      };
+
+      const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+
+      const localTransferCall = ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString()));
+
+      if (!preview) {
+        await localTransferCall.signAndSend(selected.account.address, { signer: selected.wallet.signer, assetId: feeAsset() });
+      } else {
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
+        console.log("partialFeePreview: ", partialFeePreview);
+        return partialFeePreview;
+      }
+    } else if (
+      proposalType === ProposalType.XcmBridge &&
+      (proposalData as { to: string; }).to &&
+      (proposalData as { to: string; }).to === saturnContext.state.multisigAddress &&
+      (proposalData as { chain: string; }).chain &&
+      (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { chain: string; }).chain !== (proposalData as { destinationChain: string; }).destinationChain
+    ) {
+      console.log("in XcmBridge");
+
+      const chain = (proposalData as { destinationChain: string; }).destinationChain;
+      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
+      const to = (proposalData as { to: string; }).to;
+      const asset = (proposalData as { asset: string; }).asset;
+      console.log('saturnContext.state.saturn.chains', saturnContext.state.saturn.chains);
+      const xcmAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
+
+      console.log("Found xcmAsset: ", xcmAsset);
+
+      if (!xcmAsset) {
+        console.error("xcmAsset is undefined. Check chain and asset names for typos or case sensitivity issues.");
+      }
+
+      if (!xcmAsset || !saturnContext.state.multisigAddress) return;
+
+      const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+
+      const bridgeCall = saturnContext.state.saturn
+        .bridgeXcmAsset({
+          id: saturnContext.state.multisigId,
+          asset: xcmAsset,
+          amount: new BN(amount.toString()),
+          to,
+          xcmFee: new BN(partialFee).mul(new BN("2")),
+          destination: (proposalData as { destinationChain: string; }).destinationChain,
+          proposalMetadata,
+        });
+
+      if (!preview) {
+        await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+      } else {
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals);
+        console.log("partialFeePreview: ", partialFeePreview);
+        return partialFeePreview;
+      }
+    } else {
+      console.log("Unknown proposal type or missing data for proposal type.");
+      console.log("Proposal Data:", proposalData.chain, (proposalData as any).asset, (proposalData as any).to, (proposalData as any).amount);
     }
-
-    // TODO: Implement LocalTransfer and XcmBridge.
-
+  } catch (e) {
+    console.error("Error proposing call: ", e);
+  } finally {
     proposeContext.setters.setOpenProposeModal(false);
-  };
+  }
+};
 
-  function cancel() {
-    // TODO: fix this
-    console.log("got here: ", modal());
+export default function ProposeModal() {
+  const $modalElement = () => document.getElementById(PROPOSE_MODAL_ID);
+
+  const [message, setMessage] = createSignal<string>('');
+  const [feeAsset, setFeeAsset] = createSignal<FeeAsset>(FeeAsset.TNKR);
+  const [modal, setModal] = createSignal<ModalInterface | null>(null);
+
+  const ringApisContext = useRingApisContext();
+  const proposeContext = useProposeContext();
+  const saturnContext = useSaturnContext();
+  const selectedAccountContext = useSelectedAccountContext();
+
+  const closeModal = () => {
     if (!modal()?.isHidden()) {
       modal()?.hide();
       proposeContext.setters.setOpenProposeModal(false);
     }
   };
 
-  // function openModal() {
-  //   // TODO: fix this
-  //   if (modal()) {
-  //     if (modal()?.isHidden()) {
-  //       modal()?.show();
-  //       proposeContext.setters.setOpenProposeModal(true);
-  //     }
-  //   }
-  // }
-
-  function processHeader(): string {
+  const processHeader = (): string => {
     switch (maybeProposal()?.proposalType) {
       default:
         return "Call";
 
+      // Same source and destination chains
       case ProposalType.LocalTransfer:
         return "Balance Transfer";
 
+      // Different source and destination chains
       case ProposalType.XcmTransfer:
         return "Balance Transfer";
 
@@ -196,6 +294,7 @@ export default function ProposeModal() {
       case ProposalType.XcmCall:
         return "Call";
 
+      // Cross-chain asset transfer using same account address
       case ProposalType.XcmBridge:
         return "Asset Bridge";
     }
@@ -263,14 +362,8 @@ export default function ProposeModal() {
         setMessage(e.currentTarget.value);
       }}
     />
-    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none" onClick={propose}>Propose</button>
+    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none" onClick={() => proposeCall({ preview: false, selectedAccountContext: selectedAccountContext, saturnContext: saturnContext, proposeContext: proposeContext, message, feeAsset, ringApisContext: ringApisContext })}>Propose</button>
   </div>;
-
-  // const ConnectButton = () => {
-  //   return <div class="mx-4 my-3">
-  //     <button type="button" onClick={openModal} data-modal-target={PROPOSE_MODAL_ID} data-modal-show={PROPOSE_MODAL_ID} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>Preview Propose</button>
-  //   </div>;
-  // };
 
   return <>
     {/* <ConnectButton /> */}
@@ -281,7 +374,7 @@ export default function ProposeModal() {
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">
             Propose Multisig {processHeader()}
           </h4>
-          <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={cancel}>
+          <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={closeModal}>
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
             </svg>
@@ -291,7 +384,7 @@ export default function ProposeModal() {
         <div class="flex flex-col">
           <ModalBody />
           <div class="flex flex-row justify-end gap-2 items-center m-6">
-            <LogoutButton cancel={true} proposeModal={true} onClick={cancel} />
+            <LogoutButton cancel={true} proposeModal={true} onClick={closeModal} />
           </div>
         </div>
       </div>

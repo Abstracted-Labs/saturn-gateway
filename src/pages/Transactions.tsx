@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo } from 'solid-js';
+import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
@@ -19,6 +19,8 @@ import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
 import SaturnProgress from '../components/legos/SaturnProgress';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
+
+export const ACCORDION_ID = 'accordion-collapse';
 
 export type QueuePageProps = {
 };
@@ -184,11 +186,15 @@ export default function Transactions() {
 
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
-  createEffect(() => {
+  onMount(() => {
     initAccordions();
+  });
+
+  createEffect(() => {
     const pc = pendingProposals();
 
     if (document && pc) {
+      const parentEl = () => document.getElementById(ACCORDION_ID);
       const accordionItems = () => pc.map((p, index) => {
         const triggerEl = () => document.querySelector(`#heading${ index }`) as HTMLElement;
         const targetEl = () => document.querySelector(`#content${ index }`) as HTMLElement;
@@ -204,7 +210,7 @@ export default function Transactions() {
       });
 
       const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
-      accordion = new FlowAccordion(items, undefined);
+      accordion = new FlowAccordion(parentEl(), items);
     }
   });
 
@@ -249,7 +255,7 @@ export default function Transactions() {
 
   return (
     <div>
-      <div id="accordion-collapse" data-accordion="collapse" class="flex flex-col">
+      <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col">
         <Switch fallback={<div>
           {loading() ? <LoaderAnimation text="Loading transactions..." /> : <span class={FALLBACK_TEXT_STYLE}>Nothig to display.</span>}
         </div>}>

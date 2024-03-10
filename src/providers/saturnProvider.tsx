@@ -5,7 +5,7 @@ import { MultisigItem } from "../utils/consts";
 
 interface SaturnContextState {
   saturn?: Saturn;
-  multisigId?: number;
+  multisigId?: number | undefined;
   multisigAddress?: string;
   multisigDetails?: MultisigDetails,
   multisigItems?: MultisigItem[];
@@ -13,13 +13,39 @@ interface SaturnContextState {
 
 export type SaturnContextType = {
   state: SaturnContextState,
-  setters: any,
+  setters: {
+    setSaturn: (saturn: Saturn) => void;
+    setMultisigId: (multisigId: number | undefined) => void;
+    setMultisigAddress: (multisigAddress: string) => void;
+    setMultisigDetails: (multisigDetails: MultisigDetails) => void;
+    setMultisigItems: (multisigItems: MultisigItem[]) => void;
+    logout: () => void;
+  },
 };
 
-export const SaturnContext = createContext<SaturnContextType>({ state: {}, setters: {} });
+const defaultState: SaturnContextState = {
+  saturn: undefined,
+  multisigId: undefined,
+  multisigAddress: undefined,
+  multisigDetails: undefined,
+  multisigItems: [],
+};
+
+const defaultSetters = {
+  setSaturn: () => { },
+  setMultisigId: () => { },
+  setMultisigAddress: () => { },
+  setMultisigDetails: () => { },
+  setMultisigItems: () => { },
+  logout: () => { },
+};
+
+export const SaturnContext = createContext<SaturnContextType>({
+  state: defaultState, setters: defaultSetters
+});
 
 export function SaturnProvider(props: any) {
-  const [state, setState] = createStore<SaturnContextState>({});
+  const [state, setState] = createStore<SaturnContextState>(defaultState);
 
   const value = {
     state,
@@ -28,7 +54,7 @@ export function SaturnProvider(props: any) {
         setState("saturn", saturn);
       },
 
-      setMultisigId(multisigId: number) {
+      setMultisigId(multisigId: number | undefined) {
         setState("multisigId", multisigId);
       },
 

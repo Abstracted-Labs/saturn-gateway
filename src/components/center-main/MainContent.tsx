@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation, useNavigate } from "@solidjs/router";
+import { Routes, Route, useLocation } from "@solidjs/router";
 import Management from "../../pages/Management";
 import Transactions from "../../pages/Transactions";
 import Assets from "../../pages/Assets";
@@ -13,13 +13,12 @@ const MainContent = () => {
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const loc = useLocation();
-  const navigate = useNavigate();
 
   const currentPathname = createMemo(() => loc.pathname);
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const hasMultisigs = createMemo(() => saturnContext.state.multisigItems ? saturnContext.state.multisigItems.length > 0 : false);
 
-  function pageTitle() {
+  const pageTitle = () => {
     if (!isLoggedIn() || !hasMultisigs()) return '';
     if (currentPathname().endsWith(`/${ PagesEnum.ASSETS }`)) {
       return 'Assets';
@@ -30,16 +29,7 @@ const MainContent = () => {
     } else {
       return 'Page not found!';
     }
-  }
-
-  createEffect(() => {
-    const hashId = loc.pathname.split('/')[1];
-    const page = loc.pathname.split('/')[2];
-
-    // if (isLoggedIn() && !hasMultisigs()) {
-    //   navigate(`/undefined/${ page }`, { replace: true });
-    // }
-  });
+  };
 
   return <SaturnCard header={pageTitle()}>
     <Routes>

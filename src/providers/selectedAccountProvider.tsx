@@ -4,7 +4,7 @@ import { StorageObject, createLocalStorage } from "@solid-primitives/storage";
 import { Account, BaseWallet } from "@polkadot-onboard/core";
 import { KusamaFeeAssetEnum, WalletNameEnum } from "../utils/consts";
 
-interface SelectedAccountState { account?: Account; wallet?: BaseWallet; feeAsset?: KusamaFeeAssetEnum; }
+export interface SelectedAccountState { account?: Account; wallet?: BaseWallet; feeAsset?: KusamaFeeAssetEnum; }
 
 export const SelectedAccountContext = createContext<{
   state: SelectedAccountState,

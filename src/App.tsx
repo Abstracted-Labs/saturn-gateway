@@ -309,7 +309,7 @@ const HomePlanet: Component = () => {
   }));
 
   createEffect(() => {
-    async function checkMultisigsExist() {
+    const checkMultisigsExist = async () => {
       const sat = saturnContext.state.saturn;
       const address = selectedAccountContext.state.account?.address;
 
@@ -319,14 +319,13 @@ const HomePlanet: Component = () => {
 
       const multisigs = await getMultisigsForAccount(address, sat.api);
       setHasMultisigs(multisigs.length > 0);
-    }
+    };
 
     checkMultisigsExist();
   });
 
   createEffect(() => {
     const loggedIn = isLoggedIn();
-    const hasItems = hasMultisigs();
 
     if (loggedIn) {
       const hashId = loc.pathname.split('/')[1];
@@ -336,11 +335,6 @@ const HomePlanet: Component = () => {
         if (!Number.isNaN(Number(hashId))) {
           return;
         }
-
-        // if (!hasItems) {
-        //   navigate(`/undefined/${ page }`, { replace: true });
-        //   return;
-        // }
 
         navigate(`/${ getDefaultMultisigId() }/${ page }`, { replace: true });
       }

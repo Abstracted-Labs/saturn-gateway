@@ -18,6 +18,9 @@ import { getCurrentUsdPrice } from "../../utils/getCurrentUsdPrice";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import { NetworkAssetBalance, NetworkBalancesArray } from "../../pages/Assets";
+import { proposeCall } from "../modals/ProposeModal";
+import { FeeAsset } from "@invarch/saturn-sdk";
+import getProposalType from "../../utils/getProposalType";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -82,7 +85,8 @@ const AssetsContext = () => {
   const [transferableAmount, setTransferableAmount] = createSignal<string>('0.00');
   const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
   const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
-  const [networkFee, setNetworkFee] = createSignal<number>(0.0005);
+  const [networkFee, setNetworkFee] = createSignal<number>(0);
+  const [loadingFee, setLoadingFee] = createSignal<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = createSignal<boolean>(false);
 
   const proposeContext = useProposeContext();
@@ -122,8 +126,7 @@ const AssetsContext = () => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
-
-  const filteredAssetCount = () => {
+  const filteredAssetCount = createMemo(() => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
@@ -132,7 +135,7 @@ const AssetsContext = () => {
     const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
 
     return filterAssetBlocks.length;
-  };
+  });
 
   const proposeTransfer = () => {
     const pair = finalNetworkPair();
@@ -192,11 +195,14 @@ const AssetsContext = () => {
   };
 
   const copySelfAddress = () => {
-    if (!isLoggedIn() || !maxAssetAmount()) return;
-    setBridgeToSelf(!bridgeToSelf());
+    if (!isLoggedIn()) return;
+    setBridgeToSelf(true);
+    if (saturnContext.state.multisigAddress) {
+      setTargetAddress(saturnContext.state.multisigAddress);
+    }
   };
 
-  function validateAmount(e: any) {
+  const validateAmount = (e: any) => {
     const inputValue = e.currentTarget.value;
     const maxAmount = maxAssetAmount();
     if (maxAmount === null) return;
@@ -210,7 +216,7 @@ const AssetsContext = () => {
       // Clear the input value or show an error message
       e.currentTarget.value = '';
     }
-  }
+  };
 
   const setMaxAmount = () => {
     const maxAmount = maxAssetAmount();
@@ -288,14 +294,64 @@ const AssetsContext = () => {
   };
 
   const clearAddress = () => {
-    if (!isLoggedIn() || !maxAssetAmount()) return;
+    if (!isLoggedIn()) return;
     setTargetAddress('');
     setBridgeToSelf(false);
   };
 
-  const getPaymentInfo = (amount: number) => {
-    // TODO: collect transaction fee
-    console.log('getPaymentInfo', amount);
+  const updateTargetAddress = (address: string) => {
+    if (address !== targetAddress()) {
+      setBridgeToSelf(false);
+    }
+
+    if (address) {
+      setTargetAddress(address);
+    }
+  };
+
+  const getPaymentInfo = async () => {
+    setLoadingFee(true);
+    const proposalProps = {
+      preview: true,
+      selectedAccountContext: saContext,
+      saturnContext,
+      proposeContext: {
+        state: {
+          proposal: {
+            proposalType: getProposalType({
+              asset: asset(),
+              fromChain: finalNetworkPair().from,
+              toChain: finalNetworkPair().to,
+              toAddress: (bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()) || '',
+              multisigAddress: saturnContext.state.multisigAddress || '',
+            }),
+            data: {
+              chain: finalNetworkPair().from,
+              destinationChain: finalNetworkPair().to,
+              asset: asset(),
+              amount: new BigNumber(amount()).times(BigNumber('10').pow(BigNumber(Rings[finalNetworkPair().from as keyof typeof Rings].decimals))),
+              to: bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress(),
+            }
+          },
+
+        },
+        setters: proposeContext.setters,
+      },
+      ringApisContext,
+      message: () => '',
+      feeAsset: () => asset() as unknown as FeeAsset,
+    };
+
+    const paymentInfo = await proposeCall(proposalProps);
+    if (paymentInfo) {
+      console.log("paymentInfo: ", paymentInfo);
+      setNetworkFee(Number(paymentInfo));
+    } else {
+      console.error('getPaymentInfo: no payment info');
+
+    }
+
+    setLoadingFee(false);
   };
 
   onMount(() => {
@@ -318,7 +374,7 @@ const AssetsContext = () => {
     setDropdownAsset(instance);
   });
 
-  createEffect(on(() => saturnContext.state.multisigAddress, () => {
+  createEffect(on([() => saturnContext.state.multisigAddress], () => {
     // Setting all balances whenever multisigAddress changes
     const id = saturnContext.state.multisigId;
     const address = saturnContext.state.multisigAddress;
@@ -590,8 +646,9 @@ const AssetsContext = () => {
               placeholder="Destination address"
               value={bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()}
               class={`rounded-l-md rounded-r-none grow ${ INPUT_COMMON_STYLE }`}
-              disabled={bridgeToSelf() || !isLoggedIn() || !maxAssetAmount()}
-              onInput={e => setTargetAddress(e.currentTarget.value)}
+              disabled={!isLoggedIn()}
+              onInput={e => updateTargetAddress(e.currentTarget.value)}
+              onBlur={getPaymentInfo}
             />
             <span onClick={clearAddress} class="inline-flex items-center px-3 text-xxs text-saturn-lightgrey bg-gray-200 rounded-r-md dark:bg-gray-800 hover:cursor-pointer opacity-50 hover:opacity-100">
               clear
@@ -631,7 +688,7 @@ const AssetsContext = () => {
               value={Number(amount())}
               class={`${ INPUT_COMMON_STYLE } mt-1`}
               onInput={validateAmount}
-              onBlur={[getPaymentInfo, Number(amount())]}
+              onBlur={getPaymentInfo}
               max={Number(maxAssetAmount())}
               min={0}
               disabled={!isLoggedIn() || !maxAssetAmount()}
@@ -645,7 +702,7 @@ const AssetsContext = () => {
           </span>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={!!maxAssetAmount()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
+              <Show when={!!maxAssetAmount() && !loadingFee()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
                 <span class="ml-2">{networkFee()} {asset()}</span>
               </Show>
             </span>
@@ -653,7 +710,7 @@ const AssetsContext = () => {
         </div>
       </div>
 
-      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount()} onClick={proposeTransfer}>Perform Transaction</button>
+      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount() || loadingFee() || networkFee() === 0} onClick={proposeTransfer}>Propose Transaction</button>
     </div>;
   };
 

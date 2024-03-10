@@ -23,7 +23,7 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
   const [ksmBalance, setKsmBalance] = createSignal<string | null>(null);
   const rings = useRingApisContext();
 
-  async function setBalanceTNKR() {
+  const setBalanceTNKR = async () => {
     try {
       if (!rings.state.tinkernet || !props.address) return;
 
@@ -40,9 +40,9 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
     } catch (error) {
       console.error(error);
     }
-  }
+  };
 
-  async function setBalanceKSM() {
+  const setBalanceKSM = async () => {
     try {
       if (!rings.state.tinkernet || !props.address) return;
 
@@ -56,10 +56,9 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
 
       setKsmBalance(formattedBalance);
     } catch (error) {
-
       console.error(error);
     }
-  }
+  };
 
   createEffect(() => {
     setBalanceTNKR();

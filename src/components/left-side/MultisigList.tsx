@@ -40,7 +40,7 @@ const MultisigList = (props: MultisigListProps) => {
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const [activeButton, setActiveButton] = createSignal<number | null>(null);
   const [multisigItems, setMultisigItems] = createSignal<MultisigItem[]>([]);
-  const [originalOrder, setOriginalOrder] = createSignal([...multisigItems()]);
+  const [originalOrder, setOriginalOrder] = createSignal<MultisigItem[]>([]);
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
   const [mutateButton, setMutateButton] = createSignal(false);
   const [loading, setLoading] = createSignal<boolean>(true);
@@ -58,7 +58,7 @@ const MultisigList = (props: MultisigListProps) => {
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
   const isInModal = createMemo(() => props.isInModal);
 
-  function handleClick(index: number) {
+  const handleClick = async (index: number) => {
     const sat = saturnContext.state.saturn;
     if (!sat) return;
 
@@ -79,43 +79,48 @@ const MultisigList = (props: MultisigListProps) => {
 
       saturnContext.setters.setMultisigId(id);
 
-      sat.getDetails(id).then((maybeDetails) => {
+      try {
+        const maybeDetails = await sat.getDetails(id);
         if (maybeDetails) {
+          console.debug("Multisig details fetched successfully:", maybeDetails);
           saturnContext.setters.setMultisigDetails(maybeDetails);
           saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
         }
-      });
+      } catch (error) {
+        console.error("Failed to fetch multisig details:", error);
+      } finally {
 
-      // navigate(`/${ id }/management`, { replace: true });
+        // navigate(`/${ id }/management`, { replace: true });
 
-      // Remove the selected item from the list and update the selected item
-      const selectedItem = originalOrder()[index];
-      setMultisigItems(originalOrder());
-      // setSelectedItem(selectedItem); // Update the selected item
+        // Remove the selected item from the list and update the selected item
+        const selectedItem = originalOrder()[index];
+        setMultisigItems(originalOrder());
+        // setSelectedItem(selectedItem); // Update the selected item
+      }
+
+      // Reset the scroll position
+      // const scrollContainer = scrollContainerRef;
+      // if (scrollContainer instanceof HTMLDivElement) {
+      //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      // }
+
+      // Close the left drawer
+      closeLeftDrawer();
     }
+  };
 
-    // Reset the scroll position
-    // const scrollContainer = scrollContainerRef;
-    // if (scrollContainer instanceof HTMLDivElement) {
-    //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    // }
-
-    // Close the left drawer
-    closeLeftDrawer();
-  }
-
-  function closeLeftDrawer() {
+  const closeLeftDrawer = () => {
     const button = document.querySelector('button[data-drawer-hide="leftSidebar"][aria-controls="leftSidebar"]');
     if (button instanceof HTMLButtonElement) {
       button.click();
     }
-  }
+  };
 
-  function setScrollContainerRef(ref: HTMLDivElement | null) {
+  const setScrollContainerRef = (ref: HTMLDivElement | null) => {
     scrollContainerRef = ref;
   };
 
-  function copyAddressToClipboard(e: MouseEvent, selectedAddress: string, index: number) {
+  const copyAddressToClipboard = (e: MouseEvent, selectedAddress: string, index: number) => {
     // Prevent the click event from bubbling up to the parent element
     e.stopPropagation();
 
@@ -129,7 +134,7 @@ const MultisigList = (props: MultisigListProps) => {
     setTimeout(() => {
       setCopiedIndex(null);
     }, 3000);
-  }
+  };
 
   createEffect(on(getMultisigId, () => {
     setLoading(true);
@@ -154,9 +159,9 @@ const MultisigList = (props: MultisigListProps) => {
     };
 
 
-    async function load() {
+    const load = async () => {
       if (!sat || !address || !api) {
-        // delayUnload();
+        delayUnload();
         return;
       };
 
@@ -227,13 +232,13 @@ const MultisigList = (props: MultisigListProps) => {
       }
 
       setLoading(false);
-    }
+    };
 
     load();
 
-    // onCleanup(() => {
-    //   clearTimeout(timeout);
-    // });
+    onCleanup(() => {
+      clearTimeout(timeout);
+    });
   });
 
   createEffect(() => {

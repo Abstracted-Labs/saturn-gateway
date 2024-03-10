@@ -163,7 +163,6 @@ const CryptoAccounts = () => {
 
   function handleLogout() {
     removeModal();
-    saContext.state.wallet?.disconnect();
   }
 
   function handleOpenWalletConnect() {

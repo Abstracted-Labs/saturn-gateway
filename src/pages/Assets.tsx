@@ -11,6 +11,7 @@ import BigNumber from 'bignumber.js';
 import { getCurrentUsdPrice } from '../utils/getCurrentUsdPrice';
 import { createStore } from 'solid-js/store';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
+import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
@@ -27,11 +28,15 @@ export default function Assets() {
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
 
   const saturnContext = useSaturnContext();
+  const saContext = useSelectedAccountContext();
 
-  const getMultisigAddress = createMemo(() => saturnContext.state.multisigAddress);
-  const getMultisigId = createMemo(() => saturnContext.state.multisigId);
+  const saturnState = createMemo(() => saturnContext.state);
+  const accountState = createMemo(() => saContext.state);
+  const getMultisigAddress = createMemo(() => saturnState().multisigAddress);
+  const getMultisigId = createMemo(() => saturnState().multisigId);
+  const getAccountAddress = createMemo(() => accountState().account?.address);
 
-  async function convertAssetTotalToUsd(network: NetworkEnum, total: string) {
+  const convertAssetTotalToUsd = async (network: NetworkEnum, total: string) => {
     let currentMarketPrice = null;
 
     // Get current market price for token
@@ -55,12 +60,10 @@ export default function Assets() {
     }
 
     return '';
-  }
+  };
 
-  createEffect(on([getMultisigId, getMultisigAddress], () => {
+  createEffect(() => {
     let timeout: any;
-    const id = getMultisigId();
-    const address = getMultisigAddress();
 
     const delayUnload = () => {
       timeout = setTimeout(() => {
@@ -69,8 +72,12 @@ export default function Assets() {
     };
 
     const runAsync = async () => {
-      if (typeof id !== 'number' || !address) {
-        console.log('Invalid multisig id or address');
+      const id = getMultisigId();
+      const address = getMultisigAddress();
+      const walletAddress = getAccountAddress();
+
+      if (typeof id !== 'number' || !address || !walletAddress) {
+        console.log('Invalid multisig id or address', id, address, walletAddress);
         delayUnload();
         return;
       }
@@ -103,7 +110,7 @@ export default function Assets() {
     onCleanup(() => {
       clearTimeout(timeout);
     });
-  }));
+  });
 
   createEffect(() => {
     // Convert transferable balances to USD
@@ -120,7 +127,7 @@ export default function Assets() {
     loadTransferableBalances();
   });
 
-  createEffect(async () => {
+  createEffect(() => {
     // Convert total balances to USD
     const loadTotalBalances = async () => {
       for (const [network, assets] of balances()) {
