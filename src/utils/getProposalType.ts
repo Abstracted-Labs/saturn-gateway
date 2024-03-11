@@ -4,19 +4,16 @@ import { NetworkEnum } from "./consts";
 type ProposalTypeProps = {
   fromChain: string;
   toChain: string;
-  asset: string;
-  toAddress: string;
-  multisigAddress: string | undefined;
 };
 
 export default function getProposalType(props: ProposalTypeProps): ProposalType {
-  const { fromChain, toChain, toAddress, multisigAddress } = props;
+  const { fromChain, toChain } = props;
 
-  if (fromChain === toChain && fromChain === NetworkEnum.TINKERNET && toChain === NetworkEnum.TINKERNET) {
+  if (fromChain === NetworkEnum.TINKERNET && toChain === NetworkEnum.TINKERNET) {
     return ProposalType.LocalTransfer;
-  } else if (fromChain === toChain && fromChain !== NetworkEnum.TINKERNET && toChain !== NetworkEnum.TINKERNET) {
+  } else if (fromChain === NetworkEnum.TINKERNET && toChain !== NetworkEnum.TINKERNET) {
     return ProposalType.XcmTransfer;
-  } else if (toAddress === multisigAddress && fromChain !== toChain) {
+  } else if (fromChain !== NetworkEnum.TINKERNET && fromChain !== toChain) {
     return ProposalType.XcmBridge;
   }
 
