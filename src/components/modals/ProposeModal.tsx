@@ -13,6 +13,7 @@ import LogoutButton from '../top-nav/LogoutButton';
 import { initModals, Modal, ModalInterface } from 'flowbite';
 import { formatAsset } from '../../utils/formatAsset';
 import { NetworkEnum } from '../../utils/consts';
+import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -36,6 +37,7 @@ export type IProposalProps = {
   saturnContext: SaturnContextType;
   proposeContext: ProposeContextType;
   ringApisContext: IRingsContext;
+  modalContext: MegaModalContextType;
   message: Accessor<string>;
   feeAsset: Accessor<FeeAsset>;
 };
@@ -64,7 +66,7 @@ const CallProposal = (props: CallProposalProps) => {
 };
 
 export const proposeCall = async (props: IProposalProps) => {
-  const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, message, feeAsset } = props;
+  const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, modalContext, message, feeAsset } = props;
   const selected = selectedAccountContext?.state;
 
   if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
@@ -131,8 +133,8 @@ export const proposeCall = async (props: IProposalProps) => {
       proposalType === ProposalType.XcmTransfer &&
       (proposalData as { chain: string; }).chain &&
       (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET && (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET
+      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
+      (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET
     ) {
       console.log("in XcmTransfer");
 
@@ -173,9 +175,7 @@ export const proposeCall = async (props: IProposalProps) => {
     } else if (
       proposalType === ProposalType.LocalTransfer &&
       (proposalData as { chain: string; }).chain &&
-      (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET && (proposalData as { destinationChain: string; }).destinationChain === NetworkEnum.TINKERNET
+      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET
     ) {
       console.log("in LocalTransfer");
 
@@ -202,10 +202,9 @@ export const proposeCall = async (props: IProposalProps) => {
       }
     } else if (
       proposalType === ProposalType.XcmBridge &&
-      (proposalData as { to: string; }).to &&
-      (proposalData as { to: string; }).to === saturnContext.state.multisigAddress &&
       (proposalData as { chain: string; }).chain &&
       (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET &&
       (proposalData as { chain: string; }).chain !== (proposalData as { destinationChain: string; }).destinationChain
     ) {
       console.log("in XcmBridge");
@@ -252,7 +251,7 @@ export const proposeCall = async (props: IProposalProps) => {
   } catch (e) {
     console.error("Error proposing call: ", e);
   } finally {
-    proposeContext.setters.setOpenProposeModal(false);
+    modalContext.showProposeModal();
   }
 };
 
@@ -267,12 +266,10 @@ export default function ProposeModal() {
   const proposeContext = useProposeContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
+  const modalContext = useMegaModal();
 
   const closeModal = () => {
-    if (!modal()?.isHidden()) {
-      modal()?.hide();
-      proposeContext.setters.setOpenProposeModal(false);
-    }
+    modalContext.hideProposeModal();
   };
 
   const processHeader = (): string => {
@@ -308,8 +305,17 @@ export default function ProposeModal() {
   });
 
   createEffect(() => {
-    if (!$modalElement()) {
-      setModal(new Modal($modalElement()));
+    if ($modalElement()) {
+      const instance = new Modal($modalElement());
+      setModal(instance);
+    }
+  });
+
+  createEffect(() => {
+    if (modal()?.isHidden()) {
+      modal()?.show();
+    } else {
+      modal()?.hide();
     }
   });
 
@@ -362,7 +368,7 @@ export default function ProposeModal() {
         setMessage(e.currentTarget.value);
       }}
     />
-    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none" onClick={() => proposeCall({ preview: false, selectedAccountContext: selectedAccountContext, saturnContext: saturnContext, proposeContext: proposeContext, message, feeAsset, ringApisContext: ringApisContext })}>Propose</button>
+    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset, ringApisContext, modalContext })}>Propose</button>
   </div>;
 
   return <>
@@ -383,9 +389,9 @@ export default function ProposeModal() {
         </div>
         <div class="flex flex-col">
           <ModalBody />
-          <div class="flex flex-row justify-end gap-2 items-center m-6">
+          {/* <div class="flex flex-row justify-end gap-2 items-center m-6">
             <LogoutButton cancel={true} proposeModal={true} onClick={closeModal} />
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
