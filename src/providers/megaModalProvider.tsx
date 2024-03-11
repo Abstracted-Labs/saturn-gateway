@@ -3,12 +3,15 @@ import type { ModalInterface } from 'flowbite';
 import { Modal, initModals } from 'flowbite';
 import { MULTISIG_LIST_MODAL_ID } from '../components/left-side/MultisigList';
 import { FEE_ASSET_MODAL_ID } from '../components/modals/FeeAssetModal';
+import { PROPOSE_MODAL_ID } from '../components/modals/ProposeModal';
 
-type MegaModalContextType = {
+export type MegaModalContextType = {
   showMultisigListModal: () => void;
   hideMultisigListModal: () => void;
   showFeeAssetModal: () => void;
   hideFeeAssetModal: () => void;
+  showProposeModal: () => void;
+  hideProposeModal: () => void;
 };
 
 const MegaModalContext = createContext<MegaModalContextType>();
@@ -16,8 +19,10 @@ const MegaModalContext = createContext<MegaModalContextType>();
 export function MegaModalProvider(props: { children: JSX.Element; }) {
   const [multisigListModalInstance, setMultisigListModalInstance] = createSignal<ModalInterface>();
   const [feeAssetModalInstance, setFeeAssetModalInstance] = createSignal<ModalInterface>();
+  const [proposedModalInstance, setProposedModalInstance] = createSignal<ModalInterface>();
   const multisigListModalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
   const feeAssetModalElement = () => document.getElementById(FEE_ASSET_MODAL_ID);
+  const proposedModalElement = () => document.getElementById(PROPOSE_MODAL_ID);
 
   onMount(() => {
     initModals();
@@ -33,6 +38,11 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
       const instance = new Modal(feeAssetModalElement());
       setFeeAssetModalInstance(instance);
     }
+
+    if (proposedModalElement()) {
+      const instance = new Modal(proposedModalElement());
+      setProposedModalInstance(instance);
+    }
   });
 
   const showMultisigListModal = () => {
@@ -44,7 +54,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
 
   const hideMultisigListModal = () => {
     const instance = multisigListModalInstance();
-    if (instance && instance !== null) {
+    if (instance && instance !== null && instance.hide) {
       instance.hide();
     }
   };
@@ -58,7 +68,21 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
 
   const hideFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
+    if (instance && instance !== null && instance.hide) {
+      instance.hide();
+    }
+  };
+
+  const showProposeModal = () => {
+    const instance = proposedModalInstance();
     if (instance && instance !== null) {
+      instance.show();
+    }
+  };
+
+  const hideProposeModal = () => {
+    const instance = proposedModalInstance();
+    if (instance && instance !== null && instance.hide) {
       instance.hide();
     }
   };
@@ -68,6 +92,8 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     hideMultisigListModal,
     showFeeAssetModal,
     hideFeeAssetModal,
+    showProposeModal,
+    hideProposeModal,
   };
 
   return (
