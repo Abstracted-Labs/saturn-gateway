@@ -13,9 +13,14 @@ export enum ProposalType {
   XcmBridge,
 };
 
-export type ProposalData = { chain: string; encodedCall: Uint8Array; } | // LocalCall | XcmCall
-{ chain: string; asset: string; amount: BN | BigNumber | string; to: string; } | // LocalTransfer | XcmTransfer
-{ chain: string; asset: string; destinationChain: string; amount: BN | BigNumber | string; to?: string; }; // XcmBridge
+export type ProposalData = (
+  // LocalCall | XcmCall
+  { chain: string; encodedCall: Uint8Array; } |
+  // LocalTransfer | XcmTransfer
+  { chain: string; asset: string; amount: BN | BigNumber | string; to: string; } |
+  // XcmBridge
+  { chain: string; asset: string; amount: BN | BigNumber | string; to?: string; destinationChain: string; }
+);
 
 export class Proposal {
   proposalType: ProposalType;
@@ -32,13 +37,11 @@ export type ProposalHandlerType = (proposal: Proposal) => void;
 
 type ProposeStateType = {
   proposal?: Proposal;
-  openProposeModal?: boolean;
   currentNetwork?: NetworkEnum;
 };
 
 type ProposeSettersType = {
   setProposal: (proposal: Proposal) => void,
-  setOpenProposeModal: (open: boolean) => void,
   setCurrentNetwork: (network: NetworkEnum) => void,
 };
 
@@ -49,11 +52,11 @@ export type ProposeContextType = {
 
 const defaultState = (): ProposeContextType => ({
   state: {
+    proposal: undefined,
     currentNetwork: NetworkEnum.KUSAMA,
   },
   setters: {
     setProposal: (proposal: Proposal) => { },
-    setOpenProposeModal: (open: boolean) => { },
     setCurrentNetwork: (network: NetworkEnum) => { },
   }
 });
@@ -68,9 +71,6 @@ export function ProposeProvider(props: any) {
     setters: {
       setProposal(proposal: Proposal) {
         setState('state', 'proposal', proposal);
-      },
-      setOpenProposeModal(open: boolean) {
-        setState('state', 'openProposeModal', open);
       },
       setCurrentNetwork(currentNetwork: NetworkEnum) {
         setState('state', 'currentNetwork', currentNetwork);
