@@ -128,7 +128,8 @@ const AssetsContext = () => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
-  const filteredAssetCount = createMemo(() => {
+
+  const filteredAssetCount = () => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
@@ -137,7 +138,7 @@ const AssetsContext = () => {
     const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
 
     return filterAssetBlocks.length;
-  });
+  };
 
   const proposeTransfer = () => {
     const pair = finalNetworkPair();
@@ -243,7 +244,6 @@ const AssetsContext = () => {
   };
 
   const openFrom = () => {
-    console.log('dropdownFrom');
     if (!isFromDropdownActive()) {
       dropdownFrom()?.show();
       setIsFromDropdownActive(true);
@@ -254,7 +254,6 @@ const AssetsContext = () => {
   };
 
   const openTo = () => {
-    console.log('dropdownTo');
     if (!isToDropdownActive()) {
       dropdownTo()?.show();
       setIsToDropdownActive(true);
@@ -279,17 +278,19 @@ const AssetsContext = () => {
   };
 
   const handleAssetOptionClick = (asset: AssetEnum) => {
+    setAmount(0);
     setAsset(asset);
     closeAssetDropdown();
   };
 
   const handleFromOptionClick = (from: NetworkEnum) => {
+    setAmount(0);
     setFinalNetworkPair({ from, to: finalNetworkPair().to });
-    // proposeContext.setters.setCurrentNetwork(from);
     closeFromDropdown();
   };
 
   const handleToOptionClick = (to: NetworkEnum) => {
+    setAmount(0);
     setFinalNetworkPair({ from: finalNetworkPair().from, to });
     closeToDropdown();
   };
@@ -351,11 +352,9 @@ const AssetsContext = () => {
 
     const paymentInfo = await proposeCall(proposalProps);
     if (paymentInfo) {
-      console.log("paymentInfo: ", paymentInfo);
       setNetworkFee(Number(paymentInfo));
     } else {
       console.error('getPaymentInfo: no payment info');
-
     }
 
     setLoadingFee(false);
