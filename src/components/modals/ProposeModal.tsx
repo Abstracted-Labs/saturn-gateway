@@ -1,7 +1,7 @@
-import { Accessor, createEffect, createMemo, createSignal, Match, onMount, Switch } from 'solid-js';
+import { Accessor, createMemo, createSignal, Match, Switch } from 'solid-js';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import type { Call } from '@polkadot/types/interfaces';
-import { u8aToHex, BN, formatBalance } from "@polkadot/util";
+import { u8aToHex, BN } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
 import { useProposeContext, ProposalType, ProposeContextType } from "../../providers/proposeProvider";
 import { SaturnContextType, useSaturnContext } from "../../providers/saturnProvider";
@@ -9,8 +9,6 @@ import { IRingsContext, useRingApisContext } from "../../providers/ringApisProvi
 import { SelectedAccountState, useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import FormattedCall from '../legos/FormattedCall';
 import { RingAssets } from "../../data/rings";
-import LogoutButton from '../top-nav/LogoutButton';
-import { initModals, Modal, ModalInterface } from 'flowbite';
 import { formatAsset } from '../../utils/formatAsset';
 import { NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
@@ -69,7 +67,7 @@ export const proposeCall = async (props: IProposalProps) => {
   const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, modalContext, message, feeAsset } = props;
   const selected = selectedAccountContext?.state;
 
-  if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || !proposeContext.state.proposal) {
+  if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || proposeContext.state.proposal === undefined) {
     return;
   }
 
@@ -167,6 +165,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        modalContext.showProposeModal();
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
         console.log("partialFeePreview: ", partialFeePreview);
@@ -195,6 +194,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await localTransferCall.signAndSend(selected.account.address, { signer: selected.wallet.signer, assetId: feeAsset() });
+        modalContext.showProposeModal();
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
         console.log("partialFeePreview: ", partialFeePreview);
@@ -239,6 +239,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        modalContext.showProposeModal();
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals);
         console.log("partialFeePreview: ", partialFeePreview);
@@ -250,17 +251,12 @@ export const proposeCall = async (props: IProposalProps) => {
     }
   } catch (e) {
     console.error("Error proposing call: ", e);
-  } finally {
-    modalContext.showProposeModal();
   }
 };
 
 export default function ProposeModal() {
-  const $modalElement = () => document.getElementById(PROPOSE_MODAL_ID);
-
   const [message, setMessage] = createSignal<string>('');
   const [feeAsset, setFeeAsset] = createSignal<FeeAsset>(FeeAsset.TNKR);
-  const [modal, setModal] = createSignal<ModalInterface | null>(null);
 
   const ringApisContext = useRingApisContext();
   const proposeContext = useProposeContext();
@@ -299,25 +295,6 @@ export default function ProposeModal() {
 
   const maybeProposal = createMemo(() => proposeContext.state.proposal);
   const networkName = createMemo(() => proposeContext.state.proposal?.data.chain);
-
-  onMount(() => {
-    initModals();
-  });
-
-  createEffect(() => {
-    if ($modalElement()) {
-      const instance = new Modal($modalElement());
-      setModal(instance);
-    }
-  });
-
-  createEffect(() => {
-    if (modal()?.isHidden()) {
-      modal()?.show();
-    } else {
-      modal()?.hide();
-    }
-  });
 
   const ModalBody = () => <div class='h-auto flex flex-col gap-1 text-xs'>
     <div class="flex flex-row gap-2">
