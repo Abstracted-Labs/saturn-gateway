@@ -353,9 +353,9 @@ const HomePlanet: Component = () => {
 };
 
 const App = () => (
-  <ProposeProvider>
-    <SaturnProvider>
-      <RingApisProvider>
+  <SaturnProvider>
+    <RingApisProvider>
+      <ProposeProvider>
         <WalletConnectProvider>
           <SelectedAccountProvider>
             <IdentityProvider>
@@ -367,9 +367,9 @@ const App = () => (
             </IdentityProvider>
           </SelectedAccountProvider>
         </WalletConnectProvider>
-      </RingApisProvider>
-    </SaturnProvider>
-  </ProposeProvider>
+      </ProposeProvider>
+    </RingApisProvider>
+  </SaturnProvider>
 );
 
 export default App;
