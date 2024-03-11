@@ -21,6 +21,7 @@ import { NetworkAssetBalance, NetworkBalancesArray } from "../../pages/Assets";
 import { proposeCall } from "../modals/ProposeModal";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import getProposalType from "../../utils/getProposalType";
+import { useMegaModal } from "../../providers/megaModalProvider";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -93,6 +94,7 @@ const AssetsContext = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
+  const modalContext = useMegaModal();
   const loc = useLocation();
 
   const filteredNetworks = createMemo(() => {
@@ -156,42 +158,49 @@ const AssetsContext = () => {
       return;
     }
 
-    if (pair.from == NetworkEnum.TINKERNET && pair.to == NetworkEnum.TINKERNET) {
-      const amountPlank = new BigNumber(amount()).times(BigNumber('10').pow(
-        Rings.tinkernet.decimals,
-      ));
+    const amountPlank = new BigNumber(amount()).times(BigNumber('10').pow(
+      BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
+    ));
 
+    // Handle local transfer of assets within Tinkernet.
+    if (pair.from === NetworkEnum.TINKERNET && pair.to === NetworkEnum.TINKERNET) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.LocalTransfer, { chain: NetworkEnum.TINKERNET, asset: asset(), amount: amountPlank, to: targetAddress() })
+        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
+      console.log('Proposing Local Transfer within Tinkernet', proposeContext.state.proposal);
+      modalContext.showProposeModal();
+      return;
+    }
 
-    } else if (pair.from == NetworkEnum.TINKERNET && pair.to != NetworkEnum.TINKERNET) {
-      // TODO: Handle bridging TNKR or KSM from Tinkernet to other chains.
-    } else if (pair.from != NetworkEnum.TINKERNET && pair.from != pair.to) {
-      // Handle bridging assets between other chains.
+    // Handle bridging TNKR or KSM from Tinkernet to other chains (XCM Transfer).
+    if (pair.from === NetworkEnum.TINKERNET && pair.to !== NetworkEnum.TINKERNET) {
+      proposeContext.setters.setProposal(
+        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
+      );
+      console.log('Proposing XCM Transfer from Tinkernet', proposeContext.state.proposal);
+      modalContext.showProposeModal();
+      return;
+    }
 
-      const amountPlank = new BigNumber(amount()).times(BigNumber('10').pow(
-        BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
-      ));
-
+    // Handle bridging assets between other chains (XCM Bridge).
+    if (pair.from !== NetworkEnum.TINKERNET && pair.from !== pair.to) {
       proposeContext.setters.setProposal(
         new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
       );
-
-    } else if (pair.from != NetworkEnum.TINKERNET && pair.from == pair.to) {
-      // Handle balance transfer of assets within another chain.
-
-      const amountPlank = new BigNumber(amount()).times(BigNumber('10').pow(
-        BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
-      ));
-
-      proposeContext.setters.setProposal(
-        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
-      );
+      console.log('Proposing XCM Bridge from another chain', proposeContext.state.proposal);
+      modalContext.showProposeModal();
+      return;
     }
 
-    // Open proposal modal
-    proposeContext.setters.setOpenProposeModal(true);
+    // Handle balance transfer of assets within another chain.
+    if (pair.from !== NetworkEnum.TINKERNET && pair.from === pair.to) {
+      proposeContext.setters.setProposal(
+        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
+      );
+      console.log('Proposing XCM Transfer within another chain', proposeContext.state.proposal);
+      modalContext.showProposeModal();
+      return;
+    }
   };
 
   const copySelfAddress = () => {
@@ -319,11 +328,8 @@ const AssetsContext = () => {
         state: {
           proposal: {
             proposalType: getProposalType({
-              asset: asset(),
               fromChain: finalNetworkPair().from,
               toChain: finalNetworkPair().to,
-              toAddress: (bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()) || '',
-              multisigAddress: saturnContext.state.multisigAddress || '',
             }),
             data: {
               chain: finalNetworkPair().from,
@@ -338,6 +344,7 @@ const AssetsContext = () => {
         setters: proposeContext.setters,
       },
       ringApisContext,
+      modalContext,
       message: () => '',
       feeAsset: () => asset() as unknown as FeeAsset,
     };
