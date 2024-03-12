@@ -145,10 +145,7 @@ const AssetsContext = () => {
   const proposeTransfer = () => {
     const pair = finalNetworkPair();
 
-    if (!isLoggedIn()) {
-      console.error('proposeTransfer: not logged in');
-      return;
-    }
+    if (!isLoggedIn() || loadingFee()) return;
 
     if (
       !saturnContext.state.saturn ||
@@ -631,6 +628,7 @@ const AssetsContext = () => {
             <For each={forNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleFromOptionClick(name as NetworkEnum);
+                getPaymentInfo();
               }}>
                 {element}
               </SaturnSelectItem>}
@@ -639,7 +637,10 @@ const AssetsContext = () => {
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
           <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
             <For each={toNetworks()}>
-              {([name, element]) => element !== null && <SaturnSelectItem onClick={() => handleToOptionClick(name as NetworkEnum)}>
+              {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
+                handleToOptionClick(name as NetworkEnum);
+                getPaymentInfo();
+              }}>
                 {element}
               </SaturnSelectItem>}
             </For>
@@ -659,12 +660,13 @@ const AssetsContext = () => {
               disabled={!isLoggedIn()}
               onInput={e => updateTargetAddress(e.currentTarget.value)}
               onBlur={getPaymentInfo}
+              onMouseLeave={getPaymentInfo}
             />
             <span onClick={clearAddress} class="inline-flex items-center px-3 text-xxs text-saturn-lightgrey bg-gray-200 rounded-r-md dark:bg-gray-800 hover:cursor-pointer opacity-50 hover:opacity-100">
               clear
             </span>
           </div>
-          <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress}>use my address</span>
+          <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress} onMouseLeave={getPaymentInfo}>use my address</span>
         </div>
 
         <div class="flex flex-row justify-between items-start">
@@ -674,7 +676,10 @@ const AssetsContext = () => {
             </span>
             <SaturnSelect disabled={filteredAssetCount() <= 1 || !isLoggedIn()} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssets}>
               <For each={filteredAssets()}>
-                {([name, element]) => <SaturnSelectItem onClick={() => handleAssetOptionClick(name as AssetEnum)}>
+                {([name, element]) => <SaturnSelectItem onClick={() => {
+                  handleAssetOptionClick(name as AssetEnum);
+                  getPaymentInfo();
+                }}>
                   {element}
                 </SaturnSelectItem>}
               </For>
@@ -685,7 +690,7 @@ const AssetsContext = () => {
               <Show when={maxAssetAmount() !== null} fallback={
                 <div class={FALLBACK_TEXT_STYLE}>--</div>
               }>
-                <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount}>max</span>
+                <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount} onMouseLeave={getPaymentInfo}>max</span>
                 <span class="ml-2">{maxAssetAmount()} {asset()}</span>
               </Show>
             </span>
@@ -699,6 +704,7 @@ const AssetsContext = () => {
               class={`${ INPUT_COMMON_STYLE } mt-1`}
               onInput={validateAmount}
               onBlur={getPaymentInfo}
+              onMouseLeave={getPaymentInfo}
               max={Number(maxAssetAmount())}
               min={0}
               disabled={!isLoggedIn() || !maxAssetAmount()}
@@ -712,7 +718,7 @@ const AssetsContext = () => {
           </span>
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={!!maxAssetAmount() && !loadingFee()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
+              <Show when={!!maxAssetAmount()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
                 <span class="ml-2">{networkFee()} {asset()}</span>
               </Show>
             </span>
@@ -720,7 +726,7 @@ const AssetsContext = () => {
         </div>
       </div>
 
-      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount() || loadingFee() || networkFee() === 0} onClick={proposeTransfer}>Propose Transaction</button>
+      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount() || networkFee() === 0} onClick={proposeTransfer}>Propose Transaction</button>
     </div>;
   };
 
