@@ -23,7 +23,7 @@ import { WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
 import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount, POLKADOT_CHAIN_ID } from '@polkadot-onboard/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
-import { MegaModalProvider } from './providers/megaModalProvider';
+import { MegaModalProvider, useMegaModal } from './providers/megaModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
 import { getMultisigsForAccount } from './utils/getMultisigs';
@@ -74,6 +74,7 @@ const HomePlanet: Component = () => {
   const wcContext = useWalletConnectContext();
   const navigate = useNavigate();
   const loc = useLocation();
+  const modal = useMegaModal();
 
   // const saturnStateMemo = createMemo(() => saturnContext.state);
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
@@ -87,7 +88,7 @@ const HomePlanet: Component = () => {
     }
   });
 
-  async function createApis(): Promise<Record<string, ApiPromise>> {
+  const createApis = async (): Promise<Record<string, ApiPromise>> => {
     const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
       async ([chain, data]) => {
         const res: [string, ApiPromise] = [
@@ -102,9 +103,9 @@ const HomePlanet: Component = () => {
     );
 
     return Object.fromEntries(await Promise.all(entries));
-  }
+  };
 
-  async function sessionProposalCallback(proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) {
+  const sessionProposalCallback = async (proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) => {
     console.log('session_proposal: ', proposal);
     const address = saturnContext.state.multisigAddress;
     if (address) {
@@ -120,9 +121,9 @@ const HomePlanet: Component = () => {
         },
       });
     }
-  }
+  };
 
-  async function sessionRequestCallback(event: Web3WalletTypes.SessionRequest, w3w: IWeb3Wallet) {
+  const sessionRequestCallback = async (event: Web3WalletTypes.SessionRequest, w3w: IWeb3Wallet) => {
     console.log('session_request: ', event);
     const address = saturnContext.state.multisigAddress;
     if (!address) return;
@@ -155,7 +156,7 @@ const HomePlanet: Component = () => {
         new Proposal(proposalType, { chain, encodedCall: hexToU8a(requestedTx.transactionPayload.method) })
       );
 
-      proposeContext.setters.setOpenProposeModal(true);
+      modal.showProposeModal();
 
       const response = {
         id,
@@ -167,7 +168,7 @@ const HomePlanet: Component = () => {
         await w3w.respondSessionRequest({ topic, response });
       }
     }
-  }
+  };
 
   onMount(() => {
     initDrawers();
