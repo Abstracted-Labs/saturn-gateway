@@ -9,11 +9,23 @@ type ProposalTypeProps = {
 export default function getProposalType(props: ProposalTypeProps): ProposalType {
   const { fromChain, toChain } = props;
 
+  if (!fromChain && !toChain) {
+    return ProposalType.LocalCall;
+  }
+
+  if (fromChain && !toChain) {
+    return ProposalType.XcmCall;
+  }
+
+  if ((fromChain === NetworkEnum.TINKERNET && toChain !== NetworkEnum.TINKERNET) || (fromChain !== NetworkEnum.TINKERNET && fromChain === toChain)) {
+    return ProposalType.XcmTransfer;
+  }
+
   if (fromChain === NetworkEnum.TINKERNET && toChain === NetworkEnum.TINKERNET) {
     return ProposalType.LocalTransfer;
-  } else if (fromChain === NetworkEnum.TINKERNET && toChain !== NetworkEnum.TINKERNET) {
-    return ProposalType.XcmTransfer;
-  } else if (fromChain !== NetworkEnum.TINKERNET && fromChain !== toChain) {
+  }
+
+  if (fromChain !== NetworkEnum.TINKERNET && fromChain !== toChain) {
     return ProposalType.XcmBridge;
   }
 
