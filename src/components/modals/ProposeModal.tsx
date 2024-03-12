@@ -3,7 +3,7 @@ import { FeeAsset } from '@invarch/saturn-sdk';
 import type { Call } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
-import { useProposeContext, ProposalType, ProposeContextType } from "../../providers/proposeProvider";
+import { useProposeContext, ProposalType, ProposeContextType, ProposalData } from "../../providers/proposeProvider";
 import { SaturnContextType, useSaturnContext } from "../../providers/saturnProvider";
 import { IRingsContext, useRingApisContext } from "../../providers/ringApisProvider";
 import { SelectedAccountState, useSelectedAccountContext } from "../../providers/selectedAccountProvider";
@@ -26,12 +26,14 @@ type CallProposalProps = {
   chain: string;
 };
 
+type SelectedAccountContextType = {
+  state: SelectedAccountState;
+  setters: any;
+};
+
 export type IProposalProps = {
   preview: boolean;
-  selectedAccountContext: {
-    state: SelectedAccountState;
-    setters: any;
-  };
+  selectedAccountContext: SelectedAccountContextType;
   saturnContext: SaturnContextType;
   proposeContext: ProposeContextType;
   ringApisContext: IRingsContext;
@@ -81,9 +83,10 @@ export const proposeCall = async (props: IProposalProps) => {
   const proposalData = proposeContext.state.proposal.data;
   const proposalType = proposeContext.state.proposal.proposalType;
 
-  console.log("data, type: ", proposalData, proposalType);
+  console.log("data, type: ", proposalData, (proposalData as any).amount.toNumber(), proposalType);
 
   try {
+    // LocalCall
     if (proposalType === ProposalType.LocalCall && (proposalData as { encodedCall: Uint8Array; }).encodedCall) {
       console.log("in LocalCall");
 
@@ -95,7 +98,11 @@ export const proposeCall = async (props: IProposalProps) => {
           feeAsset: feeAsset()
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
-    } else if (
+      return;
+    }
+
+    // XcmCall
+    if (
       proposalType === ProposalType.XcmCall &&
       (proposalData as { encodedCall: Uint8Array; }).encodedCall &&
       (proposalData as { chain: string; }).chain
@@ -127,16 +134,20 @@ export const proposeCall = async (props: IProposalProps) => {
           proposalMetadata,
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
-    } else if (
+      return;
+    }
+
+    // XcmTransfer
+    if (
       proposalType === ProposalType.XcmTransfer &&
       (proposalData as { chain: string; }).chain &&
       (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
-      (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET
+      (((proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
+        (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET) || ((proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET && (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain))
     ) {
       console.log("in XcmTransfer");
 
-      const chain = (proposalData as { chain: string; }).chain;
+      const chain = (proposalData as { destinationChain: string; }).destinationChain;
       const amount = (proposalData as { amount: BN | BigNumber | string; }).amount || '0';
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
@@ -150,7 +161,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!xcmAsset || !saturnContext.state.multisigAddress) return;
 
-      const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      const { partialFee } = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
 
       const transferCall = saturnContext.state.saturn
         .transferXcmAsset({
@@ -166,15 +177,21 @@ export const proposeCall = async (props: IProposalProps) => {
       if (!preview) {
         await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
         modalContext.showProposeModal();
+        return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
         console.log("partialFeePreview: ", partialFeePreview);
         return partialFeePreview;
       }
-    } else if (
+    }
+
+    // LocalTransfer
+    if (
       proposalType === ProposalType.LocalTransfer &&
       (proposalData as { chain: string; }).chain &&
-      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET
+      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
+      (proposalData as { destinationChain: string; }).destinationChain &&
+      (proposalData as { destinationChain: string; }).destinationChain === NetworkEnum.TINKERNET
     ) {
       console.log("in LocalTransfer");
 
@@ -195,12 +212,16 @@ export const proposeCall = async (props: IProposalProps) => {
       if (!preview) {
         await localTransferCall.signAndSend(selected.account.address, { signer: selected.wallet.signer, assetId: feeAsset() });
         modalContext.showProposeModal();
+        return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
         console.log("partialFeePreview: ", partialFeePreview);
         return partialFeePreview;
       }
-    } else if (
+    }
+
+    // XcmBridge
+    if (
       proposalType === ProposalType.XcmBridge &&
       (proposalData as { chain: string; }).chain &&
       (proposalData as { destinationChain: string; }).destinationChain &&
@@ -209,7 +230,7 @@ export const proposeCall = async (props: IProposalProps) => {
     ) {
       console.log("in XcmBridge");
 
-      const chain = (proposalData as { destinationChain: string; }).destinationChain;
+      const chain = (proposalData as { chain: string; }).chain;
       const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
@@ -240,17 +261,20 @@ export const proposeCall = async (props: IProposalProps) => {
       if (!preview) {
         await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
         modalContext.showProposeModal();
+        return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals);
         console.log("partialFeePreview: ", partialFeePreview);
         return partialFeePreview;
       }
-    } else {
-      console.log("Unknown proposal type or missing data for proposal type.");
-      console.log("Proposal Data:", proposalData.chain, (proposalData as any).asset, (proposalData as any).to, (proposalData as any).amount);
     }
+
+    // Unknown proposal type
+    throw new Error(JSON.stringify({
+      chain: proposalData.chain, asset: (proposalData as any).asset, to: (proposalData as any).to, amount: (proposalData as any).amount
+    }));
   } catch (e) {
-    console.error("Error proposing call: ", e);
+    console.error("Unknown proposal type or missing data for proposal type: ", e);
   }
 };
 
