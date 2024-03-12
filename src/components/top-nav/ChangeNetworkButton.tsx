@@ -92,6 +92,7 @@ const ChangeNetworkButton = () => {
             })
             .filter(([_, allBalances]) => {
               const assetBalances = allBalances as unknown as BalanceType;
+              if (!assetBalances.locks) return false;
               const totalLockAmount = assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
               const hasBalances = assetBalances.freeBalance != '0'
                 || assetBalances.reservedBalance != '0'

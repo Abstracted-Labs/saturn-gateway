@@ -103,16 +103,6 @@ const AssetsContext = () => {
     const filteredNetworks = allNetworks.filter(([name, element]) => availableNetworks.includes(name as NetworkEnum));
     return filteredNetworks;
   });
-  const filteredAssets = createMemo(() => {
-    const pair = finalNetworkPair();
-    const allAssets = Object.entries(allTheAssets());
-    const assetsFromNetwork = getAssetsFromNetwork(pair.from);
-    const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
-    const networksFromBalances = balances().find(([network, assets]) => network == pair.from);
-    const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
-
-    return filterAssetBlocks;
-  });
   const forNetworks = createMemo(() => {
     // const allNetworks = Object.entries(filteredNetworks());
     // return allNetworks;
@@ -129,12 +119,24 @@ const AssetsContext = () => {
     return idOrAddress !== 'undefined';
   });
 
-  const filteredAssetCount = () => {
+  const filteredAssets = () => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
     const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
     const networksFromBalances = balances().find(([network, assets]) => network == pair.from);
+    const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
+
+    return filterAssetBlocks;
+  };
+
+  const filteredAssetCount = () => {
+    const pair = finalNetworkPair();
+    const allAssets = Object.entries(allTheAssets());
+    const assetsFromNetwork = getAssetsFromNetwork(pair.from);
+    const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
+    const networksFromBalances = balances().find(([network, assets]) => network === pair.from);
+    console.log('filteredAssetCount networksFromBalances', networksFromBalances);
     const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
 
     return filterAssetBlocks.length;
@@ -163,17 +165,7 @@ const AssetsContext = () => {
       BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
     ));
 
-    // Handle local transfer of assets within Tinkernet.
-    if (pair.from === NetworkEnum.TINKERNET && pair.to === NetworkEnum.TINKERNET) {
-      proposeContext.setters.setProposal(
-        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
-      );
-      console.log('Proposing Local Transfer within Tinkernet', proposeContext.state.proposal);
-      modalContext.showProposeModal();
-      return;
-    }
-
-    // Handle bridging TNKR or KSM from Tinkernet to other chains (XCM Transfer).
+    // XcmTransfer: Handle bridging TNKR or KSM from Tinkernet to other chains.
     if (pair.from === NetworkEnum.TINKERNET && pair.to !== NetworkEnum.TINKERNET) {
       proposeContext.setters.setProposal(
         new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
@@ -183,22 +175,32 @@ const AssetsContext = () => {
       return;
     }
 
-    // Handle bridging assets between other chains (XCM Bridge).
-    if (pair.from !== NetworkEnum.TINKERNET && pair.from !== pair.to) {
-      proposeContext.setters.setProposal(
-        new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
-      );
-      console.log('Proposing XCM Bridge from another chain', proposeContext.state.proposal);
-      modalContext.showProposeModal();
-      return;
-    }
-
-    // Handle balance transfer of assets within another chain.
+    // XcmTransfer: Handle balance transfer of assets within another chain.
     if (pair.from !== NetworkEnum.TINKERNET && pair.from === pair.to) {
       proposeContext.setters.setProposal(
         new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing XCM Transfer within another chain', proposeContext.state.proposal);
+      modalContext.showProposeModal();
+      return;
+    }
+
+    // LocalTransfer: Handle local transfer of assets within Tinkernet.
+    if (pair.from === NetworkEnum.TINKERNET && pair.to === NetworkEnum.TINKERNET) {
+      proposeContext.setters.setProposal(
+        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
+      );
+      console.log('Proposing Local Transfer within Tinkernet', proposeContext.state.proposal);
+      modalContext.showProposeModal();
+      return;
+    }
+
+    // XcmBridge: Handle bridging assets between other chains.
+    if (pair.from !== NetworkEnum.TINKERNET && pair.from !== pair.to) {
+      proposeContext.setters.setProposal(
+        new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
+      );
+      console.log('Proposing XCM Bridge from another chain', proposeContext.state.proposal);
       modalContext.showProposeModal();
       return;
     }
@@ -400,6 +402,7 @@ const AssetsContext = () => {
             })
             .filter(([_, allBalances]) => {
               const assetBalances = allBalances as unknown as BalanceType;
+              if (!assetBalances.locks) return false;
               const totalLockAmount = assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
               const hasBalances = assetBalances.freeBalance != '0'
                 || assetBalances.reservedBalance != '0'
@@ -509,6 +512,7 @@ const AssetsContext = () => {
 
       // Calculate non-transferable amount
       const nonTransferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
+        if (!balances.locks) return acc;
         const totalLockAmount = balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
         const nonTransferable = new BigNumber(balances.reservedBalance).plus(new BigNumber(totalLockAmount));
         return acc.plus(nonTransferable);
