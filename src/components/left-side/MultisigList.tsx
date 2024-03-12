@@ -44,7 +44,6 @@ const MultisigList = (props: MultisigListProps) => {
   const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
   const [mutateButton, setMutateButton] = createSignal(false);
   const [loading, setLoading] = createSignal<boolean>(true);
-  // const [selectedItem, setSelectedItem] = createSignal<MultisigItem | null>;
 
   const modal = useMegaModal();
   const saturnContext = useSaturnContext();
@@ -63,7 +62,6 @@ const MultisigList = (props: MultisigListProps) => {
     if (!sat) return;
 
     const multisig = multisigItems()[index];
-    const selectedAddress = multisig.address;
     const id = multisig.id;
 
     if (isInModal()) {
@@ -89,13 +87,14 @@ const MultisigList = (props: MultisigListProps) => {
       } catch (error) {
         console.error("Failed to fetch multisig details:", error);
       } finally {
-
         navigate(`/${ id }/management`, { replace: true });
 
         // Remove the selected item from the list and update the selected item
         const selectedItem = originalOrder()[index];
         setMultisigItems(originalOrder());
-        // setSelectedItem(selectedItem); // Update the selected item
+
+        // Close the left drawer
+        closeLeftDrawer();
       }
 
       // Reset the scroll position
@@ -103,9 +102,6 @@ const MultisigList = (props: MultisigListProps) => {
       // if (scrollContainer instanceof HTMLDivElement) {
       //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
       // }
-
-      // Close the left drawer
-      closeLeftDrawer();
     }
   };
 
