@@ -90,7 +90,7 @@ const MultisigList = (props: MultisigListProps) => {
         console.error("Failed to fetch multisig details:", error);
       } finally {
 
-        // navigate(`/${ id }/management`, { replace: true });
+        navigate(`/${ id }/management`, { replace: true });
 
         // Remove the selected item from the list and update the selected item
         const selectedItem = originalOrder()[index];
@@ -282,10 +282,10 @@ const MultisigList = (props: MultisigListProps) => {
   return (
     <>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Saturn Accounts' : 'Select a Saturn Account below:'}</h5>
-      <div class={`${ multisigItemsLength() === 0 ? 'h-6' : multisigItemsLength() > 0 && multisigItemsLength() < 4 ? 'h-44' : 'h-80' } relative mb-6`}>
+      <div class={`relative mb-6`}>
         <div
           ref={scrollContainerRef!}
-          class={`h-auto overflow-y-auto overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
+          class={`${ multisigItemsLength() < 2 ? 'h-28' : 'h-64' } pr-5 overflow-y-auto overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
           {/* <div class="w-62 absolute bottom-0 inset-0 pointer-events-none">
             <div class="h-full bg-gradient-to-b from-transparent to-saturn-offwhite dark:to-saturn-black"></div>
