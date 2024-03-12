@@ -1,4 +1,4 @@
-import { Accessor, createMemo, createSignal, Match, Switch } from 'solid-js';
+import { Accessor, createEffect, createMemo, createSignal, Match, Switch } from 'solid-js';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import type { Call } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
@@ -10,7 +10,7 @@ import { SelectedAccountState, useSelectedAccountContext } from "../../providers
 import FormattedCall from '../legos/FormattedCall';
 import { RingAssets } from "../../data/rings";
 import { formatAsset } from '../../utils/formatAsset';
-import { NetworkEnum } from '../../utils/consts';
+import { INPUT_COMMON_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
@@ -44,15 +44,15 @@ export type IProposalProps = {
 
 const TransferProposal = (props: TransferProposalProps) => {
   return (
-    <div>
-      <p>Amount: {
+    <div class="flex flex-col gap-2">
+      <p class="border-t border-1 border-gray-700 border-dashed pt-2">Amount: <span class="capitalize text-black dark:text-white float-right font-bold">{
         BigNumber(props.amount.toString()).div(
           BigNumber('10').pow(
             BigNumber(RingAssets[props.asset as keyof typeof RingAssets].decimals),
           ),
         ).decimalPlaces(2, 1).toString()
-      } {props.asset}</p>
-      <p>To: {props.to}</p>
+      } {props.asset}</span></p>
+      <p class="border-t border-b border-1 border-gray-700 border-dashed py-2">To: <span class="capitalize text-black dark:text-white float-right font-bold">{props.to}</span></p>
     </div>
   );
 };
@@ -280,7 +280,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
 export default function ProposeModal() {
   const [message, setMessage] = createSignal<string>('');
-  const [feeAsset, setFeeAsset] = createSignal<FeeAsset>(FeeAsset.TNKR);
+  const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
 
   const ringApisContext = useRingApisContext();
   const proposeContext = useProposeContext();
@@ -299,36 +299,36 @@ export default function ProposeModal() {
 
       // Same source and destination chains
       case ProposalType.LocalTransfer:
-        return "Balance Transfer";
+        return "Local Balance Transfer";
 
       // Different source and destination chains
       case ProposalType.XcmTransfer:
-        return "Balance Transfer";
+        return "XCM Balance Transfer";
 
       case ProposalType.LocalCall:
-        return "Call";
+        return "Local Call";
 
       case ProposalType.XcmCall:
-        return "Call";
+        return "XCM Call";
 
       // Cross-chain asset transfer using same account address
       case ProposalType.XcmBridge:
-        return "Asset Bridge";
+        return "XCM Bridge";
     }
   };
 
   const maybeProposal = createMemo(() => proposeContext.state.proposal);
   const networkName = createMemo(() => proposeContext.state.proposal?.data.chain);
 
-  const ModalBody = () => <div class='h-auto flex flex-col gap-1 text-xs'>
-    <div class="flex flex-row gap-2">
-      <label for="feeAssetToggle" class="relative inline-flex items-center mr-5 cursor-pointer">
-        <input type="checkbox" name="feeAssetToggle" value={feeAsset()} onInput={() => feeAsset() === FeeAsset.TNKR ? setFeeAsset(FeeAsset.KSM) : setFeeAsset(FeeAsset.TNKR)} checked={feeAsset() != FeeAsset.TNKR} class="sr-only peer theme-color-toggle" />
-        <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-purple-100 dark:peer-focus:ring-purple-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600" />
-        <span class="ml-3 text-sm font-medium text-saturn-lightgrey dark:text-saturn-lightgrey">{feeAsset() === FeeAsset.TNKR ? 'TNKR' : 'KSM'}</span>
-      </label>
-    </div>
-    <p>Network: <span class="capitalize text-black dark:text-white">{networkName() || '--'}</span></p>
+  createEffect(() => {
+    const selectedAsset = selectedAccountContext.setters.getFeeAsset() as KusamaFeeAssetEnum;
+    setFeeAsset(selectedAsset);
+  });
+
+  const ModalBody = () => <div class='flex flex-col gap-2 p-4 text-xs'>
+    <p class="border-t border-1 border-gray-700 border-dashed pt-2">Proposal type: <span class="capitalize text-black dark:text-white float-right font-bold">{processHeader()}</span></p>
+    <p class="border-t border-1 border-gray-700 border-dashed pt-2">Fees paid in: <span class="capitalize text-black dark:text-white float-right font-bold">{feeAsset()}</span></p>
+    <p class="border-t border-1 border-gray-700 border-dashed pt-2">Network: <span class="capitalize text-black dark:text-white float-right font-bold">{networkName() || '--'}</span></p>
     <Switch>
       <Match when={
         proposeContext.state.proposal?.proposalType === ProposalType.LocalCall ||
@@ -363,21 +363,22 @@ export default function ProposeModal() {
     </Switch>
     <input
       type='text'
+      class={`${ INPUT_COMMON_STYLE } my-2`}
       placeholder='Add message (optional)'
       value={message()}
       onInput={e => {
         setMessage(e.currentTarget.value);
       }}
     />
-    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset, ringApisContext, modalContext })}>Propose</button>
+    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() as unknown as FeeAsset, ringApisContext, modalContext })}>Propose</button>
   </div>;
 
   return <>
     {/* <ConnectButton /> */}
     <div id={PROPOSE_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
       <div id="proposeModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
-      <div class={`relative px-4 bg-saturn-offwhite dark:bg-black rounded-md m-5 md:m-auto`}>
-        <div class="flex flex-row grow-1 items-start justify-between p-4">
+      <div class={`relative px-4 bg-saturn-offwhite dark:bg-black border border-gray-900 rounded-md w-full m-5 md:m-auto`}>
+        <div class="flex flex-row grow-1 items-start justify-between gap-10 p-4">
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">
             Propose Multisig {processHeader()}
           </h4>
@@ -388,12 +389,7 @@ export default function ProposeModal() {
             <span class="sr-only">Close modal</span>
           </button>
         </div>
-        <div class="flex flex-col">
-          <ModalBody />
-          {/* <div class="flex flex-row justify-end gap-2 items-center m-6">
-            <LogoutButton cancel={true} proposeModal={true} onClick={closeModal} />
-          </div> */}
-        </div>
+        <ModalBody></ModalBody>
       </div>
     </div>
   </>;
