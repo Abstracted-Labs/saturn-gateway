@@ -1,4 +1,4 @@
-import { Accessor, createEffect, createMemo, createSignal, Match, Switch } from 'solid-js';
+import { Accessor, createEffect, createMemo, createSignal, Match, Show, Switch } from 'solid-js';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import type { Call } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
@@ -12,6 +12,7 @@ import { RingAssets } from "../../data/rings";
 import { formatAsset } from '../../utils/formatAsset';
 import { INPUT_COMMON_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
+import { ISubmittableResult } from '@kiltprotocol/sdk-js';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -83,8 +84,6 @@ export const proposeCall = async (props: IProposalProps) => {
   const proposalData = proposeContext.state.proposal.data;
   const proposalType = proposeContext.state.proposal.proposalType;
 
-  console.log("data, type: ", proposalData, (proposalData as any).amount.toNumber(), proposalType);
-
   try {
     // LocalCall
     if (proposalType === ProposalType.LocalCall && (proposalData as { encodedCall: Uint8Array; }).encodedCall) {
@@ -95,7 +94,7 @@ export const proposeCall = async (props: IProposalProps) => {
           id: saturnContext.state.multisigId,
           call: (proposalData as { encodedCall: Uint8Array; }).encodedCall,
           proposalMetadata,
-          feeAsset: feeAsset()
+          feeAsset: FeeAsset[feeAsset()] as unknown as FeeAsset,
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
       return;
@@ -176,11 +175,10 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
-        modalContext.showProposeModal();
+        modalContext.hideProposeModal();
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
-        console.log("partialFeePreview: ", partialFeePreview);
         return partialFeePreview;
       }
     }
@@ -210,12 +208,22 @@ export const proposeCall = async (props: IProposalProps) => {
       const localTransferCall = ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString()));
 
       if (!preview) {
-        await localTransferCall.signAndSend(selected.account.address, { signer: selected.wallet.signer, assetId: feeAsset() });
-        modalContext.showProposeModal();
+        await localTransferCall.signAndSend(selected.account.address, { signer: selected.wallet.signer }, (result: ISubmittableResult) => {
+          modalContext.hideProposeModal();
+
+          if (result.isInBlock || result.isFinalized) {
+            console.log("Proposal submitted to chain: ", chain);
+            return;
+          }
+
+          if (result.isError) {
+            console.error("Error submitting proposal: ", result);
+            return;
+          }
+        });
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
-        console.log("partialFeePreview: ", partialFeePreview);
         return partialFeePreview;
       }
     }
@@ -260,21 +268,20 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
-        modalContext.showProposeModal();
+        modalContext.hideProposeModal();
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals);
-        console.log("partialFeePreview: ", partialFeePreview);
         return partialFeePreview;
       }
     }
 
     // Unknown proposal type
     throw new Error(JSON.stringify({
-      chain: proposalData.chain, asset: (proposalData as any).asset, to: (proposalData as any).to, amount: (proposalData as any).amount
+      chain: proposalData.chain, destinationChain: (proposalData as any).destinationChain, asset: (proposalData as any).asset, to: (proposalData as any).to, amount: (proposalData as any).amount
     }));
   } catch (e) {
-    console.error("Unknown proposal type or missing data for proposal type: ", e);
+    console.error(e);
   }
 };
 
@@ -361,16 +368,18 @@ export default function ProposeModal() {
         }
       </Match>
     </Switch>
-    <input
-      type='text'
-      class={`${ INPUT_COMMON_STYLE } my-2`}
-      placeholder='Add message (optional)'
-      value={message()}
-      onInput={e => {
-        setMessage(e.currentTarget.value);
-      }}
-    />
-    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() as unknown as FeeAsset, ringApisContext, modalContext })}>Propose</button>
+    <Show when={maybeProposal()?.proposalType !== ProposalType.LocalTransfer}>
+      <input
+        type='text'
+        class={`${ INPUT_COMMON_STYLE } mt-2`}
+        placeholder='Add message (optional)'
+        value={message()}
+        onInput={e => {
+          setMessage(e.currentTarget.value);
+        }}
+      />
+    </Show>
+    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm mt-2" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() as unknown as FeeAsset, ringApisContext, modalContext })}>Propose</button>
   </div>;
 
   return <>

@@ -136,7 +136,6 @@ const AssetsContext = () => {
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
     const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
     const networksFromBalances = balances().find(([network, assets]) => network === pair.from);
-    console.log('filteredAssetCount networksFromBalances', networksFromBalances);
     const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
 
     return filterAssetBlocks.length;
@@ -185,7 +184,7 @@ const AssetsContext = () => {
     // LocalTransfer: Handle local transfer of assets within Tinkernet.
     if (pair.from === NetworkEnum.TINKERNET && pair.to === NetworkEnum.TINKERNET) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, asset: asset(), amount: amountPlank, to: targetAddress() })
+        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing Local Transfer within Tinkernet', proposeContext.state.proposal);
       modalContext.showProposeModal();
@@ -320,6 +319,9 @@ const AssetsContext = () => {
 
   const getPaymentInfo = async () => {
     setLoadingFee(true);
+
+    if (!targetAddress() || !asset() || !amount()) return;
+
     const proposalProps = {
       preview: true,
       selectedAccountContext: saContext,
