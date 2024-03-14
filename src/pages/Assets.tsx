@@ -92,8 +92,7 @@ export default function Assets() {
             })
             .filter(([_, allBalances]) => {
               const assetBalances = allBalances as unknown as BalanceType;
-              if (!assetBalances.locks) return false;
-              const totalLockAmount = assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
+              const totalLockAmount = !!assetBalances.locks && assetBalances.locks.length > 0 ? assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
               const hasBalances = assetBalances.freeBalance != '0'
                 || assetBalances.reservedBalance != '0'
                 || (+totalLockAmount !== 0);
@@ -177,7 +176,7 @@ export default function Assets() {
                 return <Show when={assets.length}>
                   <tbody class="dark:text-saturn-offwhite text-saturn-black">
                     <For each={assets as unknown as [string, BalanceType][]}>{([asset, b]) => {
-                      const totalLockAmount = b.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
+                      const totalLockAmount = !!b.locks && b.locks.length > 0 ? b.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
                       return <tr class="border-b border-gray-200 dark:border-gray-800">
                         {/* Asset */}
                         <td class='py-3 px-4 text-left w-[20%]'>
