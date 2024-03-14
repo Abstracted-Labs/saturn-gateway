@@ -232,7 +232,7 @@ const AssetsContext = () => {
     setAmount(maxAmount - 1);
   };
 
-  const openAssets = () => {
+  const openAssetsDropdown = () => {
     if (!isAssetDropdownActive()) {
       dropdownAsset()?.show();
       setIsAssetDropdownActive(true);
@@ -241,7 +241,7 @@ const AssetsContext = () => {
     }
   };
 
-  const openFrom = () => {
+  const openFromDropdown = () => {
     if (!isFromDropdownActive()) {
       dropdownFrom()?.show();
       setIsFromDropdownActive(true);
@@ -251,7 +251,7 @@ const AssetsContext = () => {
 
   };
 
-  const openTo = () => {
+  const openToDropdown = () => {
     if (!isToDropdownActive()) {
       dropdownTo()?.show();
       setIsToDropdownActive(true);
@@ -261,18 +261,24 @@ const AssetsContext = () => {
   };
 
   const closeFromDropdown = () => {
-    dropdownFrom()?.hide();
-    setIsFromDropdownActive(false);
+    if (isFromDropdownActive()) {
+      dropdownFrom()?.hide();
+      setIsFromDropdownActive(false);
+    }
   };
 
   const closeToDropdown = () => {
-    dropdownTo()?.hide();
-    setIsToDropdownActive(false);
+    if (isToDropdownActive()) {
+      dropdownTo()?.hide();
+      setIsToDropdownActive(false);
+    }
   };
 
   const closeAssetDropdown = () => {
-    dropdownAsset()?.hide();
-    setIsAssetDropdownActive(false);
+    if (isAssetDropdownActive()) {
+      dropdownAsset()?.hide();
+      setIsAssetDropdownActive(false);
+    }
   };
 
   const handleAssetOptionClick = (asset: AssetEnum) => {
@@ -401,8 +407,7 @@ const AssetsContext = () => {
             })
             .filter(([_, allBalances]) => {
               const assetBalances = allBalances as unknown as BalanceType;
-              if (!assetBalances.locks) return false;
-              const totalLockAmount = assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
+              const totalLockAmount = !!assetBalances.locks && assetBalances.locks.length > 0 ? assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
               const hasBalances = assetBalances.freeBalance != '0'
                 || assetBalances.reservedBalance != '0'
                 || (+totalLockAmount !== 0);
@@ -511,8 +516,7 @@ const AssetsContext = () => {
 
       // Calculate non-transferable amount
       const nonTransferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
-        if (!balances.locks) return acc;
-        const totalLockAmount = balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount), 0).toString();
+        const totalLockAmount = !!balances.locks && balances.locks.length > 0 ? balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
         const nonTransferable = new BigNumber(balances.reservedBalance).plus(new BigNumber(totalLockAmount));
         return acc.plus(nonTransferable);
       }, new BigNumber(0));
@@ -626,7 +630,7 @@ const AssetsContext = () => {
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
-          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFrom}>
+          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFromDropdown}>
             <For each={forNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleFromOptionClick(name as NetworkEnum);
@@ -637,7 +641,7 @@ const AssetsContext = () => {
             </For>
           </SaturnSelect>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
-          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openTo}>
+          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openToDropdown}>
             <For each={toNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleToOptionClick(name as NetworkEnum);
@@ -676,7 +680,7 @@ const AssetsContext = () => {
             <span class="align-top mb-1 text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
               Choose Asset
             </span>
-            <SaturnSelect disabled={filteredAssetCount() <= 1 || !isLoggedIn()} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssets}>
+            <SaturnSelect disabled={filteredAssetCount() <= 1 || !isLoggedIn()} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssetsDropdown}>
               <For each={filteredAssets()}>
                 {([name, element]) => <SaturnSelectItem onClick={() => {
                   handleAssetOptionClick(name as AssetEnum);
