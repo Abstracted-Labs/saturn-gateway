@@ -16,10 +16,11 @@ export type RingsType = {
   tinkernet: RingsData;
   basilisk: RingsData;
   picasso: RingsData;
+  kusama: RingsData; // asset hub
 };
 
 export const Rings: RingsType = {
-  tinkernet: {
+  [NetworkEnum.TINKERNET]: {
     wcNamespace: 'polkadot:d42e9606a995dfe433dc7955dc2a70f4',
     polkaholicId: 'invArch',
     decimals: 12,
@@ -27,7 +28,7 @@ export const Rings: RingsType = {
     websocket: WSS_TINKERNET,
     genesisHash: "0xd42e9606a995dfe433dc7955dc2a70f495f350f373daa200098ae84437816ad2",
   },
-  basilisk: {
+  [NetworkEnum.BASILISK]: {
     wcNamespace: 'polkadot:a85cfb9b9fd4d622a5b28289a02347af',
     polkaholicId: 'basilisk',
     decimals: 12,
@@ -35,13 +36,21 @@ export const Rings: RingsType = {
     websocket: 'wss://basilisk-rpc.dwellir.com',
     genesisHash: "0xa85cfb9b9fd4d622a5b28289a02347af987d8f73fa3108450e2b4a11c1ce5755",
   },
-  picasso: {
+  [NetworkEnum.PICASSO]: {
     wcNamespace: 'polkadot:6811a339673c9daa897944dcdac99c6e',
     polkaholicId: 'picasso',
     decimals: 12,
     icon: PicassoIcon,
     websocket: 'wss://rpc.composablenodes.tech',
     genesisHash: "0x6811a339673c9daa897944dcdac99c6e2939cc88245ed21951a0a3c9a2be75bc",
+  },
+  [NetworkEnum.KUSAMA]: {
+    wcNamespace: 'polkadot:b0a8d493285c2df73290dfb7e61f870f',
+    polkaholicId: 'statemine',
+    decimals: 12,
+    icon: PicassoIcon,
+    websocket: 'wss://statemine-rpc.dwellir.com',
+    genesisHash: "",
   },
 };
 
@@ -56,10 +65,10 @@ export enum AssetEnum {
 export type NetworksByAssetType = Record<AssetEnum, NetworkEnum[]>;
 
 export const NetworksByAsset: NetworksByAssetType = {
-  TNKR: [NetworkEnum.KUSAMA, NetworkEnum.TINKERNET, NetworkEnum.BASILISK],
+  TNKR: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET],
   BSX: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK],
   PICA: [NetworkEnum.KUSAMA, NetworkEnum.PICASSO],
-  KSM: [NetworkEnum.KUSAMA, NetworkEnum.TINKERNET, NetworkEnum.BASILISK, NetworkEnum.PICASSO],
+  KSM: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET, NetworkEnum.PICASSO],
   DOT: [NetworkEnum.POLKADOT],
 };
 
