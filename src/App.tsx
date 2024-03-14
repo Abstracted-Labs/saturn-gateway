@@ -19,7 +19,7 @@ import { decodeAddress } from '@polkadot/util-crypto';
 import { Core } from '@walletconnect/core';
 import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wallet';
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
-import { WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
+import { NetworkEnum, WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
 import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount, POLKADOT_CHAIN_ID } from '@polkadot-onboard/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
@@ -27,6 +27,7 @@ import { MegaModalProvider, useMegaModal } from './providers/megaModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
 import { getMultisigsForAccount } from './utils/getMultisigs';
+import { createApis } from './utils/createApis';
 
 interface ExtendedWallet extends BaseWallet {
   autoConnect: () => Promise<void>;
@@ -88,22 +89,6 @@ const HomePlanet: Component = () => {
     }
   });
 
-  const createApis = async (): Promise<Record<string, ApiPromise>> => {
-    const entries: Array<Promise<[string, ApiPromise]>> = Object.entries(Rings).map(
-      async ([chain, data]) => {
-        const res: [string, ApiPromise] = [
-          chain,
-          await ApiPromise.create({
-            provider: new WsProvider(data.websocket),
-          }),
-        ];
-
-        return res;
-      },
-    );
-
-    return Object.fromEntries(await Promise.all(entries));
-  };
 
   const sessionProposalCallback = async (proposal: Web3WalletTypes.SessionProposal, w3w: IWeb3Wallet) => {
     console.log('session_proposal: ', proposal);
@@ -177,6 +162,15 @@ const HomePlanet: Component = () => {
   onMount(() => {
     const runAsync = async () => {
       const apis = await createApis();
+
+      // Disconnect non-Tinkernet RPCs
+      Object.entries(Rings).forEach(([network, ring]) => {
+        if (network !== NetworkEnum.TINKERNET) {
+          apis[network].disconnect();
+        }
+      });
+
+      // Save Tinkernet API to Saturn context
       if (apis.tinkernet) {
         ringApisContext.setters.setRingApisBatch(apis);
 
