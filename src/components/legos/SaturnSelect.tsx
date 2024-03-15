@@ -21,10 +21,16 @@ const SaturnSelect = (props: SaturnSelectType) => {
   const kids = children(() => mergedProps.children);
   const isDisabled = createMemo(() => mergedProps.disabled);
 
-  return <div class={`relative grow ${ mergedProps.isMini ? 'w-auto' : 'w-full' }`}>
+  return <div class={`relative grow ${ mergedProps.isMini ? 'w-auto' : 'w-full' }`} onClick={(event) => {
+    if (typeof mergedProps.onClick === 'function') {
+      console.log('clicking somewhere in dropdown');
+      mergedProps.onClick(event);
+    } else {
+      console.log('No onClick function provided for dropdown');
+    }
+  }}>
     <button
       disabled={isDisabled()}
-      onClick={isDisabled() ? () => null : mergedProps.onClick}
       data-dropdown-offset-distance="-7"
       id={mergedProps.toggleId}
       data-dropdown-toggle={mergedProps.dropdownId}
@@ -37,10 +43,10 @@ const SaturnSelect = (props: SaturnSelectType) => {
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5 5 1 1 5" />
       </svg>
     </button>
-    <div id={mergedProps.dropdownId} aria-labelledby={mergedProps.toggleId} class={`${ BUTTON_COMMON_STYLE } hidden z-80 divide-y rounded-t-none border-t-0 dark:border-t-saturn-black focus:outline-none pt-1.5 z-50 ${ mergedProps.isMini ? 'w-28' : 'w-44' }`}>
-      <ul class={`${ mergedProps.isMini ? 'text-xxs' : 'text-sm' } text-gray-700 w-full dark:text-gray-200`}>
+    <div id={mergedProps.dropdownId} aria-labelledby={mergedProps.toggleId} aria-hidden={!isOpen()} class={`${ BUTTON_COMMON_STYLE } hidden z-80 divide-y rounded-t-none border-t-0 dark:border-t-saturn-black focus:outline-none pt-1.5 z-50 ${ mergedProps.isMini ? 'w-28' : 'w-44' }`}>
+      <div class={`${ mergedProps.isMini ? 'text-xxs' : 'text-sm' } text-gray-700 w-full dark:text-gray-200`}>
         {kids()}
-      </ul>
+      </div>
     </div>
   </div >;
 };

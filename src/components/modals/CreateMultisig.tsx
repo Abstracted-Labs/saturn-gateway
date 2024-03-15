@@ -6,7 +6,7 @@ import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
-import { ApiTypes, FALLBACK_TEXT_STYLE, INPUT_CREATE_MULTISIG_STYLE, MultisigEnum } from "../../utils/consts";
+import { ApiTypes, FALLBACK_TEXT_STYLE, INPUT_CREATE_MULTISIG_STYLE, KusamaFeeAssetEnum, MultisigEnum } from "../../utils/consts";
 import SaturnCard from "../legos/SaturnCard";
 import SaturnNumberInput from "../legos/SaturnNumberInput";
 import SaturnRadio from "../legos/SaturnRadio";
@@ -60,6 +60,7 @@ const CreateMultisig = () => {
   const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
   const [coreCreationFee, setCoreCreationFee] = createSignal<string>("100");
   const [tnkrBalance, setTnkrBalance] = createSignal<string>("0");
+  const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
 
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const selectedState = createMemo(() => selectedAccountContext.state);
@@ -167,7 +168,7 @@ const CreateMultisig = () => {
     const createMultisigResult = await saturn.createMultisig({
       minimumSupport: new BN(ms),
       requiredApproval: new BN(ra),
-      creationFeeAsset: FeeAsset.TNKR
+      creationFeeAsset: feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM,
     }).signAndSend(account.address, wallet.signer);
 
     console.log("createMultisigResult: ", createMultisigResult);
@@ -356,12 +357,20 @@ const CreateMultisig = () => {
 
   onMount(() => {
     initModals();
+  });
+
+  onMount(() => {
     const instance = $modalElement();
     modal = new Modal(instance);
   });
 
   onMount(() => {
     abortUi();
+  });
+
+  onMount(() => {
+    const feeCurrency = selectedAccountContext.setters.getFeeAsset();
+    setFeeAsset(feeCurrency);
   });
 
   createEffect(() => {

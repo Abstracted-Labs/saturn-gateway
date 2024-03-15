@@ -1,11 +1,11 @@
 import BigNumber from "bignumber.js";
-import { createSignal, createEffect, For, Show, createMemo, lazy, onMount, JSXElement, onCleanup, on } from "solid-js";
+import { createSignal, createEffect, For, Show, createMemo, onMount, JSXElement, onCleanup, on } from "solid-js";
 import { AssetEnum, NetworksByAsset, Rings } from "../../data/rings";
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import SaturnCard from "../legos/SaturnCard";
-import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, MINI_TEXT_LINK_STYLE, NetworkEnum } from "../../utils/consts";
+import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, KusamaFeeAssetEnum, MINI_TEXT_LINK_STYLE, NetworkEnum } from "../../utils/consts";
 import SaturnSelectItem from "../legos/SaturnSelectItem";
 import SaturnSelect from "../legos/SaturnSelect";
 import { initDropdowns, Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
@@ -75,6 +75,7 @@ const AssetsContext = () => {
   const [dropdownAsset, setDropdownAsset] = createSignal<DropdownInterface | null>(null);
   const [amount, setAmount] = createSignal<number>(0);
   const [asset, setAsset] = createSignal<AssetEnum>(AssetEnum.TNKR);
+  const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
   const [targetAddress, setTargetAddress] = createSignal<string>('');
   const [bridgeToSelf, setBridgeToSelf] = createSignal<boolean>(false);
@@ -97,19 +98,16 @@ const AssetsContext = () => {
   const modalContext = useMegaModal();
   const loc = useLocation();
 
-  const filteredNetworks = createMemo(() => {
-    const availableNetworks = balances().map(([network, assets]) => network);
+  const forNetworks = createMemo(() => {
+    const selectedNetwork = finalNetworkPair().from;
+    const availableNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedNetwork);
     const allNetworks = Object.entries(allTheNetworks());
     const filteredNetworks = allNetworks.filter(([name, element]) => availableNetworks.includes(name as NetworkEnum));
     return filteredNetworks;
   });
-  const forNetworks = createMemo(() => {
-    // const allNetworks = Object.entries(filteredNetworks());
-    // return allNetworks;
-    return filteredNetworks();
-  });
   const toNetworks = createMemo(() => {
-    const balanceNetworks = balances().map(([network, assets]) => network);
+    const selectedToNetwork = finalNetworkPair().to;
+    const balanceNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedToNetwork);
     const networks = Object.entries(allTheNetworks()).filter(([name, element]) => balanceNetworks.includes(name as NetworkEnum));
     return networks;
   });
@@ -118,28 +116,37 @@ const AssetsContext = () => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
-
   const filteredAssets = () => {
     const pair = finalNetworkPair();
+    const selectedAsset = asset();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
-    const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
-    const networksFromBalances = balances().find(([network, assets]) => network == pair.from);
-    const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
+    const networksFromBalances = balances().find(([network, _]) => network === pair.from);
+    const filteredAssets = allAssets.filter(([name, _]) => assetsFromNetwork.includes(name as AssetEnum) && name !== selectedAsset);
+
+    if (!networksFromBalances) return [];
+
+    const assetNamesInBalances = Object.entries(networksFromBalances[1]).map(([key, value]) => Object.values(value)[0] as string);
+    const filterAssetBlocks = filteredAssets.filter(([name, element]) =>
+      assetNamesInBalances.includes(name)
+    );
 
     return filterAssetBlocks;
   };
-
-  const filteredAssetCount = () => {
+  const filteredAssetCount = createMemo(() => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
     const assetsFromNetwork = getAssetsFromNetwork(pair.from);
-    const filteredAssets = allAssets.filter(([name, element]) => assetsFromNetwork.includes(name as AssetEnum));
-    const networksFromBalances = balances().find(([network, assets]) => network === pair.from);
-    const filterAssetBlocks = filteredAssets.filter(([name, element]) => Object.keys(networksFromBalances?.[1] || {}).includes(name));
+    const networksFromBalances = balances().find(([network, _]) => network === pair.from);
+    const filteredAssets = allAssets.filter(([name, _]) => assetsFromNetwork.includes(name as AssetEnum));
+
+    if (!networksFromBalances) return 0;
+
+    const assetNamesInBalances = Object.entries(networksFromBalances[1]).map(([key, value]) => Object.values(value)[0] as string);
+    const filterAssetBlocks = filteredAssets.filter(([name, _]) => assetNamesInBalances.includes(name));
 
     return filterAssetBlocks.length;
-  };
+  });
 
   const proposeTransfer = () => {
     const pair = finalNetworkPair();
@@ -232,71 +239,58 @@ const AssetsContext = () => {
     setAmount(maxAmount - 1);
   };
 
-  const openAssetsDropdown = () => {
-    if (!isAssetDropdownActive()) {
-      dropdownAsset()?.show();
+  const handleAssetsDropdown = () => {
+    const dropdown = dropdownAsset();
+    if (dropdown && !dropdown.isVisible()) {
+      dropdown.init();
+      dropdown.show();
       setIsAssetDropdownActive(true);
     } else {
-      closeAssetDropdown();
+      dropdown?.hide();
+      dropdown?.destroy();
+      setIsAssetDropdownActive(false);
     }
   };
 
-  const openFromDropdown = () => {
-    if (!isFromDropdownActive()) {
-      dropdownFrom()?.show();
+  const handleFromDropdown = () => {
+    const dropdown = dropdownFrom();
+    if (dropdown && !dropdown.isVisible()) {
+      dropdown.init();
+      dropdown.show();
       setIsFromDropdownActive(true);
     } else {
-      closeFromDropdown();
-    }
-
-  };
-
-  const openToDropdown = () => {
-    if (!isToDropdownActive()) {
-      dropdownTo()?.show();
-      setIsToDropdownActive(true);
-    } else {
-      closeToDropdown();
-    }
-  };
-
-  const closeFromDropdown = () => {
-    if (isFromDropdownActive()) {
-      dropdownFrom()?.hide();
+      dropdown?.hide();
+      dropdown?.destroy();
       setIsFromDropdownActive(false);
     }
   };
 
-  const closeToDropdown = () => {
-    if (isToDropdownActive()) {
-      dropdownTo()?.hide();
+  const handleToDropdown = () => {
+    const dropdown = dropdownTo();
+    if (dropdown && !dropdown.isVisible()) {
+      dropdown.init();
+      dropdown.show();
+      setIsToDropdownActive(true);
+    } else {
+      dropdown?.hide();
+      dropdown?.destroy();
       setIsToDropdownActive(false);
-    }
-  };
-
-  const closeAssetDropdown = () => {
-    if (isAssetDropdownActive()) {
-      dropdownAsset()?.hide();
-      setIsAssetDropdownActive(false);
     }
   };
 
   const handleAssetOptionClick = (asset: AssetEnum) => {
     setAmount(0);
     setAsset(asset);
-    closeAssetDropdown();
   };
 
   const handleFromOptionClick = (from: NetworkEnum) => {
     setAmount(0);
     setFinalNetworkPair({ from, to: finalNetworkPair().to });
-    closeFromDropdown();
   };
 
   const handleToOptionClick = (to: NetworkEnum) => {
     setAmount(0);
     setFinalNetworkPair({ from: finalNetworkPair().from, to });
-    closeToDropdown();
   };
 
   const renderSelectedOption = (network: NetworkEnum) => {
@@ -354,7 +348,7 @@ const AssetsContext = () => {
       ringApisContext,
       modalContext,
       message: () => '',
-      feeAsset: () => asset() as unknown as FeeAsset,
+      feeAsset: () => feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM,
     };
 
     const paymentInfo = await proposeCall(proposalProps);
@@ -368,7 +362,6 @@ const AssetsContext = () => {
   };
 
   onMount(() => {
-    // Initializing the dropdowns
     initDropdowns();
   });
 
@@ -385,6 +378,11 @@ const AssetsContext = () => {
   onMount(() => {
     const instance = new Dropdown(assetDropdownElement(), assetToggleElement(), assetOptions);
     setDropdownAsset(instance);
+  });
+
+  onMount(() => {
+    const feeCurrency = saContext.setters.getFeeAsset();
+    setFeeAsset(feeCurrency);
   });
 
   createEffect(on([() => saturnContext.state.multisigAddress], () => {
@@ -422,7 +420,7 @@ const AssetsContext = () => {
     runAsync();
   }));
 
-  createEffect(on([() => finalNetworkPair().from, balances, asset], () => {
+  createEffect(on([() => finalNetworkPair().from, balances], () => {
     // Updating the From/To dropdowns when the current network changes
     const currentAsset = asset();
     const balance = balances();
@@ -554,10 +552,20 @@ const AssetsContext = () => {
   }));
 
   createEffect(() => {
+    const toToggle = toToggleElement();
+    const toDropdown = toDropdownElement();
+    const dropdown = dropdownTo();
+
     const handleClickOutside = (event: any) => {
-      if (toToggleElement() && toDropdownElement() && !toToggleElement()?.contains(event.target) && !toDropdownElement()?.contains(event.target)) {
-        dropdownTo()?.hide();
+      if (!toToggle || !toDropdown || !dropdown) return;
+      if (toToggle && toDropdown && !toToggle.contains(event.target) && !toDropdown.contains(event.target)) {
+        dropdown.hide();
+        dropdown.destroy();
         setIsToDropdownActive(false);
+      } else {
+        dropdown.init();
+        dropdown.show();
+        setIsToDropdownActive(true);
       }
     };
 
@@ -571,10 +579,20 @@ const AssetsContext = () => {
   });
 
   createEffect(() => {
+    const fromToggle = fromToggleElement();
+    const fromDropdown = fromDropdownElement();
+    const dropdown = dropdownFrom();
+
     const handleClickOutside = (event: any) => {
-      if (fromToggleElement() && fromDropdownElement() && !fromToggleElement()?.contains(event.target) && !fromDropdownElement()?.contains(event.target)) {
-        dropdownFrom()?.hide();
+      if (!fromToggle || !fromDropdown || !dropdown) return;
+      if (fromToggle && fromDropdown && !fromToggle.contains(event.target) && !fromDropdown.contains(event.target)) {
+        dropdown.hide();
+        dropdown.destroy();
         setIsFromDropdownActive(false);
+      } else {
+        dropdown.init();
+        dropdown.show();
+        setIsToDropdownActive(true);
       }
     };
 
@@ -588,10 +606,20 @@ const AssetsContext = () => {
   });
 
   createEffect(() => {
+    const assetToggle = assetToggleElement();
+    const assetDropdown = assetDropdownElement();
+    const dropdown = dropdownAsset();
+
     const handleClickOutside = (event: any) => {
-      if (assetToggleElement() && assetDropdownElement() && !assetToggleElement()?.contains(event.target) && !assetDropdownElement()?.contains(event.target)) {
-        dropdownAsset()?.hide();
+      if (!assetToggle || !assetDropdown || !dropdown) return;
+      if (assetToggle && assetDropdown && !assetToggle.contains(event.target) && !assetDropdown.contains(event.target)) {
+        dropdown.hide();
+        dropdown.destroy();
         setIsAssetDropdownActive(false);
+      } else {
+        dropdown.init();
+        dropdown.show();
+        setIsToDropdownActive(true);
       }
     };
 
@@ -602,6 +630,10 @@ const AssetsContext = () => {
     onCleanup(() => {
       document.removeEventListener('click', handleClickOutside);
     });
+  });
+
+  createEffect(() => {
+    console.log('Asset changed to:', asset());
   });
 
   const MyBalance = () => {
@@ -630,7 +662,7 @@ const AssetsContext = () => {
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
-          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={openFromDropdown}>
+          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={handleFromDropdown}>
             <For each={forNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleFromOptionClick(name as NetworkEnum);
@@ -641,7 +673,7 @@ const AssetsContext = () => {
             </For>
           </SaturnSelect>
           <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
-          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={openToDropdown}>
+          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={handleToDropdown}>
             <For each={toNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleToOptionClick(name as NetworkEnum);
@@ -680,9 +712,9 @@ const AssetsContext = () => {
             <span class="align-top mb-1 text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
               Choose Asset
             </span>
-            <SaturnSelect disabled={filteredAssetCount() <= 1 || !isLoggedIn()} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={openAssetsDropdown}>
+            <SaturnSelect disabled={filteredAssetCount() < 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={handleAssetsDropdown}>
               <For each={filteredAssets()}>
-                {([name, element]) => <SaturnSelectItem onClick={() => {
+                {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                   handleAssetOptionClick(name as AssetEnum);
                   getPaymentInfo();
                 }}>
@@ -725,7 +757,7 @@ const AssetsContext = () => {
           <div class="flex flex-col justify-end">
             <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
               <Show when={!!maxAssetAmount()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
-                <span class="ml-2">{networkFee()} {asset()}</span>
+                <span class="ml-2">{networkFee()} {feeAsset()}</span>
               </Show>
             </span>
           </div>
