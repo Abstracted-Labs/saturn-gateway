@@ -380,12 +380,14 @@ const AssetsContext = () => {
     setDropdownAsset(instance);
   });
 
-  onMount(() => {
+  createEffect(() => {
     const feeCurrency = saContext.setters.getFeeAsset();
     setFeeAsset(feeCurrency);
+    setNetworkFee(0);
+    setAmount(0);
   });
 
-  createEffect(on([() => saturnContext.state.multisigAddress], () => {
+  createEffect(on([() => saturnContext.state.multisigAddress, feeAsset], () => {
     // Setting all balances whenever multisigAddress changes
     const id = saturnContext.state.multisigId;
     const address = saturnContext.state.multisigAddress;
@@ -630,10 +632,6 @@ const AssetsContext = () => {
     onCleanup(() => {
       document.removeEventListener('click', handleClickOutside);
     });
-  });
-
-  createEffect(() => {
-    console.log('Asset changed to:', asset());
   });
 
   const MyBalance = () => {
