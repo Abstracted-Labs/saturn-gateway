@@ -21,14 +21,7 @@ const SaturnSelect = (props: SaturnSelectType) => {
   const kids = children(() => mergedProps.children);
   const isDisabled = createMemo(() => mergedProps.disabled);
 
-  return <div class={`relative grow ${ mergedProps.isMini ? 'w-auto' : 'w-full' }`} onClick={(event) => {
-    if (typeof mergedProps.onClick === 'function') {
-      console.log('clicking somewhere in dropdown');
-      mergedProps.onClick(event);
-    } else {
-      console.log('No onClick function provided for dropdown');
-    }
-  }}>
+  return <div class={`relative grow ${ mergedProps.isMini ? 'w-auto' : 'w-full' }`} onClick={(event) => typeof mergedProps.onClick === 'function' ? mergedProps.onClick(event) : null}>
     <button
       disabled={isDisabled()}
       data-dropdown-offset-distance="-7"
