@@ -17,7 +17,7 @@ async function fetchData(url: string) {
 }
 
 export function getCurrentUsdPrice(network: NetworkEnum) {
-  if (network === NetworkEnum.TINKERNET || network === NetworkEnum.KUSAMA) return null;
+  if (network !== NetworkEnum.BASILISK) return null;
 
   let data;
 
