@@ -236,13 +236,13 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
                 freeBalance: updatedFreeBalance,
                 reservedBalance: updatedReservedBalance,
                 totalBalance: updatedTotalBalance,
+                locks,
               };
             } else {
               balancesByNetwork[assetSymbol] = {
                 freeBalance: freeTokens,
                 reservedBalance: reservedTokens,
                 totalBalance: totalTokens,
-                locks,
               };
             }
           }
