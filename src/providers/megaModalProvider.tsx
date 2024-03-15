@@ -28,62 +28,75 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     initModals();
   });
 
-  createEffect(() => {
+  onMount(() => {
+    const modal = multisigListModalElement();
     if (multisigListModalElement()) {
-      const instance = new Modal(multisigListModalElement());
+      const instance = new Modal(modal);
       setMultisigListModalInstance(instance);
     }
+  });
 
+  onMount(() => {
+    const modal = feeAssetModalElement();
     if (feeAssetModalElement()) {
-      const instance = new Modal(feeAssetModalElement());
+      const instance = new Modal(modal);
       setFeeAssetModalInstance(instance);
     }
+  });
 
+  onMount(() => {
+    const modal = proposedModalElement();
     if (proposedModalElement()) {
-      const instance = new Modal(proposedModalElement());
+      const instance = new Modal(modal);
       setProposedModalInstance(instance);
     }
   });
 
   const showMultisigListModal = () => {
     const instance = multisigListModalInstance();
-    if (instance && instance !== null) {
+    if (instance && instance !== null && !instance.isVisible()) {
+      instance.init();
       instance.show();
     }
   };
 
   const hideMultisigListModal = () => {
     const instance = multisigListModalInstance();
-    if (instance && instance !== null && instance.hide) {
+    if (instance && instance !== null && instance.isVisible()) {
       instance.hide();
+      instance.destroy();
     }
   };
 
   const showFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
-    if (instance && instance !== null) {
+    if (instance && instance !== null && !instance.isVisible()) {
+      instance.init();
       instance.show();
     }
   };
 
   const hideFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
-    if (instance && instance !== null && instance.hide) {
+    if (instance && instance !== null && instance.isVisible()) {
       instance.hide();
+      instance.destroy();
     }
   };
 
   const showProposeModal = () => {
     const instance = proposedModalInstance();
-    if (instance && instance !== null) {
+    if (instance && instance !== null && !instance.isVisible()) {
+      instance.init();
       instance.show();
     }
   };
 
   const hideProposeModal = () => {
     const instance = proposedModalInstance();
-    if (instance && instance !== null && instance.hide) {
+    if (instance && instance !== null && instance.isVisible()) {
       instance.hide();
+      instance.destroy();
     }
   };
 
