@@ -48,13 +48,24 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
 
       const accountInfo = await rings.state.tinkernet.query.tokens.accounts(props.address, 1);
       const { free: total, reserved, frozen } = accountInfo.toHuman() as unknown as AssetReturnType;
-      const formatTotal = new BigNumber(total.toString());
-      const formatFrozen = new BigNumber(frozen.toString());
-      const formatReserve = new BigNumber(reserved.toString());
-      const transferable = formatTotal.minus(formatFrozen).minus(formatReserve);
-      const formattedBalance = formatAsset(transferable.toString(), 10);
 
-      setKsmBalance(formattedBalance);
+      // Convert to BigNumber safely, defaulting to 0 if NaN
+      const formatTotal = new BigNumber(isNaN(total) ? 0 : total);
+      const formatFrozen = new BigNumber(isNaN(frozen) ? 0 : frozen);
+      const formatReserve = new BigNumber(isNaN(reserved) ? 0 : reserved);
+
+      // Calculate transferable balance
+      const transferable = formatTotal.minus(formatFrozen).minus(formatReserve);
+
+      // Check if the result is NaN
+      if (!transferable.isNaN()) {
+        const formattedBalance = formatAsset(transferable.toString(), 10);
+        setKsmBalance(formattedBalance);
+      } else {
+        // Handle NaN result, e.g., by setting balance to "0" or logging an error
+        console.error("Calculated balance is NaN");
+        setKsmBalance("0");
+      }
     } catch (error) {
       console.error(error);
     }
