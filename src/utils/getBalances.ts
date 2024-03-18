@@ -161,8 +161,25 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
       break;
     }
 
-    // asset hub (statemine)
     case NetworkEnum.KUSAMA: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.KSM] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+      }
+      break;
+    }
+
+    case NetworkEnum.ASSETHUB: {
       if (api) {
         // query balances
         const balances = await api.query.system.account(address);
@@ -259,23 +276,8 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
     }
   }
 
-  console.log({ [network]: balancesByNetwork });
-
   api.disconnect();
   return ({ [network]: balancesByNetwork });
-
-  // return fetch('https://corsproxy.io/?' + encodeURIComponent(SUB_ID_START_URL + address + `/balances/${ balancesUrl }`)).then(async response => response.json().then(res => {
-  //   const balances = (res as ResultBalances);
-  //   // filter out zero balances
-  //   for (const [key, value] of Object.entries(balances)) {
-  //     // console.log(key, value);
-  //     if (value.totalBalance === '0') {
-  //       delete balances[key];
-  //     }
-  //   }
-
-  //   return ({ [network]: res as ResultBalances });
-  // }));
 }
 
 export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {

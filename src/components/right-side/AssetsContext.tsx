@@ -14,7 +14,6 @@ import { getAssetBlock } from "../../utils/getAssetBlock";
 import { getAssetsFromNetwork } from "../../utils/getAssetsFromNetwork";
 import { BalanceType, getBalancesFromAllNetworks } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
-import { getCurrentUsdPrice } from "../../utils/getCurrentUsdPrice";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import { NetworkAssetBalance, NetworkBalancesArray } from "../../pages/Assets";
@@ -22,6 +21,7 @@ import { proposeCall } from "../modals/ProposeModal";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import getProposalType from "../../utils/getProposalType";
 import { useMegaModal } from "../../providers/megaModalProvider";
+import { usePriceContext } from "../../providers/priceProvider";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -84,9 +84,9 @@ const AssetsContext = () => {
   const [isAssetDropdownActive, setIsAssetDropdownActive] = createSignal(false);
   const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
   const [maxAssetAmount, setMaxAssetAmount] = createSignal<number | null>(null);
-  const [transferableAmount, setTransferableAmount] = createSignal<string>('0.00');
-  const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('0.00');
-  const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('0.00');
+  const [transferableAmount, setTransferableAmount] = createSignal<string>('$0.00');
+  const [nonTransferableAmount, setNonTransferableAmount] = createSignal<string>('$0.00');
+  const [totalPortfolioValue, setTotalPortfolioValue] = createSignal<string>('$0.00');
   const [networkFee, setNetworkFee] = createSignal<number>(0);
   const [loadingFee, setLoadingFee] = createSignal<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = createSignal<boolean>(false);
@@ -97,7 +97,9 @@ const AssetsContext = () => {
   const saContext = useSelectedAccountContext();
   const modalContext = useMegaModal();
   const loc = useLocation();
+  const priceContext = usePriceContext();
 
+  const getUsdPrices = createMemo(() => priceContext.prices);
   const forNetworks = createMemo(() => {
     const selectedNetwork = finalNetworkPair().from;
     const availableNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedNetwork);
@@ -116,23 +118,6 @@ const AssetsContext = () => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
-  const filteredAssets = () => {
-    const pair = finalNetworkPair();
-    const selectedAsset = asset();
-    const allAssets = Object.entries(allTheAssets());
-    const assetsFromNetwork = getAssetsFromNetwork(pair.from);
-    const networksFromBalances = balances().find(([network, _]) => network === pair.from);
-    const filteredAssets = allAssets.filter(([name, _]) => assetsFromNetwork.includes(name as AssetEnum) && name !== selectedAsset);
-
-    if (!networksFromBalances) return [];
-
-    const assetNamesInBalances = Object.entries(networksFromBalances[1]).map(([key, value]) => Object.values(value)[0] as string);
-    const filterAssetBlocks = filteredAssets.filter(([name, element]) =>
-      assetNamesInBalances.includes(name)
-    );
-
-    return filterAssetBlocks;
-  };
   const filteredAssetCount = createMemo(() => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
@@ -165,7 +150,7 @@ const AssetsContext = () => {
     }
 
     const amountPlank = new BigNumber(amount()).times(BigNumber('10').pow(
-      BigNumber(Rings[pair.from as keyof typeof Rings].decimals),
+      BigNumber(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0),
     ));
 
     // XcmTransfer: Handle bridging TNKR or KSM from Tinkernet to other chains.
@@ -207,6 +192,24 @@ const AssetsContext = () => {
       modalContext.showProposeModal();
       return;
     }
+  };
+
+  const filteredAssets = () => {
+    const pair = finalNetworkPair();
+    const selectedAsset = asset();
+    const allAssets = Object.entries(allTheAssets());
+    const assetsFromNetwork = getAssetsFromNetwork(pair.from);
+    const networksFromBalances = balances().find(([network, _]) => network === pair.from);
+    const filteredAssets = allAssets.filter(([name, _]) => assetsFromNetwork.includes(name as AssetEnum) && name !== selectedAsset);
+
+    if (!networksFromBalances) return [];
+
+    const assetNamesInBalances = Object.entries(networksFromBalances[1]).map(([key, value]) => Object.values(value)[0] as string);
+    const filterAssetBlocks = filteredAssets.filter(([name, element]) =>
+      assetNamesInBalances.includes(name)
+    );
+
+    return filterAssetBlocks;
   };
 
   const copySelfAddress = () => {
@@ -337,7 +340,7 @@ const AssetsContext = () => {
               chain: finalNetworkPair().from,
               destinationChain: finalNetworkPair().to,
               asset: asset(),
-              amount: new BigNumber(amount()).times(BigNumber('10').pow(BigNumber(Rings[finalNetworkPair().from as keyof typeof Rings].decimals))),
+              amount: new BigNumber(amount()).times(BigNumber('10').pow(BigNumber(Rings[finalNetworkPair().from as keyof typeof Rings]?.decimals ?? 0))),
               to: bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress(),
             }
           },
@@ -365,17 +368,17 @@ const AssetsContext = () => {
     initDropdowns();
   });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(fromDropdownElement(), fromToggleElement(), options);
     setDropdownFrom(instance);
   });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(toDropdownElement(), toToggleElement(), options);
     setDropdownTo(instance);
   });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(assetDropdownElement(), assetToggleElement(), assetOptions);
     setDropdownAsset(instance);
   });
@@ -453,7 +456,7 @@ const AssetsContext = () => {
       if (assetBalances) {
         const freeBalance = assetBalances?.[1].freeBalance;
         if (freeBalance) {
-          const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings].decimals);
+          const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings]?.decimals ?? 0);
           // remove commas from transferable string
           const transferableNumber = Number(transferable.replace(/,/g, ''));
           setMaxAssetAmount(transferableNumber);
@@ -472,86 +475,69 @@ const AssetsContext = () => {
     setIsLoggedIn(!!saContext.state.account?.address);
   });
 
-  createEffect(on([() => finalNetworkPair().from, balances], () => {
+  createEffect(() => {
+    const allPrices = getUsdPrices();
+
     const loadAllBalances = async () => {
-      // Setting My Balance amounts across all balances from current network
-      let currentMarketPrice = null;
-      const currentNetwork = finalNetworkPair().from;
-      const allBalances = balances();
+      if (!allPrices) return;
 
-      const networkBalances: NetworkAssetBalance | undefined = allBalances.find(([network, assets]) => network == currentNetwork);
-      if (!networkBalances || !Array.isArray(networkBalances[1])) {
-        return;
-      }
+      let sumTransferable = new BigNumber(0);
+      let sumNonTransferable = new BigNumber(0);
+      let sumTotalPortfolio = new BigNumber(0);
 
-      const balanceArray = networkBalances[1];
+      for (const [network, assets] of balances()) {
+        const decimals = Rings[network as keyof typeof Rings]?.decimals ?? 12;
 
-      // Get current market price for token
-      const assetInUsd = await getCurrentUsdPrice(currentNetwork);
-      if (assetInUsd) {
-        currentMarketPrice = new BigNumber(assetInUsd.market_data.current_price.usd);
-      } else {
-        // If token doesn't exist, use as default conversion
-        currentMarketPrice = null;
-      }
+        for (const [assetName, balance] of assets as unknown as [string, BalanceType][]) {
+          let currentMarketPrice = new BigNumber(0);
 
-      // Calculate transferable amount
-      const transferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
-        const transferable = new BigNumber(balances.freeBalance);
-        return acc.plus(transferable);
-      }, new BigNumber(0));
-      if (transferable) {
-        let renderedString = '';
-        let transferableNumber = '';
-        if (currentMarketPrice !== null) {
-          transferableNumber = formatAsset(new BigNumber(transferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-          renderedString = `$ ${ transferableNumber }`;
-        } else {
-          transferableNumber = formatAsset(transferable.toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-          renderedString = `${ transferableNumber } ${ asset() }`;
+          // Apply logic from convertAssetTotalToUsd
+          if (assetName === AssetEnum.TNKR) {
+            const tnkrPrice = allPrices[network as NetworkEnum]?.usd;
+            if (tnkrPrice && new BigNumber(tnkrPrice).isGreaterThan(0)) {
+              currentMarketPrice = new BigNumber(tnkrPrice);
+            }
+          } else {
+            const specificNetworkPrice = allPrices[network as NetworkEnum]?.usd;
+            if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
+              currentMarketPrice = new BigNumber(specificNetworkPrice);
+            } else {
+              const networksHoldingAsset = NetworksByAsset[assetName as AssetEnum];
+              for (const net of networksHoldingAsset) {
+                const price = allPrices[net as NetworkEnum]?.usd;
+                if (price && new BigNumber(price).isGreaterThan(0)) {
+                  currentMarketPrice = new BigNumber(price);
+                  break;
+                }
+              }
+            }
+          }
+
+          // Continue with balance calculations
+          if (currentMarketPrice.isGreaterThan(0)) {
+            const transferable = new BigNumber(balance.freeBalance).dividedBy(new BigNumber(10).pow(decimals));
+            const totalLockAmount = balance.locks && balance.locks.length > 0
+              ? balance.locks.reduce((acc, lock) => acc.plus(new BigNumber(lock.amount.toString())), new BigNumber(0)).dividedBy(new BigNumber(10).pow(decimals))
+              : new BigNumber(0);
+            const nonTransferable = new BigNumber(balance.reservedBalance).plus(totalLockAmount).dividedBy(new BigNumber(10).pow(decimals));
+
+            sumTransferable = sumTransferable.plus(transferable.times(currentMarketPrice));
+            sumNonTransferable = sumNonTransferable.plus(nonTransferable.times(currentMarketPrice));
+            sumTotalPortfolio = sumTotalPortfolio.plus(transferable.plus(nonTransferable).times(currentMarketPrice));
+          }
         }
-
-        setTransferableAmount(renderedString);
       }
 
-      // Calculate non-transferable amount
-      const nonTransferable = (balanceArray as unknown as [string, BalanceType][]).reduce((acc, [token, balances]) => {
-        const totalLockAmount = !!balances.locks && balances.locks.length > 0 ? balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
-        const nonTransferable = new BigNumber(balances.reservedBalance).plus(new BigNumber(totalLockAmount));
-        return acc.plus(nonTransferable);
-      }, new BigNumber(0));
-      if (nonTransferable) {
-        let renderedString = '';
-        let nonTransferableNumber = '';
-        if (currentMarketPrice !== null) {
-          nonTransferableNumber = formatAsset(new BigNumber(nonTransferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-          renderedString = `$ ${ nonTransferableNumber }`;
-        } else {
-          nonTransferableNumber = formatAsset(nonTransferable.toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-          renderedString = `${ nonTransferableNumber } ${ asset() }`;
-        }
+      // Format and set the calculated values
+      const formatValue = (value: BigNumber) => `$${ value.isGreaterThan(0) ? value.toFixed(2) : '0.00' }`;
 
-        setNonTransferableAmount(renderedString);
-      }
-
-      // Calculate total portfolio value
-      if (transferable && nonTransferable) {
-        let renderedString = '';
-        let totalPortfolioNumber = '';
-        if (currentMarketPrice !== null) {
-          totalPortfolioNumber = formatAsset(new BigNumber(transferable).plus(nonTransferable).times(currentMarketPrice).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-          renderedString = `$ ${ totalPortfolioNumber }`;
-        } else {
-          totalPortfolioNumber = formatAsset(new BigNumber(transferable).plus(nonTransferable).toString(), Rings[currentNetwork as keyof typeof Rings].decimals);
-          renderedString = `${ totalPortfolioNumber } ${ asset() }`;
-        }
-
-        setTotalPortfolioValue(renderedString);
-      }
+      setTransferableAmount(formatValue(sumTransferable));
+      setNonTransferableAmount(formatValue(sumNonTransferable));
+      setTotalPortfolioValue(formatValue(sumTotalPortfolio));
     };
 
     loadAllBalances();
-  }));
+  });
 
   createEffect(() => {
     const toToggle = toToggleElement();
@@ -710,7 +696,7 @@ const AssetsContext = () => {
             <span class="align-top mb-1 text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
               Choose Asset
             </span>
-            <SaturnSelect disabled={filteredAssetCount() < 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={handleAssetsDropdown}>
+            <SaturnSelect disabled={filteredAssetCount() <= 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={handleAssetsDropdown}>
               <For each={filteredAssets()}>
                 {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                   handleAssetOptionClick(name as AssetEnum);
@@ -767,8 +753,7 @@ const AssetsContext = () => {
   };
 
   return <div class="mb-5">
-    <SaturnCard header={`My Balance (${ finalNetworkPair().from.charAt(0).toUpperCase() + finalNetworkPair().from.slice(1) })`}>
-      {/* <RoundedCard header="My Balance"> */}
+    <SaturnCard header="My Balance">
       <MyBalance />
     </SaturnCard>
     <SaturnCard header="Send Crypto">

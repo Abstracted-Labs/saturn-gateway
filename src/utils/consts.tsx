@@ -35,6 +35,7 @@ export enum NetworkEnum {
   PICASSO = "picasso",
   KUSAMA = "kusama",
   POLKADOT = "polkadot",
+  ASSETHUB = "assethub",
 }
 
 // export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
@@ -58,7 +59,7 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   TNKR: [TinkernetIcon, BasiliskIcon],
   BSX: [BasiliskIcon],
   PICA: [PicassoIcon],
-  KSM: [TinkernetIcon, BasiliskIcon, PicassoIcon],
+  KSM: [KusamaIcon, TinkernetIcon, BasiliskIcon, PicassoIcon],
   DOT: [PolkadotIcon],
 };
 

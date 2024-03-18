@@ -1,6 +1,6 @@
-import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on } from 'solid-js';
+import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on, onMount } from 'solid-js';
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
-import { Rings } from '../data/rings';
+import { AssetEnum, NetworksByAsset, Rings } from '../data/rings';
 import { useSaturnContext } from "../providers/saturnProvider";
 import type { BalanceType, NetworkBalances, ResultBalances } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
@@ -8,10 +8,10 @@ import { getAssetIcon } from '../utils/getAssetIcon';
 import { getNetworkIcon } from '../utils/getNetworkIcon';
 import { FALLBACK_TEXT_STYLE, NetworkEnum } from '../utils/consts';
 import BigNumber from 'bignumber.js';
-import { getCurrentUsdPrice } from '../utils/getCurrentUsdPrice';
 import { createStore } from 'solid-js/store';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
+import { usePriceContext } from '../providers/priceProvider';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
@@ -26,41 +26,77 @@ export default function Assets() {
   const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
   const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
+  const [usdPrices, setUsdPrices] = createStore<Record<string, string>>({});
 
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
+  const priceContext = usePriceContext();
 
   const saturnState = createMemo(() => saturnContext.state);
   const accountState = createMemo(() => saContext.state);
   const getMultisigAddress = createMemo(() => saturnState().multisigAddress);
   const getMultisigId = createMemo(() => saturnState().multisigId);
   const getAccountAddress = createMemo(() => accountState().account?.address);
+  const getUsdPrices = createMemo(() => priceContext.prices);
 
-  const convertAssetTotalToUsd = async (network: NetworkEnum, total: string) => {
+  const convertAssetTotalToUsd = async (asset: AssetEnum, network: NetworkEnum, total: string) => {
+    let totalInUsd = '($0.00)';
+    const allPrices = usdPrices;
+
+    if (!allPrices) return totalInUsd;
+
     let currentMarketPrice = null;
 
-    // Get current market price for token
-    const assetInUsd = await getCurrentUsdPrice(network);
-    if (assetInUsd) {
-      currentMarketPrice = new BigNumber(assetInUsd.market_data.current_price.usd);
-    } else {
-      // If token doesn't exist, use as default conversion
-      currentMarketPrice = null;
-    }
-
-    if (total) {
-      let totalInUsd = '0.00';
-      if (currentMarketPrice !== null) {
-        totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), Rings[network as keyof typeof Rings].decimals) })`;
+    if (asset === AssetEnum.TNKR) {
+      const tnkrPrice = allPrices[network];
+      if (tnkrPrice && new BigNumber(tnkrPrice).isGreaterThan(0)) {
+        currentMarketPrice = new BigNumber(tnkrPrice);
       } else {
-        totalInUsd = '';
+        return totalInUsd;
       }
-
-      return totalInUsd;
+    } else {
+      const specificNetworkPrice = allPrices[network];
+      if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
+        currentMarketPrice = new BigNumber(specificNetworkPrice);
+      } else {
+        const networksHoldingAsset = NetworksByAsset[asset];
+        for (const net of networksHoldingAsset) {
+          const price = allPrices[net];
+          if (price && new BigNumber(price).isGreaterThan(0)) {
+            currentMarketPrice = new BigNumber(price);
+            break;
+          }
+        }
+      }
     }
 
-    return '';
+    if (total && currentMarketPrice !== null && Rings[network]?.decimals !== undefined) {
+      const decimals = Rings[network]?.decimals ?? 12;
+      totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals) })`;
+    } else {
+      console.error(`Decimals not found for asset: ${ asset } or market price is $0`);
+    }
+
+    return totalInUsd;
   };
+
+  createEffect(() => {
+    const allPrices = getUsdPrices();
+
+    const loadPrices = async () => {
+      if (allPrices) {
+        const pricesInUsd = Object.entries(allPrices).reduce((acc, [network, priceInfo]) => {
+          acc[network] = priceInfo.usd;
+          return acc;
+        }, {} as Record<string, string>);
+        setUsdPrices(pricesInUsd);
+      } else {
+        console.log('No prices found', allPrices);
+      }
+    };
+
+    loadPrices();
+  });
 
   createEffect(() => {
     let timeout: any;
@@ -118,7 +154,7 @@ export default function Assets() {
       for (const [network, assets] of balances()) {
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
           const balances = b as unknown as BalanceType;
-          const value = await convertAssetTotalToUsd(network as NetworkEnum, balances.freeBalance);
+          const value = await convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);
           setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
         }
       }
@@ -136,8 +172,8 @@ export default function Assets() {
           const balance = balanceDetails[1] as BalanceType[];
           if (balance && Array.isArray(balance)) {
             for (const b of balance) {
-              const value = await convertAssetTotalToUsd(network as NetworkEnum, b.freeBalance);
-              setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+              const value = await convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, b.freeBalance);
+              setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
             }
           }
 
@@ -194,7 +230,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {formatAsset(b.freeBalance, Rings[network as keyof typeof Rings].decimals)}
+                              {formatAsset(b.freeBalance, Rings[network as keyof typeof Rings]?.decimals ?? 12)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
@@ -207,7 +243,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network as keyof typeof Rings].decimals)}
+                              {formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network as keyof typeof Rings]?.decimals ?? 12)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
@@ -219,7 +255,7 @@ export default function Assets() {
                         {/* Chains */}
                         <td>
                           <span class="flex flex-row items-center gap-1">
-                            <For each={getNetworkIcon(asset)}>
+                            <For each={getNetworkIcon(asset).filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
                               {icon =>
                                 <span class='h-5 w-5 flex rounded-full bg-black'>
                                   <img src={icon} class="p-1" alt="asset-icon" />

@@ -1,6 +1,8 @@
 import BasiliskIcon from '../assets/icons/basilisk-icon.svg';
 import TinkernetIcon from '../assets/icons/tinkernet-icon.svg';
 import PicassoIcon from '../assets/icons/picasso-icon.svg';
+import KusamaIcon from '../assets/icons/kusama-icon.svg';
+import AssetHubIcon from '../assets/icons/assethub-icon.svg';
 import { NetworkEnum, WSS_TINKERNET } from '../utils/consts';
 
 export type RingsData = {
@@ -13,10 +15,7 @@ export type RingsData = {
 };
 
 export type RingsType = {
-  tinkernet: RingsData;
-  basilisk: RingsData;
-  picasso: RingsData;
-  kusama: RingsData; // asset hub
+  [key in NetworkEnum]?: RingsData;
 };
 
 export const Rings: RingsType = {
@@ -46,12 +45,20 @@ export const Rings: RingsType = {
   },
   [NetworkEnum.KUSAMA]: {
     wcNamespace: 'polkadot:b0a8d493285c2df73290dfb7e61f870f',
-    polkaholicId: 'statemine',
+    polkaholicId: 'kusama',
     decimals: 12,
-    icon: PicassoIcon,
-    websocket: 'wss://statemine-rpc.dwellir.com',
+    icon: KusamaIcon,
+    websocket: 'wss://kusama-rpc.dwellir.com',
     genesisHash: "",
   },
+  [NetworkEnum.ASSETHUB]: {
+    wcNamespace: 'polkadot:0x',
+    polkaholicId: 'statemine',
+    decimals: 12,
+    icon: AssetHubIcon,
+    websocket: 'wss://statemine-rpc.dwellir.com',
+    genesisHash: "",
+  }
 };
 
 export enum AssetEnum {
