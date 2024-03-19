@@ -1,8 +1,7 @@
 import { Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { ColorModeEnum } from "../left-side/ColorSwitch";
 import { useThemeContext } from "../../providers/themeProvider";
-import darkLogo from "../../assets/icons/saturn-logo-dark-beta.svg";
-import lightLogo from "../../assets/icons/saturn-logo-light-beta.svg";
+import OmniwayLogo from "../../assets/icons/omniway-logo.svg";
 import { A, useLocation } from "@solidjs/router";
 
 const SaturnLogo = () => {
@@ -24,12 +23,7 @@ const SaturnLogo = () => {
   }));
 
   return <A href="/" class={`flex ${ !atHome() ? 'md:mr-24' : '' }`}>
-    <Show when={lightMode()}>
-      <img id="lightLogo" src={lightLogo} class="h-8 my-5 mr-3 max-w-xs w-2/3 sm:w-auto" alt="Saturn Gateway Logo Light" />
-    </Show>
-    <Show when={!lightMode()}>
-      <img id="darkLogo" src={darkLogo} class="h-8 my-5 mr-3 max-w-xs w-2/3 sm:w-auto" alt="Saturn Gateway Logo Dark" />
-    </Show>
+    <img id="omniway-logo" src={OmniwayLogo} class="h-8 my-5 mr-3 max-w-xs w-2/3 sm:w-auto" alt="OmniWay Logo" />
   </A>;
 };
 

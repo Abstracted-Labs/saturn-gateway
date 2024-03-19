@@ -1,8 +1,7 @@
 import { Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { ColorModeEnum } from "../left-side/ColorSwitch";
 import { useThemeContext } from "../../providers/themeProvider";
-import darkLogo from "../../assets/icons/saturn-home-logo-dark.svg";
-import lightLogo from "../../assets/icons/saturn-home-logo-light.svg";
+import OmniwayLogo from "../../assets/icons/omniway-logo.svg";
 
 const HomeLogo = () => {
   const [lightMode, setLightMode] = createSignal<boolean>(false);
@@ -20,12 +19,7 @@ const HomeLogo = () => {
   }));
 
   return <>
-    <Show when={lightMode()}>
-      <img id="lightLogo" src={lightLogo} class="flex" alt="Saturn Gateway Logo Light" />
-    </Show>
-    <Show when={!lightMode()}>
-      <img id="darkLogo" src={darkLogo} class="flex" alt="Saturn Gateway Logo Dark" />
-    </Show>
+    <img id="omniway-logo-landing" src={OmniwayLogo} class="flex" alt="OmniWay Logo" />
   </>;
 };
 

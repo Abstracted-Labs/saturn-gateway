@@ -110,7 +110,7 @@ const Home = () => {
             onClick={enterGateway}
             class="z-20 relative my-5 p-0.5 overflow-hidden text-sm font-bold w-1/2 md:w-1/3 mx-auto rounded-md group bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] focus:outline-none focus:ring-saturn-purple dark:focus:ring-saturn-purple hover:text-black">
             <span class="w-full h-14 flex items-center justify-center block mx-auto transition-all ease-in duration-75 bg-white dark:bg-black rounded-md group-hover:bg-opacity-0">
-              <span class={`${ !isHovered() ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]' : 'text-black' } visited:text-black`}>Enter the Gateway</span>
+              <span class={`${ !isHovered() ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF]' : 'text-black' } visited:text-black`}>Enter the Omniway</span>
             </span>
           </button>
           <ColorSwitch />

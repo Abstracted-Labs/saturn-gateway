@@ -78,7 +78,7 @@ const Welcome = () => {
       </Match>
       <Match when={!isLoggedIn()}>
         <div class="text-xs mx-auto text-center">
-          <h2 class="text-lg font-bold">Welcome to Saturn Gateway.</h2>
+          <h2 class="text-lg font-bold">Welcome to Omniway.</h2>
           <p class="mt-1">To get started, please connect your wallet.</p>
           <ConnectWallet inMultisig={true} />
         </div>

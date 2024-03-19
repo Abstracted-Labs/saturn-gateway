@@ -1,7 +1,6 @@
 import type { Component } from 'solid-js';
 import { createEffect, createMemo, createSignal, lazy, on, onCleanup, onMount } from 'solid-js';
 import { Routes, Route, useNavigate, useLocation } from '@solidjs/router';
-import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Saturn } from '@invarch/saturn-sdk';
 import { Rings } from './data/rings';
 import { Proposal, ProposalType, ProposeProvider, useProposeContext } from "./providers/proposeProvider";
@@ -20,13 +19,12 @@ import { Core } from '@walletconnect/core';
 import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wallet';
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
 import { NetworkEnum, WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
-import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount, POLKADOT_CHAIN_ID } from '@polkadot-onboard/wallet-connect';
+import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount } from '@polkadot-onboard/wallet-connect';
 import { initDrawers } from 'flowbite';
 import NotFound from './pages/NotFound';
 import { MegaModalProvider, useMegaModal } from './providers/megaModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
-import { getMultisigsForAccount } from './utils/getMultisigs';
 import { createApis } from './utils/createApis';
 import { PriceProvider } from './providers/priceProvider';
 
@@ -40,14 +38,14 @@ export const KUSAMA_CHAIN_ID = "polkadot:d42e9606a995dfe433dc7955dc2a70f4";
 const BASILISK_CHAIN_ID = "polkadot:a85cfb9b9fd4d622a5b28289a02347af";
 const PICASSO_CHAIN_ID = "polkadot:6811a339673c9daa897944dcdac99c6e";
 
-const injectedWalletProvider = new InjectedWalletProvider({}, 'Saturn Gateway');
+const injectedWalletProvider = new InjectedWalletProvider({}, 'Omniway');
 
 const walletConnectParams: WalletConnectConfiguration = {
   projectId: WC_PROJECT_ID,
   relayUrl: 'wss://relay.walletconnect.com',
   metadata: {
-    name: 'Saturn Gateway',
-    description: 'Saturn Gateway',
+    name: 'Omniyay',
+    description: 'Omniyay',
     url: 'https://invarch.network',
     icons: [
       'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
@@ -67,7 +65,7 @@ export const walletAggregator = new WalletAggregator([
 
 const HomePlanet: Component = () => {
   const [wcOptions, setWcOptions] = createSignal<Web3WalletTypes.Options | undefined>(undefined);
-  const [hasMultisigs, setHasMultisigs] = createSignal(false);
+  // const [hasMultisigs, setHasMultisigs] = createSignal(false);
 
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
@@ -194,8 +192,8 @@ const HomePlanet: Component = () => {
       const options: Web3WalletTypes.Options = {
         core,
         metadata: {
-          name: 'Saturn Gateway',
-          description: 'Saturn Gateway Multisig',
+          name: 'Omniway',
+          description: 'Omniway Omnisig',
           url: 'https://invarch.network',
           icons: [
             'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',
@@ -304,21 +302,21 @@ const HomePlanet: Component = () => {
     runAsync();
   }));
 
-  createEffect(() => {
-    const checkMultisigsExist = async () => {
-      const sat = saturnContext.state.saturn;
-      const address = selectedAccountContext.state.account?.address;
+  // createEffect(() => {
+  //   const checkMultisigsExist = async () => {
+  //     const sat = saturnContext.state.saturn;
+  //     const address = selectedAccountContext.state.account?.address;
 
-      if (!sat || !address) {
-        return;
-      }
+  //     if (!sat || !address) {
+  //       return;
+  //     }
 
-      const multisigs = await getMultisigsForAccount(address, sat.api);
-      setHasMultisigs(multisigs.length > 0);
-    };
+  //     const multisigs = await getMultisigsForAccount(address, sat.api);
+  //     setHasMultisigs(multisigs.length > 0);
+  //   };
 
-    checkMultisigsExist();
-  });
+  //   checkMultisigsExist();
+  // });
 
   createEffect(() => {
     const loggedIn = isLoggedIn();
