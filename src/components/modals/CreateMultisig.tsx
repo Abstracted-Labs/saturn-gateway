@@ -29,6 +29,7 @@ import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import BigNumber from "bignumber.js";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import { useMegaModal } from "../../providers/megaModalProvider";
+import debounce from "../../utils/debounce";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -53,7 +54,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const accessibleSteps = createMemo(() => {
     return props.limitSteps && props.limitSteps.length ? MULTISIG_CRUMB_TRAIL.filter((step) => props.limitSteps?.includes(step)) : MULTISIG_CRUMB_TRAIL;
   });
-  const modalIdMemo = createMemo(() => {
+  const multisigModalType = createMemo(() => {
     return accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? ADD_MEMBER_MODAL_ID : MULTISIG_MODAL_ID;
   });
   const initFirstStep = createMemo(() => {
@@ -108,6 +109,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     if (multisigName() === '' || nameError()) {
       return accessibleSteps().filter(crumb => crumb !== accessibleSteps()[0]);
+    }
+
+    if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
+      const hasErrors = hasAddressError().length > 0;
+      return hasErrors ? accessibleSteps().filter(crumb => crumb !== accessibleSteps()[0]) : [];
     }
 
     if (finishing()) {
@@ -306,7 +312,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const currentMembers = members();
     let newMembers: [string, number][];
 
-    if (modalIdMemo() === MULTISIG_MODAL_ID) {
+    if (multisigModalType() === MULTISIG_MODAL_ID) {
       newMembers = [...currentMembers, ['', 1]];
     } else {
       if (currentMembers.length === 0) {
@@ -360,7 +366,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   const removeModal = () => {
     const instance = modal;
-    if (modalIdMemo() === ADD_MEMBER_MODAL_ID) {
+    if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
       instance.hideAddMemberModal();
     } else {
       instance.hideCreateMultisigModal();
@@ -368,15 +374,42 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   };
 
   const validateInput = async (inputValue: string, memberIndex: number) => {
+    if (!inputValue) return;
+
     if (inputValue === '') {
       setDisableAddMember(true);
+      setHasAddressError(current => [...current, memberIndex]);
+    } else {
+      setDisableAddMember(false);
+      setHasAddressError(current => current.filter(i => i !== memberIndex));
     }
 
-    let isValidAddress = isValidPolkadotAddress(inputValue);
+    let isValidAddress;
 
-    if (!isValidAddress) {
-      isValidAddress = (await isValidKiltWeb3Name(inputValue)) !== '';
+    try {
+      isValidAddress = isValidPolkadotAddress(inputValue);
+    } catch (error) {
+      console.error(error);
+      isValidAddress = false;
+      setHasAddressError(current => [...current, memberIndex]);
     }
+
+    console.log('isValidAddress after isValidPolkadotAddress: ', isValidAddress);
+
+    try {
+      if (!isValidAddress) {
+        isValidAddress = (await isValidKiltWeb3Name(inputValue)) !== '';
+      } else {
+        setHasAddressError(current => current.filter(i => i !== memberIndex));
+        setDisableAddMember(false);
+      }
+    } catch (error) {
+      console.error(error);
+      isValidAddress = false;
+      setHasAddressError(current => [...current, memberIndex]);
+    }
+
+    console.log('isValidAddress after isValidKiltWeb3Name: ', isValidAddress);
 
     const isUnique = members().every((member, index) => index === memberIndex || member[0] !== inputValue);
 
@@ -385,30 +418,23 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       newMembers.push(['', 1]);
     }
 
+    console.log('isUnique & isValidAddress: ', isValidAddress, isUnique);
+
     if (isValidAddress && isUnique) {
       newMembers[memberIndex][0] = inputValue;
       setMembers(newMembers);
       setHasAddressError(current => current.filter(i => i !== memberIndex));
+      setDisableAddMember(false);
       return false;
     } else {
-      if (!hasAddressError().includes(memberIndex)) {
-        setHasAddressError(current => [...current, memberIndex]);
-      }
+      setHasAddressError(current => [...current, memberIndex]);
+      setDisableAddMember(true);
       console.error('Input is invalid or was already added.');
       return true;
     }
   };
 
-  const handleInput = async (event: any, memberIndex: number) => {
-    const inputValue = event.target.value;
-    const validationResult = await validateInput(inputValue, memberIndex);
-
-    if (!validationResult) {
-      console.log("Validation passed");
-    } else {
-      console.log("Validation failed");
-    }
-  };
+  const debouncedValidateInput = debounce(validateInput, 500);
 
   onMount(() => {
     abortUi();
@@ -423,9 +449,9 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     setActive(initFirstStep());
   });
 
-  createEffect(on([() => saturnContext.state.multisigDetails, modalIdMemo], () => {
+  createEffect(on([() => saturnContext.state.multisigDetails, multisigModalType], () => {
     const details = saturnContext.state.multisigDetails;
-    const inAddMemberModal = modalIdMemo() === ADD_MEMBER_MODAL_ID;
+    const inAddMemberModal = multisigModalType() === ADD_MEMBER_MODAL_ID;
 
     const loadMultisigDetails = async () => {
       if (!details) {
@@ -448,8 +474,32 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   createEffect(() => {
     // set self address as first member
-    if (modalIdMemo() === MULTISIG_MODAL_ID) {
+    if (multisigModalType() === MULTISIG_MODAL_ID) {
       setSelfAddress();
+    }
+  });
+
+  createEffect(() => {
+    if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
+      let foundEmptyAddress = false;
+      let newHasAddressError = [];
+
+      for (let index = 0; index < members().length; index++) {
+        const [address] = members()[index];
+        if (address === '') {
+          foundEmptyAddress = true;
+          newHasAddressError.push(index);
+          break; // Exit the loop after finding the first empty address
+        }
+      }
+
+      setDisableAddMember(foundEmptyAddress || members().length === 0);
+      setHasAddressError(newHasAddressError);
+
+      // If no empty addresses are found and there are members, ensure the add member button is enabled
+      if (!foundEmptyAddress && members().length > 0) {
+        setDisableAddMember(false);
+      }
     }
   });
 
@@ -494,7 +544,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   createEffect(() => {
     // set default threshold values when multisigType changes 
-    if (getCurrentStep() === accessibleSteps()[2]) {
+    if (multisigModalType() === MULTISIG_MODAL_ID && getCurrentStep() === accessibleSteps()[2]) {
       const supportCount = totalSupportCount();
       const approvalCount = totalApprovalCount();
 
@@ -515,7 +565,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   });
 
   createEffect(() => {
-    if (modalIdMemo() === ADD_MEMBER_MODAL_ID) {
+    if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
       switch (getCurrentStep()) {
         case accessibleSteps()[0]:
           setTextHint('Enter the address of the member you would like to invite.');
@@ -556,7 +606,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   createEffect(on(members, () => {
     // When navigating away from the members step, clear members with blank addresses
-    if (getCurrentStep() !== (modalIdMemo() === ADD_MEMBER_MODAL_ID ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[2]) && members().length > 1) {
+    if (getCurrentStep() !== (multisigModalType() === ADD_MEMBER_MODAL_ID ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[2]) && members().length > 1) {
       const filteredMembers = members().filter(([address, _], index) => {
         // return !hasAddressError().includes(index) && address !== '';
         return address !== '';
@@ -605,12 +655,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   const STEP_3_MEMBERS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[2]}>
-      <div class={SECTION_TEXT_STYLE}>{`${ modalIdMemo() === ADD_MEMBER_MODAL_ID ? 'Invite additional' : 'Next, invite some' } users into the organization.`}</div>
+      <div class={SECTION_TEXT_STYLE}>{`${ multisigModalType() === ADD_MEMBER_MODAL_ID ? 'Invite additional' : 'Next, invite some' } users into the organization.`}</div>
 
       {/* First row is the multisig creator's address */}
       <div class="flex flex-row items-end gap-2 mb-2">
         <div class={`relative flex flex-col ml-2 md:w-[440px] ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-2/5' : 'w-5/6' }`}>
-          <Show when={modalIdMemo() === MULTISIG_MODAL_ID}>
+          <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
             <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
           </Show>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
@@ -622,7 +672,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
               <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
             </Match>
           </Switch>
-          <input id="defaultMember" name="defaultMember" disabled={modalIdMemo() === MULTISIG_MODAL_ID} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0] ? members()[0][0] : ''} onInput={(e) => handleInput(e, 0)} />
+          <input id="defaultMember" name="defaultMember" disabled={multisigModalType() === MULTISIG_MODAL_ID} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0] ? members()[0][0] : ''} onInput={(e) => debouncedValidateInput(e.target.value, 0)} />
         </div>
         <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
           <div>
@@ -643,18 +693,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           <For each={members()}>
             {([address, weight], index) => {
 
-              createEffect(() => {
-                if (hasAddressError().includes(index())) {
-                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
-                  setHasAddressError(newHasAddressError);
-                  setDisableAddMember(true);
-                }
-              });
-
               const shouldShow = () => {
-                if (modalIdMemo() === ADD_MEMBER_MODAL_ID && index() === 0) {
+                if (multisigModalType() === ADD_MEMBER_MODAL_ID && index() === 0) {
                   return false;
-                } else if (modalIdMemo() === MULTISIG_MODAL_ID && address === selectedState().account?.address) {
+                } else if (multisigModalType() === MULTISIG_MODAL_ID && address === selectedState().account?.address) {
                   return false;
                 }
                 return true;
@@ -673,7 +715,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         </Match>
                       </Switch>
                       <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } w-full`} value={address}
-                        onInput={(e) => handleInput(e, index())}
+                        onInput={(e) => debouncedValidateInput(e.target.value, index())}
                       />
                     </div>
                     <div class="relative flex flex-row items-center gap-2">
@@ -685,7 +727,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         }} />
                       </Show>
                       <div class={`px-2 relative top-[3px] ${ multisigType() === MultisigEnum.GOVERNANCE ? 'left-[-13px] sm:left-0' : '' }`}>
-                        <button type="button" disabled={index() === 0 || disableAddMember()} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100 h-[15px] w-[17px]"><img src={RemoveMemberIcon} alt="RemoveMember" class="h-[15px] w-[17px]" /></button>
+                        <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100 h-[15px] w-[17px]"><img src={RemoveMemberIcon} alt="RemoveMember" class="h-[15px] w-[17px]" /></button>
                       </div>
                     </div>
                   </div>
@@ -722,14 +764,18 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[4]}>
       <div class={SECTION_TEXT_STYLE}>Finally, do one last spot-check.</div>
       <dl class="mt-2 text-xs final-checklist max-h-[200px] overflow-y-scroll saturn-scrollbar pr-3">
-        <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
-          <dt class="text-xxs text-right w-24 mr-5">Name <ToCrumb crumb="Choose a Name" /></dt>
-          <dd class="text-black dark:text-white">{multisigName()}</dd>
-        </div>
-        <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
-          <dt class="text-xxs text-right w-24 mr-5">Multisig Type <ToCrumb crumb="Select Type" /></dt>
-          <dd class="text-black dark:text-white">{multisigType()}</dd>
-        </div>
+        <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
+          <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
+            <dt class="text-xxs text-right w-24 mr-5">Name <ToCrumb crumb="Choose a Name" /></dt>
+            <dd class="text-black dark:text-white">{multisigName()}</dd>
+          </div>
+        </Show>
+        <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
+          <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
+            <dt class="text-xxs text-right w-24 mr-5">Multisig Type <ToCrumb crumb="Select Type" /></dt>
+            <dd class="text-black dark:text-white">{multisigType()}</dd>
+          </div>
+        </Show>
         <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
           <dt class="text-xxs text-right w-24 mr-5">Members <ToCrumb crumb="Add Members" /></dt>
           <dd class="text-black dark:text-white border border-saturn-lightgrey rounded-md p-3 w-4/6">
@@ -745,39 +791,41 @@ const CreateMultisig = (props: CreateMultisigProps) => {
             </div>
           </dd>
         </div>
-        <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
-          <dt class="text-xxs text-right w-24 mr-5">Thresholds <ToCrumb crumb="Set Voting Thresholds" /></dt>
-          <dd>
-            <div>
-              <span class="text-saturn-lightgrey text-xxs">Minimum Support:
-                <span class="text-black dark:text-white ml-2 text-xs float-right">
-                  {minimumSupportField()}%
-                </span>
-              </span>
-              <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
-                <br />
-                <span class="text-saturn-lightgrey text-xxs">Required Approval:
+        <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
+          <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
+            <dt class="text-xxs text-right w-24 mr-5">Thresholds <ToCrumb crumb="Set Voting Thresholds" /></dt>
+            <dd>
+              <div>
+                <span class="text-saturn-lightgrey text-xxs">Minimum Support:
                   <span class="text-black dark:text-white ml-2 text-xs float-right">
-                    {requiredApprovalField()}%
+                    {minimumSupportField()}%
                   </span>
                 </span>
-              </Show>
-            </div>
-          </dd>
-        </div>
+                <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
+                  <br />
+                  <span class="text-saturn-lightgrey text-xxs">Required Approval:
+                    <span class="text-black dark:text-white ml-2 text-xs float-right">
+                      {requiredApprovalField()}%
+                    </span>
+                  </span>
+                </Show>
+              </div>
+            </dd>
+          </div>
+        </Show>
       </dl>
     </div>
   );
 
   const STEP_6_SUCCESS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[5]}>
-      {modalIdMemo() === MULTISIG_MODAL_ID ? <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to the Assets page<EllipsisAnimation /></div> : <div class={SECTION_TEXT_STYLE}>Please note that invited users need to be voted in prior to becoming a member. You will be automatically redirected to the Transactions page in a few seconds<EllipsisAnimation /></div>}
+      {multisigModalType() === MULTISIG_MODAL_ID ? <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to the Assets page<EllipsisAnimation /></div> : <div class={SECTION_TEXT_STYLE}>Please note that invited users need to be voted in prior to becoming a member. You will be automatically redirected to the Transactions page in a few seconds<EllipsisAnimation /></div>}
     </div>
   );
 
   return (
     <>
-      <div id={modalIdMemo()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
+      <div id={multisigModalType()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
         <div id="multisigModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1 w-full" />
         <div class="absolute top-[10px] right-2.5 mb-8 z-[90]">
           <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={removeModal}>
@@ -789,7 +837,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         </div>
         <div class="flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
           <Show when={!!getCurrentStep()}>
-            <Show when={modalIdMemo() === MULTISIG_MODAL_ID && !isNextToLastStep() || modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+            <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
               <SaturnCrumb trail={accessibleSteps()} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
             </Show>
             <SaturnCard noPadding>
@@ -797,7 +845,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                 <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
                   <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
                     <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
-                      <Show when={modalIdMemo() === MULTISIG_MODAL_ID}>
+                      <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
                         {
                           !isNextToLastStep() ?
                             <span>
@@ -809,19 +857,19 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                             </span>
                         }
                       </Show>
-                      <Show when={modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+                      <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
                         <span>
                           Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
                         </span>
                       </Show>
                     </h3>
-                    <Show when={modalIdMemo() === MULTISIG_MODAL_ID && !isNextToLastStep() || modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+                    <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
                       <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
                     </Show>
                   </div>
                   <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>
                     <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
-                      <Show when={modalIdMemo() === MULTISIG_MODAL_ID}>
+                      <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
                         <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
                           <Match when={!isLoggedIn()}>
                             <STEP_LOGIN />
@@ -846,7 +894,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                           </Match>
                         </Switch>
                       </Show>
-                      <Show when={modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+                      <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
                         <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
                           <Match when={!isLoggedIn()}>
                             <STEP_LOGIN />
