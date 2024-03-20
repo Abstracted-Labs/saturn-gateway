@@ -1,6 +1,6 @@
 import { For, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, on, onMount } from "solid-js";
 import SaturnCrumb from "../legos/SaturnCrumb";
-import { BN, formatBalance, hexToString, stringShorten } from "@polkadot/util";
+import { BN, formatBalance, hexToString } from "@polkadot/util";
 import { useNavigate } from "@solidjs/router";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
@@ -58,7 +58,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   });
   const initFirstStep = createMemo(() => {
     const step = accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[0];
-    console.log("Initializing first step:", step);
     return step;
   });
 
@@ -304,20 +303,26 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   };
 
   const addMember = () => {
-    // add another member to members()
     const currentMembers = members();
-    const newMembers = [...currentMembers, ['', 1] as [string, number]];
+    let newMembers: [string, number][];
+
+    if (modalIdMemo() === MULTISIG_MODAL_ID) {
+      newMembers = [...currentMembers, ['', 1]];
+    } else {
+      if (currentMembers.length === 0) {
+        newMembers = [['', 1]];
+      } else {
+        newMembers = [...currentMembers, ['', 1]];
+      }
+    }
+
     setMembers(newMembers);
 
-    // Scroll to the bottom of the saturn-scrollbar element
+    // Scroll to the bottom of the saturn-scrollbar element and focus on the new input
     const scrollContainer = document.getElementById('additionalMembers');
     if (scrollContainer) {
-      // Focus on the newly added input element
       const newInputElement = scrollContainer.lastElementChild?.querySelector('input');
-      if (newInputElement) {
-        newInputElement.focus();
-      }
-
+      newInputElement?.focus();
       scrollContainer.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
     }
   };
@@ -362,6 +367,49 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
   };
 
+  const validateInput = async (inputValue: string, memberIndex: number) => {
+    if (inputValue === '') {
+      setDisableAddMember(true);
+    }
+
+    let isValidAddress = isValidPolkadotAddress(inputValue);
+
+    if (!isValidAddress) {
+      isValidAddress = (await isValidKiltWeb3Name(inputValue)) !== '';
+    }
+
+    const isUnique = members().every((member, index) => index === memberIndex || member[0] !== inputValue);
+
+    const newMembers = [...members()];
+    while (newMembers.length <= memberIndex) {
+      newMembers.push(['', 1]);
+    }
+
+    if (isValidAddress && isUnique) {
+      newMembers[memberIndex][0] = inputValue;
+      setMembers(newMembers);
+      setHasAddressError(current => current.filter(i => i !== memberIndex));
+      return false;
+    } else {
+      if (!hasAddressError().includes(memberIndex)) {
+        setHasAddressError(current => [...current, memberIndex]);
+      }
+      console.error('Input is invalid or was already added.');
+      return true;
+    }
+  };
+
+  const handleInput = async (event: any, memberIndex: number) => {
+    const inputValue = event.target.value;
+    const validationResult = await validateInput(inputValue, memberIndex);
+
+    if (!validationResult) {
+      console.log("Validation passed");
+    } else {
+      console.log("Validation failed");
+    }
+  };
+
   onMount(() => {
     abortUi();
   });
@@ -400,7 +448,9 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   createEffect(() => {
     // set self address as first member
-    setSelfAddress();
+    if (modalIdMemo() === MULTISIG_MODAL_ID) {
+      setSelfAddress();
+    }
   });
 
   createEffect(() => {
@@ -413,6 +463,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setCoreCreationFee(formattedFee);
       }
     };
+
     getCreationFee();
   });
 
@@ -510,6 +561,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         // return !hasAddressError().includes(index) && address !== '';
         return address !== '';
       });
+      console.log('filteredMembers: ', filteredMembers);
       setMembers(filteredMembers);
 
       // Reset the error state as well
@@ -558,9 +610,19 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       {/* First row is the multisig creator's address */}
       <div class="flex flex-row items-end gap-2 mb-2">
         <div class={`relative flex flex-col ml-2 md:w-[440px] ${ multisigType() === MultisigEnum.GOVERNANCE ? 'w-2/5' : 'w-5/6' }`}>
-          <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
+          <Show when={modalIdMemo() === MULTISIG_MODAL_ID}>
+            <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
+          </Show>
           <label for="defaultMember" class={LIST_LABEL_STYLE}>Address</label>
-          <input id="defaultMember" name="defaultMember" disabled type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0] ? members()[0][0] : ''} />
+          <Switch>
+            <Match when={hasAddressError().includes(0)}>
+              <span class="absolute left-[-7px] top-[33px]"><img src={NayIcon} width={12} height={12} /></span>
+            </Match>
+            <Match when={!hasAddressError().includes(0)}>
+              <span class="absolute left-[-7px] top-[33px]"><img src={AyeIcon} width={12} height={12} /></span>
+            </Match>
+          </Switch>
+          <input id="defaultMember" name="defaultMember" disabled={modalIdMemo() === MULTISIG_MODAL_ID} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE }`} value={members()[0] ? members()[0][0] : ''} onInput={(e) => handleInput(e, 0)} />
         </div>
         <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
           <div>
@@ -580,118 +642,38 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         <div id="additionalMembers" class={`saturn-scrollbar h-[130px] pr-1 overflow-y-auto pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
           <For each={members()}>
             {([address, weight], index) => {
-              const [error, setError] = createSignal<boolean | undefined>();
-
-              function validateMemberAddress(e: any) {
-                e.preventDefault();
-
-                if (hasAddressError().includes(index())) {
-                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
-                  setHasAddressError(newHasAddressError);
-                }
-
-                setError(undefined);
-
-                try {
-                  const newMembers = members();
-                  const inputValue = e.target.value;
-                  const isUnique = () => newMembers.every((member) => member[0] !== inputValue);
-                  const isValidAddress = isValidPolkadotAddress(inputValue);
-
-                  if (isUnique() && isValidAddress) {
-                    setError(false);
-                    newMembers[index()][0] = inputValue;
-                    setMembers(newMembers);
-                    updateAddressError(index(), true);
-                  } else {
-                    setError(true);
-                    if (!hasAddressError().includes(index())) {
-                      setHasAddressError([...hasAddressError(), index()]);
-                      console.error('Member address is invalid or was already added.');
-                    }
-                  }
-                } catch (error) {
-                  setError(true);
-                  console.error(error);
-                }
-              }
-
-              async function validateWeb3Name(e: any) {
-                e.preventDefault();
-
-                try {
-                  const newMembers = members();
-                  const inputValue = e.target.value;
-                  const web3name = await isValidKiltWeb3Name(inputValue);
-                  const isUnique = () => newMembers.every((member) => member[0] !== web3name);
-                  const isValidAddress = isValidPolkadotAddress(inputValue);
-
-                  // If the input is a valid address and there's no error, we're done
-                  if (isValidAddress && error()) {
-                    setError(false);
-                    newMembers[index()][0] = web3name;
-                    setMembers(newMembers);
-                    updateAddressError(index(), true);
-                    setDisableAddMember(false);
-                    return;
-                  }
-
-                  // If the web3name is empty, not unique or invalid, set an error
-                  if (!web3name || !isUnique()) {
-                    setError(true);
-                    updateAddressError(index());
-                    return;
-                  }
-
-                  // At this point, the web3name is valid and unique. Update the member's address.
-                  // setError(false);
-                  // newMembers[index()][0] = web3name;
-                  // setMembers(newMembers);
-                  // updateAddressError(index(), true);
-                  // setDisableAddMember(false);
-                } catch (error) {
-                  console.error(error);
-                }
-              }
-
-              // Helper function to update the address error state
-              function updateAddressError(index: number, remove = false) {
-                const newHasAddressError = hasAddressError().filter((i) => i !== index);
-                if (remove) {
-                  setHasAddressError(newHasAddressError);
-                } else {
-                  setHasAddressError([...hasAddressError(), index]);
-                }
-              }
-
-              onMount(() => {
-                setError(false);
-
-                if (hasAddressError().includes(index())) {
-                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
-                  setHasAddressError(newHasAddressError);
-                }
-              });
 
               createEffect(() => {
-                if (error() === true) setDisableAddMember(true);
+                if (hasAddressError().includes(index())) {
+                  const newHasAddressError = hasAddressError().filter((i) => i !== index());
+                  setHasAddressError(newHasAddressError);
+                  setDisableAddMember(true);
+                }
               });
 
+              const shouldShow = () => {
+                if (modalIdMemo() === ADD_MEMBER_MODAL_ID && index() === 0) {
+                  return false;
+                } else if (modalIdMemo() === MULTISIG_MODAL_ID && address === selectedState().account?.address) {
+                  return false;
+                }
+                return true;
+              };
+
               return (
-                <Show when={address !== selectedState().account?.address}>
+                <Show when={shouldShow()}>
                   <div class={`flex flex-row items-center gap-2 mb-2 w-full ${ multisigType() === MultisigEnum.GOVERNANCE ? 'max-w-[515px]' : 'max-w-[489px]' }`}>
                     <div class="relative ml-2 flex-grow">
                       <Switch>
-                        <Match when={error() === true}>
+                        <Match when={hasAddressError().includes(index())}>
                           <span class="absolute left-[-7px] top-[15px]"><img src={NayIcon} width={12} height={12} /></span>
                         </Match>
-                        <Match when={error() === false}>
+                        <Match when={!hasAddressError().includes(index())}>
                           <span class="absolute left-[-7px] top-[15px]"><img src={AyeIcon} width={12} height={12} /></span>
                         </Match>
                       </Switch>
                       <input id={`text-${ index() }`} type="text" class={`${ INPUT_CREATE_MULTISIG_STYLE } w-full`} value={address}
-                        onInput={validateMemberAddress}
-                      // onBlur={validateWeb3Name} TODO: Not working as expected
+                        onInput={(e) => handleInput(e, index())}
                       />
                     </div>
                     <div class="relative flex flex-row items-center gap-2">
@@ -703,7 +685,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         }} />
                       </Show>
                       <div class={`px-2 relative top-[3px] ${ multisigType() === MultisigEnum.GOVERNANCE ? 'left-[-13px] sm:left-0' : '' }`}>
-                        <button type="button" disabled={index() === 0} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100 h-[15px] w-[17px]"><img src={RemoveMemberIcon} alt="RemoveMember" class="h-[15px] w-[17px]" /></button>
+                        <button type="button" disabled={index() === 0 || disableAddMember()} onClick={() => removeMember(index())} class="focus:outline-none opacity-75 hover:opacity-100 h-[15px] w-[17px]"><img src={RemoveMemberIcon} alt="RemoveMember" class="h-[15px] w-[17px]" /></button>
                       </div>
                     </div>
                   </div>
