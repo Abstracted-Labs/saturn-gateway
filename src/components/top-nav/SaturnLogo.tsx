@@ -23,7 +23,7 @@ const SaturnLogo = () => {
   }));
 
   return <A href="/" class={`flex ${ !atHome() ? 'md:mr-24' : '' }`}>
-    <img id="omniway-logo" src={OmniwayLogo} class="h-8 my-5 mr-3 max-w-xs w-2/3 sm:w-auto" alt="OmniWay Logo" />
+    <img id="omniway-logo" src={OmniwayLogo} class="h-8 my-3 mr-3 max-w-xs w-2/3 sm:w-auto" alt="OmniWay Logo" />
   </A>;
 };
 
