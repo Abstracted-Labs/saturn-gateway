@@ -104,7 +104,7 @@ export default function Assets() {
     const delayUnload = () => {
       timeout = setTimeout(() => {
         setLoading(false);
-      }, 2000);
+      }, 200);
     };
 
     const runAsync = async () => {

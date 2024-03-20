@@ -151,7 +151,7 @@ const MultisigList = (props: MultisigListProps) => {
     const delayUnload = () => {
       timeout = setTimeout(() => {
         setLoading(false);
-      }, 2000);
+      }, 200);
     };
 
 

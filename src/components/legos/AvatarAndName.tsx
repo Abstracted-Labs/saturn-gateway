@@ -22,7 +22,7 @@ const AvatarAndName = (props: IAvatarAndNameProps) => {
       if (!!props.name) {
         timeout = setTimeout(() => {
           setLoading(false);
-        }, 2000);
+        }, 200);
       }
     };
 

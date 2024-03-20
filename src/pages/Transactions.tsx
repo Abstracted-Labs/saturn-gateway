@@ -150,7 +150,7 @@ export default function Transactions() {
         return [ring.icon];
 
       default:
-        return [Rings.tinkernet.icon];
+        return [Rings.tinkernet?.icon as string];
     }
   };
 
@@ -228,7 +228,7 @@ export default function Transactions() {
     const delayUnload = () => {
       timeout = setTimeout(() => {
         setLoading(false);
-      }, 2000);
+      }, 200);
     };
 
     const runAsync = async () => {
