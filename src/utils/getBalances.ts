@@ -276,8 +276,6 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
     }
   }
 
-  console.log({ [network]: balancesByNetwork });
-
   api.disconnect();
   return ({ [network]: balancesByNetwork });
 }
