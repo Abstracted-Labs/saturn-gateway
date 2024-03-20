@@ -125,7 +125,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   });
   const inReviewStep = createMemo(() => {
     // check if on next to last crumb trail
-    return getCurrentStep() === (accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? accessibleSteps()[accessibleSteps().length] : MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2]);
+    return getCurrentStep() === (multisigModalType() === ADD_MEMBER_MODAL_ID ? accessibleSteps()[1] : MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2]);
   });
   const notEnoughBalance = createMemo(() => {
     // check if user has enough balance to create multisig
@@ -154,8 +154,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const requiredApproval = requiredApprovalField();
     const minimumSupport = minimumSupportField();
     const multisigParty = members();
-
-    console.log(name, multisigParty, minimumSupport, requiredApproval, wallet.signer);
 
     if (!name || !wallet.signer) {
       return;
@@ -394,8 +392,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       setHasAddressError(current => [...current, memberIndex]);
     }
 
-    console.log('isValidAddress after isValidPolkadotAddress: ', isValidAddress);
-
     try {
       if (!isValidAddress) {
         isValidAddress = (await isValidKiltWeb3Name(inputValue)) !== '';
@@ -409,16 +405,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       setHasAddressError(current => [...current, memberIndex]);
     }
 
-    console.log('isValidAddress after isValidKiltWeb3Name: ', isValidAddress);
-
     const isUnique = members().every((member, index) => index === memberIndex || member[0] !== inputValue);
 
     const newMembers = [...members()];
     while (newMembers.length <= memberIndex) {
       newMembers.push(['', 1]);
     }
-
-    console.log('isUnique & isValidAddress: ', isValidAddress, isUnique);
 
     if (isValidAddress && isUnique) {
       newMembers[memberIndex][0] = inputValue;
@@ -455,12 +447,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     const loadMultisigDetails = async () => {
       if (!details) {
-        console.log('Multisig details not available', details);
         return;
       };
 
       if (inAddMemberModal && details.metadata && details.requiredApproval) {
-        console.log('Multisig details found: ', details);
         const multisigName = hexToString(details.metadata);
         const requiredApproval = new BigNumber(details.requiredApproval.toString());
         const multisigType = requiredApproval.isZero() ? MultisigEnum.TRADITIONAL : MultisigEnum.GOVERNANCE;
@@ -489,14 +479,13 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         if (address === '') {
           foundEmptyAddress = true;
           newHasAddressError.push(index);
-          break; // Exit the loop after finding the first empty address
+          break;
         }
       }
 
       setDisableAddMember(foundEmptyAddress || members().length === 0);
       setHasAddressError(newHasAddressError);
 
-      // If no empty addresses are found and there are members, ensure the add member button is enabled
       if (!foundEmptyAddress && members().length > 0) {
         setDisableAddMember(false);
       }
@@ -911,7 +900,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                   </div>
                 </div>
               </div>
-              <Show when={getCurrentStep() !== accessibleSteps()[5]}>
+              <Show when={(multisigModalType() === MULTISIG_MODAL_ID && getCurrentStep() !== accessibleSteps()[5]) || multisigModalType() === ADD_MEMBER_MODAL_ID}>
                 <div class={`flex ${ lessThan1200() ? 'flex-col' : 'flex-row' } items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg`}>
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
