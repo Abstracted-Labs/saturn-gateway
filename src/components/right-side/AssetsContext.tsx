@@ -368,17 +368,17 @@ const AssetsContext = () => {
     initDropdowns();
   });
 
-  createEffect(() => {
+  onMount(() => {
     const instance = new Dropdown(fromDropdownElement(), fromToggleElement(), options);
     setDropdownFrom(instance);
   });
 
-  createEffect(() => {
+  onMount(() => {
     const instance = new Dropdown(toDropdownElement(), toToggleElement(), options);
     setDropdownTo(instance);
   });
 
-  createEffect(() => {
+  onMount(() => {
     const instance = new Dropdown(assetDropdownElement(), assetToggleElement(), assetOptions);
     setDropdownAsset(instance);
   });
