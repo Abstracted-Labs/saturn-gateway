@@ -20,7 +20,7 @@ export function setupSaturnConnect(saturnContext: SaturnContextType, proposeCont
 
       if (!saturnContext.state.saturn || typeof saturnContext.state.multisigId != "number") return;
 
-      if (data.payload.genesisHash === Rings.tinkernet.genesisHash) {
+      if (data.payload.genesisHash === Rings.tinkernet?.genesisHash) {
         proposeContext.setters.setProposal(
           new Proposal(ProposalType.LocalCall, { chain: "tinkernet", encodedCall: hexToU8a(data.payload.method) })
         );

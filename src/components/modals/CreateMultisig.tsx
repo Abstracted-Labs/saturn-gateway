@@ -1,6 +1,6 @@
 import { For, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, on, onMount } from "solid-js";
 import SaturnCrumb from "../legos/SaturnCrumb";
-import { BN, formatBalance, stringShorten } from "@polkadot/util";
+import { BN, formatBalance, hexToString, stringShorten } from "@polkadot/util";
 import { useNavigate } from "@solidjs/router";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
@@ -22,30 +22,45 @@ import { isValidPolkadotAddress } from "../../utils/isValidPolkadotAddress";
 import { isValidKiltWeb3Name } from "../../utils/isValidKiltWeb3Name";
 import LoaderAnimation from "../legos/LoaderAnimation";
 import ConnectWallet from "../top-nav/ConnectWallet";
-import { MULTISIG_MODAL_ID } from "../left-side/AddMultisigButton";
-import { initModals, Modal, ModalInterface } from "flowbite";
+import { ADD_MEMBER_MODAL_ID, MULTISIG_MODAL_ID } from "../left-side/AddMultisigButton";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { Call } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import BigNumber from "bignumber.js";
-import { formatAsset } from "../../utils/formatAsset";
 import { FeeAsset } from "@invarch/saturn-sdk";
+import { useMegaModal } from "../../providers/megaModalProvider";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
 const THRESHOLD_TEXT_STYLE = "text-xxs p-2 border border-saturn-lightgrey rounded-md text-black dark:text-white";
 const SECTION_TEXT_STYLE = "text-black dark:text-white text-lg mb-3";
 const LIST_LABEL_STYLE = "text-saturn-darkgrey dark:text-white text-xxs mb-1";
-const MULTISIG_CRUMB_TRAIL = ['Choose Name', 'Select Type', 'Add Members', 'Set Thresholds', 'Review', 'success'];
 
-const CreateMultisig = () => {
-  let modal: ModalInterface;
-  const $modalElement = () => document.getElementById(MULTISIG_MODAL_ID);
+export const MULTISIG_CRUMB_TRAIL = ['Choose Name', 'Select Type', 'Add Members', 'Set Thresholds', 'Review', 'success']; // MULTISIG_CRUMB_TRAIL key: [0 = 'Choose Name', 1 = 'Select Type', 2 = 'Add Members', 3 = 'Set Thresholds', 4 = 'Review', 5 = 'success']
+
+interface CreateMultisigProps {
+  limitSteps?: string[];
+}
+
+const CreateMultisig = (props: CreateMultisigProps) => {
   const navigate = useNavigate();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const ringApisContext = useRingApisContext();
   const theme = useThemeContext();
+  const modal = useMegaModal();
+
+  const accessibleSteps = createMemo(() => {
+    return props.limitSteps && props.limitSteps.length ? MULTISIG_CRUMB_TRAIL.filter((step) => props.limitSteps?.includes(step)) : MULTISIG_CRUMB_TRAIL;
+  });
+  const modalIdMemo = createMemo(() => {
+    return accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? ADD_MEMBER_MODAL_ID : MULTISIG_MODAL_ID;
+  });
+  const initFirstStep = createMemo(() => {
+    const step = accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[0];
+    console.log("Initializing first step:", step);
+    return step;
+  });
 
   const [active, setActive] = createSignal<string>(MULTISIG_CRUMB_TRAIL[0], { equals: false });
   const [multisigName, setMultisigName] = createSignal('');
@@ -61,6 +76,11 @@ const CreateMultisig = () => {
   const [coreCreationFee, setCoreCreationFee] = createSignal<string>("100");
   const [tnkrBalance, setTnkrBalance] = createSignal<string>("0");
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
+
+  const getCurrentStep = () => {
+    // get current step in crumb trail
+    return active();
+  };
 
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const selectedState = createMemo(() => selectedAccountContext.state);
@@ -84,46 +104,23 @@ const CreateMultisig = () => {
   const disableCrumbs = createMemo(() => {
     // check if any fields are invalid and disable crumbs accordingly
     const party = members();
-    // const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '' || parseInt(minimumSupportField()) < totalSupportCount();
     const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '';
-    // const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '' || (multisigType() === MultisigEnum.GOVERNANCE && parseInt(requiredApprovalField()) < totalApprovalCount());
     const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '';
 
     if (multisigName() === '' || nameError()) {
-      return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb !== MULTISIG_CRUMB_TRAIL[0]);
+      return accessibleSteps().filter(crumb => crumb !== accessibleSteps()[0]);
     }
-
-    // if (totalSupportCount() === 1) {
-    //   return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[2] || crumb === MULTISIG_CRUMB_TRAIL[3]);
-    // }
-
-    // if (totalSupportCount() > 1) {
-    //   // loop through and check each party member for valid address and weight
-    //   for (const [address, weight] of party) {
-    //     if (address === '' || weight === 0) {
-    //       return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[2]);
-    //     }
-    //   }
-    // }
-
-    // if (hasAddressError().length > 0) {
-    //   return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[3] || crumb === MULTISIG_CRUMB_TRAIL[4]);
-    // }
-
-    // if (isMinimumSupportInvalid || isRequiredApprovalInvalid) {
-    //   return MULTISIG_CRUMB_TRAIL.filter(crumb => crumb === MULTISIG_CRUMB_TRAIL[4]);
-    // }
 
     if (finishing()) {
       // disable everything
-      return MULTISIG_CRUMB_TRAIL;
+      return accessibleSteps();
     }
 
     return [];
   });
   const inReviewStep = createMemo(() => {
     // check if on next to last crumb trail
-    return getCurrentStep() === MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2];
+    return getCurrentStep() === (accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? accessibleSteps()[accessibleSteps().length] : MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 2]);
   });
   const notEnoughBalance = createMemo(() => {
     // check if user has enough balance to create multisig
@@ -133,9 +130,11 @@ const CreateMultisig = () => {
     return false;
   });
 
-  async function createMultisig() {
+  const createMultisig = async () => {
     // create multisig
     setFinishing(true);
+
+    if (accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length) return;
 
     const account = selectedState().account;
     const wallet = selectedState().wallet;
@@ -215,12 +214,13 @@ const CreateMultisig = () => {
     }
   };
 
-  function handleSetActive(crumb: string) {
-    // scroll to crumb
-    setActive(crumb);
-  }
+  const handleSetActive = (crumb: string) => {
+    if (accessibleSteps().includes(crumb)) {
+      setActive(crumb);
+    }
+  };
 
-  function handleSetMultisigName(e: any) {
+  const handleSetMultisigName = (e: any) => {
     // set multisig name
     try {
       // first clear any previous errors
@@ -242,9 +242,9 @@ const CreateMultisig = () => {
       console.error(error);
       setNameError((error as any).message);
     }
-  }
+  };
 
-  function handleSetMultisigType(type: MultisigEnum) {
+  const handleSetMultisigType = (type: MultisigEnum) => {
     // set multisig type and associated fields
     if (type === MultisigEnum.TRADITIONAL) {
       setRequiredApprovalField('0');
@@ -252,53 +252,58 @@ const CreateMultisig = () => {
       setRequiredApprovalField('50');
     }
     setMultisigType(type);
-  }
+  };
 
-  function getCurrentStep() {
-    // get current step in crumb trail
-    return active();
-  }
-
-  function getNextStep() {
-    // get next step in crumb trail
-    const currentStep = getCurrentStep();
-    const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
-    const nextStep = MULTISIG_CRUMB_TRAIL[currentIndex + 1];
-
-    return nextStep;
-  }
-
-  function isLastStep() {
-    // check if on last step in crumb trail
-    return getCurrentStep() === MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1];
-  }
-
-  function goBack() {
-    // go back one step
-    const currentStep = getCurrentStep();
-    const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
-    const previousStep = MULTISIG_CRUMB_TRAIL[currentIndex - 1];
-
-    if (currentIndex === 0) {
-      removeModal();
-      return;
+  const isStepAccessible = (step: string): boolean => {
+    // If limitSteps is not defined, all steps are accessible
+    if (!props.limitSteps || props.limitSteps.length === 0) {
+      return true;
     }
+    // Check if the current step is included in limitSteps
+    return props.limitSteps.includes(step);
+  };
 
-    setActive(previousStep);
-  }
-
-  function goForward() {
-    // check if next step is disabled, then go forward one step
+  const getNextStep = () => {
     const currentStep = getCurrentStep();
-    const currentIndex = MULTISIG_CRUMB_TRAIL.indexOf(currentStep);
-    const nextStep = MULTISIG_CRUMB_TRAIL[currentIndex + 1];
+    const steps = accessibleSteps();
+    let currentIndex = steps.indexOf(currentStep);
+    let nextIndex = currentIndex + 1;
+    if (nextIndex < steps.length) {
+      return steps[nextIndex];
+    }
+    return null; // Return null if there's no next accessible step
+  };
 
-    if (disableCrumbs().includes(nextStep)) return;
+  const isNextToLastStep = () => {
+    const currentStep = getCurrentStep();
+    return currentStep === accessibleSteps()[accessibleSteps().length - 1];
+  };
 
-    setActive(nextStep);
-  }
+  const goForward = () => {
+    let currentIndex = accessibleSteps().indexOf(getCurrentStep());
+    let nextIndex = currentIndex + 1;
+    while (nextIndex < accessibleSteps().length && !isStepAccessible(accessibleSteps()[nextIndex])) {
+      nextIndex++;
+    }
+    if (nextIndex < accessibleSteps().length) {
+      setActive(accessibleSteps()[nextIndex]);
+    }
+  };
 
-  function addMember() {
+  const goBack = () => {
+    let currentIndex = accessibleSteps().indexOf(getCurrentStep());
+    let prevIndex = currentIndex - 1;
+    while (prevIndex >= 0 && !isStepAccessible(accessibleSteps()[prevIndex])) {
+      prevIndex--;
+    }
+    if (prevIndex >= 0) {
+      setActive(accessibleSteps()[prevIndex]);
+    } else {
+      removeModal();
+    }
+  };
+
+  const addMember = () => {
     // add another member to members()
     const currentMembers = members();
     const newMembers = [...currentMembers, ['', 1] as [string, number]];
@@ -315,9 +320,9 @@ const CreateMultisig = () => {
 
       scrollContainer.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  };
 
-  function removeMember(index: number) {
+  const removeMember = (index: number) => {
     // remove member from members()
     const currentMembers = members();
     const newMembers = currentMembers.filter((_, i) => i !== index);
@@ -327,42 +332,35 @@ const CreateMultisig = () => {
     const newHasAddressError = hasAddressError().filter((i) => i !== index);
     setHasAddressError(newHasAddressError);
     setDisableAddMember(false);
-  }
+  };
 
-  function abortUi() {
+  const abortUi = () => {
     // reset all state
     setMultisigName('');
     setMembers([]);
     setMinimumSupportField('50');
     setRequiredApprovalField('50');
-    setActive(MULTISIG_CRUMB_TRAIL[0]);
+    setActive(accessibleSteps()[0]);
     setSelfAddress();
     setFinishing(false);
-  }
+  };
 
-  function setSelfAddress() {
+  const setSelfAddress = () => {
     const selected = selectedAccountContext.state;
     const address = selected.account?.address;
     if (address) {
       setMembers([[address, 1]]);
     }
-  }
+  };
 
-  function removeModal() {
-    if (modal) {
-      modal.hide();
-      abortUi();
+  const removeModal = () => {
+    const instance = modal;
+    if (modalIdMemo() === ADD_MEMBER_MODAL_ID) {
+      instance.hideAddMemberModal();
+    } else {
+      instance.hideCreateMultisigModal();
     }
-  }
-
-  onMount(() => {
-    initModals();
-  });
-
-  onMount(() => {
-    const instance = $modalElement();
-    modal = new Modal(instance);
-  });
+  };
 
   onMount(() => {
     abortUi();
@@ -372,6 +370,33 @@ const CreateMultisig = () => {
     const feeCurrency = selectedAccountContext.setters.getFeeAsset();
     setFeeAsset(feeCurrency);
   });
+
+  onMount(() => {
+    setActive(initFirstStep());
+  });
+
+  createEffect(on([() => saturnContext.state.multisigDetails, modalIdMemo], () => {
+    const details = saturnContext.state.multisigDetails;
+    const inAddMemberModal = modalIdMemo() === ADD_MEMBER_MODAL_ID;
+
+    const loadMultisigDetails = async () => {
+      if (!details) {
+        console.log('Multisig details not available', details);
+        return;
+      };
+
+      if (inAddMemberModal && details.metadata && details.requiredApproval) {
+        console.log('Multisig details found: ', details);
+        const multisigName = hexToString(details.metadata);
+        const requiredApproval = new BigNumber(details.requiredApproval.toString());
+        const multisigType = requiredApproval.isZero() ? MultisigEnum.TRADITIONAL : MultisigEnum.GOVERNANCE;
+        setMultisigName(multisigName);
+        setMultisigType(multisigType);
+      }
+    };
+
+    loadMultisigDetails();
+  }));
 
   createEffect(() => {
     // set self address as first member
@@ -418,7 +443,7 @@ const CreateMultisig = () => {
 
   createEffect(() => {
     // set default threshold values when multisigType changes 
-    if (getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]) {
+    if (getCurrentStep() === accessibleSteps()[2]) {
       const supportCount = totalSupportCount();
       const approvalCount = totalApprovalCount();
 
@@ -439,24 +464,36 @@ const CreateMultisig = () => {
   });
 
   createEffect(() => {
-    // update textHint() when active() crumb trail changes
+    if (modalIdMemo() === ADD_MEMBER_MODAL_ID) {
+      switch (getCurrentStep()) {
+        case accessibleSteps()[0]:
+          setTextHint('Enter the address of the member you would like to invite.');
+          break;
+        case accessibleSteps()[1]:
+          setTextHint('Review before submitting for proposal.');
+          break;
+      }
+      return;
+    }
+
+    // update textHint() when active() crumb trail changes for MULTISIG_MODAL_ID
     switch (getCurrentStep()) {
-      case MULTISIG_CRUMB_TRAIL[0]:
+      case accessibleSteps()[0]:
         setTextHint('This can be the name of your organization, community, department, or anything you like.');
         break;
-      case MULTISIG_CRUMB_TRAIL[1]:
+      case accessibleSteps()[1]:
         setTextHint('Choose between a traditional multisig or a governance/DAO-style multisig.');
         break;
-      case MULTISIG_CRUMB_TRAIL[2]:
+      case accessibleSteps()[2]:
         setTextHint('You can add as many members as you need and customize their voting weight (can add more later).');
         break;
-      case MULTISIG_CRUMB_TRAIL[3]:
+      case accessibleSteps()[3]:
         setTextHint('Vote thresholds are the minimum number of votes required to pass a proposal.');
         break;
-      case MULTISIG_CRUMB_TRAIL[4]:
+      case accessibleSteps()[4]:
         setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } TNKR in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } TNKR required).`);
         break;
-      case MULTISIG_CRUMB_TRAIL[5]:
+      case accessibleSteps()[5]:
         setFinishing(false);
         setTextHint('Congratulations! Now get to work.');
         break;
@@ -468,7 +505,7 @@ const CreateMultisig = () => {
 
   createEffect(on(members, () => {
     // When navigating away from the members step, clear members with blank addresses
-    if (getCurrentStep() !== MULTISIG_CRUMB_TRAIL[2] && members().length > 1) {
+    if (getCurrentStep() !== (modalIdMemo() === ADD_MEMBER_MODAL_ID ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[2]) && members().length > 1) {
       const filteredMembers = members().filter(([address, _], index) => {
         // return !hasAddressError().includes(index) && address !== '';
         return address !== '';
@@ -516,7 +553,7 @@ const CreateMultisig = () => {
 
   const STEP_3_MEMBERS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[2]}>
-      <div class={SECTION_TEXT_STYLE}>Next, add some members.</div>
+      <div class={SECTION_TEXT_STYLE}>{`${ modalIdMemo() === ADD_MEMBER_MODAL_ID ? 'Invite additional' : 'Next, invite some' } users into the organization.`}</div>
 
       {/* First row is the multisig creator's address */}
       <div class="flex flex-row items-end gap-2 mb-2">
@@ -752,13 +789,13 @@ const CreateMultisig = () => {
 
   const STEP_6_SUCCESS = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[5]}>
-      <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to the Assets page<EllipsisAnimation /></div>
+      {modalIdMemo() === MULTISIG_MODAL_ID ? <div class={SECTION_TEXT_STYLE}>The multisig has been created and is almost ready. You will be automatically redirected to the Assets page<EllipsisAnimation /></div> : <div class={SECTION_TEXT_STYLE}>Please note that invited users need to be voted in prior to becoming a member. You will be automatically redirected to the Transactions page in a few seconds<EllipsisAnimation /></div>}
     </div>
   );
 
   return (
     <>
-      <div id={MULTISIG_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
+      <div id={modalIdMemo()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
         <div id="multisigModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1 w-full" />
         <div class="absolute top-[10px] right-2.5 mb-8 z-[90]">
           <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={removeModal}>
@@ -770,55 +807,86 @@ const CreateMultisig = () => {
         </div>
         <div class="flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
           <Show when={!!getCurrentStep()}>
-            <Show when={!isLastStep()}>
-              <SaturnCrumb trail={MULTISIG_CRUMB_TRAIL} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
+            <Show when={modalIdMemo() === MULTISIG_MODAL_ID && !isNextToLastStep() || modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+              <SaturnCrumb trail={accessibleSteps()} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
             </Show>
             <SaturnCard noPadding>
               <div class={`p-5 ${ lessThan1200() ? 'h-auto' : 'h-96' }`}>
                 <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
                   <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
-                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>{!isLastStep() ? <span>
-                      Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
-                    </span> : <span class="flex flex-col items-center"><img src={CheckIcon} width={80} height={80} /><span class="mt-5 break-words">You're All Set!</span></span>}</h3>
-                    <Show when={!isLastStep()}>
+                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
+                      <Show when={modalIdMemo() === MULTISIG_MODAL_ID}>
+                        {
+                          !isNextToLastStep() ?
+                            <span>
+                              Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                            </span> :
+                            <span class="flex flex-col items-center">
+                              <img src={CheckIcon} width={80} height={80} />
+                              <span class="mt-5 break-words">You're All Set!</span>
+                            </span>
+                        }
+                      </Show>
+                      <Show when={modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+                        <span>
+                          Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                        </span>
+                      </Show>
+                    </h3>
+                    <Show when={modalIdMemo() === MULTISIG_MODAL_ID && !isNextToLastStep() || modalIdMemo() === ADD_MEMBER_MODAL_ID}>
                       <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
                     </Show>
                   </div>
                   <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>
                     <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
-                      <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
-                        <Match when={!isLoggedIn()}>
-                          <STEP_LOGIN />
-                        </Match>
-                        <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]}>
-                          <STEP_1_NAME />
-                        </Match>
-                        <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[1]}>
-                          <STEP_2_SELECT_TYPE />
-                        </Match>
-                        <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
-                          <STEP_3_MEMBERS />
-                        </Match>
-                        <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[3]}>
-                          <STEP_4_VOTE_THRESHOLD />
-                        </Match>
-                        <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
-                          <STEP_5_CONFIRM />
-                        </Match>
-                        <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[5]}>
-                          <STEP_6_SUCCESS />
-                        </Match>
-                      </Switch>
+                      <Show when={modalIdMemo() === MULTISIG_MODAL_ID}>
+                        <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
+                          <Match when={!isLoggedIn()}>
+                            <STEP_LOGIN />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]}>
+                            <STEP_1_NAME />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[1]}>
+                            <STEP_2_SELECT_TYPE />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
+                            <STEP_3_MEMBERS />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[3]}>
+                            <STEP_4_VOTE_THRESHOLD />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
+                            <STEP_5_CONFIRM />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[5]}>
+                            <STEP_6_SUCCESS />
+                          </Match>
+                        </Switch>
+                      </Show>
+                      <Show when={modalIdMemo() === ADD_MEMBER_MODAL_ID}>
+                        <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
+                          <Match when={!isLoggedIn()}>
+                            <STEP_LOGIN />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
+                            <STEP_3_MEMBERS />
+                          </Match>
+                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
+                            <STEP_5_CONFIRM />
+                          </Match>
+                        </Switch>
+                      </Show>
                     </div>
                   </div>
                 </div>
               </div>
-              <Show when={getCurrentStep() !== MULTISIG_CRUMB_TRAIL[5]}>
+              <Show when={getCurrentStep() !== accessibleSteps()[5]}>
                 <div class={`flex ${ lessThan1200() ? 'flex-col' : 'flex-row' } items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg`}>
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
-                    <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === MULTISIG_CRUMB_TRAIL[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep()) || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+                    <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
+                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
                   </div>
                 </div>
               </Show>

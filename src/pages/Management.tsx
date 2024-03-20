@@ -8,6 +8,8 @@ import RemoveIcon from '../assets/icons/remove-member-icon.svg';
 import SaturnNumberInput from '../components/legos/SaturnNumberInput';
 import SearchIcon from '../assets/icons/search.svg';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
+import { useMegaModal } from '../providers/megaModalProvider';
+import { hexToString } from '@polkadot/util';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
@@ -18,31 +20,34 @@ export default function Management() {
   const [loading, setLoading] = createSignal<boolean>(true);
 
   const saturnContext = useSaturnContext();
+  const modal = useMegaModal();
+
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
-  function removeMember(address: string) {
+  const removeMember = (address: string) => {
     const newMembers = members().filter((member) => member.address !== address);
     console.log('removing member: ', address);
     setMembers(newMembers);
-  }
+  };
 
-  function addMember() {
-    console.log('adding member...');
-    return;
-  }
+  const addMember = () => {
+    if (modal.showAddMemberModal) {
+      modal.showAddMemberModal();
+    }
+  };
 
-  function proposeNewVotingPower(address: string, votingPower: string) {
+  const proposeNewVotingPower = (address: string, votingPower: string) => {
     console.log('proposing to update voting power for: ', address, votingPower);
     return;
-  }
+  };
 
-  function handleSearch(e: InputEvent) {
+  const handleSearch = (e: InputEvent) => {
     if (e.target instanceof HTMLInputElement) {
       const value = e.target.value;
       setSearch(value);
       console.log('searching for: ', search());
     }
-  }
+  };
 
   createEffect(on(getMultisigId, () => {
     setLoading(true);

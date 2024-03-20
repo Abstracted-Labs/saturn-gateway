@@ -1,20 +1,17 @@
-import { A, useLocation } from '@solidjs/router';
 import AddMultisigIcon from '../../assets/icons/add-multisig-icon-15x15.svg';
-import { createEffect, createMemo, createSignal, onMount } from 'solid-js';
-import { useSaturnContext } from '../../providers/saturnProvider';
-import { ModalInterface, initModals, Modal, ModalOptions } from 'flowbite';
+import { createEffect, createMemo, createSignal } from 'solid-js';
 import { useSelectedAccountContext } from '../../providers/selectedAccountProvider';
 import { useMegaModal } from '../../providers/megaModalProvider';
 
 export const MULTISIG_MODAL_ID = 'multisigModal';
+export const ADD_MEMBER_MODAL_ID = 'addMemberModal';
 
 interface AddMultisigButtonProps {
   isInModal?: boolean;
 }
 
 const AddMultisigButton = (props: AddMultisigButtonProps) => {
-  const multisigModal = useMegaModal();
-  const [modal, setModal] = createSignal<ModalInterface | null>(null);
+  const modal = useMegaModal();
   const [mutateButton, setMutateButton] = createSignal(false);
 
   const saContext = useSelectedAccountContext();
@@ -23,30 +20,13 @@ const AddMultisigButton = (props: AddMultisigButtonProps) => {
   const isInModal = createMemo(() => props.isInModal);
 
   function openModal() {
-    if (modal() && modal()?.show) {
-      const $modalElement = () => document.getElementById(MULTISIG_MODAL_ID);
-      if ($modalElement()) {
-        modal()?.show();
-      }
-    }
-
     if (isInModal()) {
-      multisigModal.hideMultisigListModal();
+      modal.hideMultisigListModal();
+      return;
     }
+
+    modal.showCreateMultisigModal();
   }
-
-  onMount(() => {
-    const $modalElement = () => document.getElementById(MULTISIG_MODAL_ID);
-    const modalOptions: ModalOptions = {
-      backdrop: 'dynamic',
-      closable: true,
-    };
-
-    initModals();
-    if (!$modalElement()) {
-      setModal(new Modal($modalElement(), modalOptions));
-    }
-  });
 
   createEffect(() => {
     const isDrawerPresent = () => !!document.getElementById('inDrawer');

@@ -6,7 +6,7 @@ import { Show, createMemo } from "solid-js";
 import CryptoAccounts from "../modals/CryptoAccounts";
 import ProposeModal from "../modals/ProposeModal";
 import { Portal } from "solid-js/web";
-import CreateMultisig from "../modals/CreateMultisig";
+import CreateMultisig, { MULTISIG_CRUMB_TRAIL } from "../modals/CreateMultisig";
 import MultisigListModal from "../modals/MultisigListModal";
 import FeeAssetModal from "../modals/FeeAssetModal";
 
@@ -36,6 +36,9 @@ const Layout = ({ children }: { children: any; }) => {
     </Portal>
     <Portal mount={document.getElementById('feeAssetWindow') || undefined}>
       <FeeAssetModal />
+    </Portal>
+    <Portal mount={document.getElementById('addMemberWindow') || undefined}>
+      <CreateMultisig limitSteps={[MULTISIG_CRUMB_TRAIL[2], MULTISIG_CRUMB_TRAIL[4]]} />
     </Portal>
 
     {/* Top nav */}

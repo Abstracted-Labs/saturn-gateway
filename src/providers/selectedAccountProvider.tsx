@@ -40,7 +40,7 @@ export function SelectedAccountProvider(props: any) {
           if (account && wallet) {
             setState("account", account);
             setState("wallet", wallet);
-            setStorageState("selectedAccount", JSON.stringify({ address: account.address, wallet: wallet.metadata.title === 'Saturn Gateway' ? WalletNameEnum.WALLETCONNECT : wallet.metadata.title }));
+            setStorageState("selectedAccount", JSON.stringify({ address: account.address, wallet: wallet.metadata.title === 'Omniway' ? WalletNameEnum.WALLETCONNECT : wallet.metadata.title }));
           } else {
             throw new Error('account or wallet is not valid');
           }

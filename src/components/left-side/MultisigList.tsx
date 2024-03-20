@@ -164,15 +164,24 @@ const MultisigList = (props: MultisigListProps) => {
       let iden;
       const path = loc.pathname;
       const urlId = path.split('/')[1];
+
       const multisigs = await getMultisigsForAccount(address, api);
+
       const sortedByDescendingId = multisigs.sort((a, b) => b - a);
+
+      if (sortedByDescendingId.length === 0) {
+        console.log("No multisigs found for this account");
+        setMultisigItems([]);
+        saturnContext.setters.setMultisigItems([]);
+        setLoading(false);
+        return;
+      }
+
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
-        // We calculate the address locally instead of wasting time fetching from the chain.
-        // The v2 of the Saturn SDK should have a function to calculate the address.
-        const address = encodeAddress(
-          blake2AsU8a(
-            api.createType("(H256, u32)", [Rings.tinkernet.genesisHash, m]).toU8a(), 256
-          ), 117);
+        const multisigDetails = await sat.getDetails(m);
+
+        const address = multisigDetails?.account.toHuman() as string;
+
         iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
           info: {
             display: { Raw: string; };
@@ -277,7 +286,7 @@ const MultisigList = (props: MultisigListProps) => {
 
   return (
     <>
-      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Saturn Accounts' : 'Select a Saturn Account below:'}</h5>
+      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Omniway Accounts' : 'Select an Omniway Account below:'}</h5>
       <div class={`relative mb-6`}>
         <div
           ref={scrollContainerRef!}
@@ -310,7 +319,7 @@ const MultisigList = (props: MultisigListProps) => {
 
           {/* Multisig list */}
           <Switch fallback={<div>
-            {loading() ? <LoaderAnimation text="Loading Saturn accounts..." /> : multisigItems().length === 0 && <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
+            {loading() ? <LoaderAnimation text="Loading Omniway accounts..." /> : multisigItems().length === 0 && <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
           </div>}>
             <Match when={multisigItems() && multisigItems().length > 0}>
               <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>
