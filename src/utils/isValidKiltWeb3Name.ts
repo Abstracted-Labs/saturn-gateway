@@ -12,7 +12,7 @@ export async function isValidKiltWeb3Name(web3Name: string) {
       const api = Kilt.ConfigService.get('api');
       const encodedDid = await api.call.did.queryByWeb3Name(web3Name);
       if (encodedDid !== null) {
-        const linkedInfo = Kilt.Did.linkedInfoFromChain(encodedDid, 117);
+        const linkedInfo = Kilt.Did.linkedInfoFromChain(encodedDid as unknown as any, 117);
         returnAddress = linkedInfo.accounts[0];
       }
     }

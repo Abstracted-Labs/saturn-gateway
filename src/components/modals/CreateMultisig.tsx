@@ -1,7 +1,7 @@
 import { For, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, on, onMount } from "solid-js";
 import SaturnCrumb from "../legos/SaturnCrumb";
 import { BN, formatBalance, hexToString } from "@polkadot/util";
-import { useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
@@ -50,6 +50,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const ringApisContext = useRingApisContext();
   const theme = useThemeContext();
   const modal = useMegaModal();
+  const loc = useLocation();
 
   const accessibleSteps = createMemo(() => {
     return props.limitSteps && props.limitSteps.length ? MULTISIG_CRUMB_TRAIL.filter((step) => props.limitSteps?.includes(step)) : MULTISIG_CRUMB_TRAIL;
@@ -65,6 +66,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const [active, setActive] = createSignal<string>(MULTISIG_CRUMB_TRAIL[0], { equals: false });
   const [multisigName, setMultisigName] = createSignal('');
   const [members, setMembers] = createSignal<[string, number][]>([], { equals: false });
+  const [currentMembers, setCurrentMembers] = createSignal<string[]>([]);
   const [minimumSupportField, setMinimumSupportField] = createSignal<string>('50');
   const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('50');
   const [multisigType, setMultisigType] = createSignal<MultisigEnum>(MultisigEnum.TRADITIONAL);
@@ -84,6 +86,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const selectedState = createMemo(() => selectedAccountContext.state);
+  const saturnState = createMemo(() => saturnContext.state);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const lessThan1200 = createMemo(() => window.matchMedia('(max-width: 1200px)').matches);
   const totalSupportCount = createMemo(() => {
@@ -143,7 +146,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     const account = selectedState().account;
     const wallet = selectedState().wallet;
-    const saturn = saturnContext.state.saturn;
+    const saturn = saturnState().saturn;
     const tinkernetApi = ringApisContext.state.tinkernet;
 
     if (!saturn || !wallet || !account) return;
@@ -217,24 +220,25 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
   };
 
-  const addNewMembers = async () => {
+  const proposeNewMembers = async () => {
     const tinkernetApi = ringApisContext.state.tinkernet;
-    const saturn = saturnContext.state.saturn;
+    const saturn = saturnState().saturn;
     const account = selectedState().account;
     const wallet = selectedState().wallet;
     const feeAsset = selectedState().feeAsset;
 
     if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
 
-    const id = saturnContext.state.multisigId;
+    const id = saturnState().multisigId;
 
     try {
       if (id !== undefined && wallet?.signer) {
         const wrappedCalls = await Promise.all(members().map(async ([address, initialBalance]) => {
+          const processedAddress = address.includes(':') ? address.split(':')[1] : address;
           const amount = new BN(initialBalance);
           const proposeCall = saturn.proposeNewMember({
             id,
-            address,
+            address: processedAddress,
             amount,
           });
 
@@ -429,6 +433,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
 
     let isValidAddress;
+    let addressFromWeb3Name: string | null = null;
 
     try {
       isValidAddress = isValidPolkadotAddress(inputValue);
@@ -440,7 +445,9 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     try {
       if (!isValidAddress) {
-        isValidAddress = (await isValidKiltWeb3Name(inputValue)) !== '';
+        const web3Name = await isValidKiltWeb3Name(inputValue);
+        addressFromWeb3Name = web3Name;
+        isValidAddress = web3Name !== '';
       } else {
         setHasAddressError(current => current.filter(i => i !== memberIndex));
         setDisableAddMember(false);
@@ -453,13 +460,15 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     const isUnique = members().every((member, index) => index === memberIndex || member[0] !== inputValue);
 
+    const isInMultisig = currentMembers().some((member) => member.toString() === addressFromWeb3Name);
+
     const newMembers = [...members()];
     while (newMembers.length <= memberIndex) {
       newMembers.push(['', 1]);
     }
 
-    if (isValidAddress && isUnique) {
-      newMembers[memberIndex][0] = inputValue;
+    if (isValidAddress && isUnique && !isInMultisig) {
+      newMembers[memberIndex][0] = inputValue + ':' + addressFromWeb3Name;
       setMembers(newMembers);
       setHasAddressError(current => current.filter(i => i !== memberIndex));
       setDisableAddMember(false);
@@ -467,7 +476,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     } else {
       setHasAddressError(current => [...current, memberIndex]);
       setDisableAddMember(true);
-      console.error('Input is invalid or was already added.');
+      console.error('Member address is invalid, a duplicate, or already in the multisig.');
       return true;
     }
   };
@@ -487,8 +496,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     setActive(initFirstStep());
   });
 
-  createEffect(on([() => saturnContext.state.multisigDetails, multisigModalType], () => {
-    const details = saturnContext.state.multisigDetails;
+  createEffect(on([() => saturnState().multisigDetails, multisigModalType], () => {
+    const details = saturnState().multisigDetails;
     const inAddMemberModal = multisigModalType() === ADD_MEMBER_MODAL_ID;
 
     const loadMultisigDetails = async () => {
@@ -654,6 +663,25 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       setDisableAddMember(false);
     }
   }));
+
+  createEffect(() => {
+    const saturn = saturnState().saturn;
+    const hashId = loc.pathname.split('/')[1];
+
+    if (!saturn || !hashId) {
+      console.log('no saturn or multisigId');
+      return;
+    };
+
+    const loadMembers = async () => {
+      const members = await saturn.getMultisigMembers(Number(hashId));
+      const humanReadableMembers = members.map(member => member.toHuman());
+      setCurrentMembers(humanReadableMembers);
+    };
+
+    loadMembers();
+  });
+
 
   const ToCrumb = (props: { crumb: string; }) => {
     // scroll to crumb
@@ -951,7 +979,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
                     <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : addNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
                   </div>
                 </div>
               </Show>
