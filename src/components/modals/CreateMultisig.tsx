@@ -27,7 +27,7 @@ import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { Call } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import BigNumber from "bignumber.js";
-import { FeeAsset } from "@invarch/saturn-sdk";
+import { FeeAsset, MultisigCallResult } from "@invarch/saturn-sdk";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import debounce from "../../utils/debounce";
 
@@ -214,6 +214,52 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       console.error(error);
     } finally {
       wallet.disconnect();
+    }
+  };
+
+  const addNewMembers = async () => {
+    const tinkernetApi = ringApisContext.state.tinkernet;
+    const saturn = saturnContext.state.saturn;
+    const account = selectedState().account;
+    const wallet = selectedState().wallet;
+    const feeAsset = selectedState().feeAsset;
+
+    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
+
+    const id = saturnContext.state.multisigId;
+
+    try {
+      if (id !== undefined && wallet?.signer) {
+        const wrappedCalls = await Promise.all(members().map(async ([address, initialBalance]) => {
+          const amount = new BN(initialBalance);
+          const proposeCall = saturn.proposeNewMember({
+            id,
+            address,
+            amount,
+          });
+
+          return proposeCall.call;
+        }));
+
+        const call = tinkernetApi.tx.utility.batchAll(wrappedCalls);
+
+        const buildCall = saturn.buildMultisigCall({
+          id,
+          call,
+        });
+
+        const result: MultisigCallResult = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM);
+
+        if (result.executionResult) {
+          if (result.executionResult.isOk) {
+            alert("New members have been proposed. Please wait for the vote to pass.");
+          } else if (result.executionResult.isErr) {
+            console.error("Failed to add new members to multisig:", result.executionResult.asErr.toHuman());
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to add new members to multisig:", error);
     }
   };
 
@@ -905,7 +951,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
                     <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : createMultisig}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : addNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
                   </div>
                 </div>
               </Show>

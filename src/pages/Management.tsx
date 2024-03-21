@@ -3,13 +3,16 @@ import { BigNumber } from 'bignumber.js';
 import { useSaturnContext } from "../providers/saturnProvider";
 import Identity from '../components/identity/Identity';
 import { getAllMembers } from '../utils/getAllMembers';
-import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE } from '../utils/consts';
+import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, KusamaFeeAssetEnum } from '../utils/consts';
 import RemoveIcon from '../assets/icons/remove-member-icon.svg';
 import SaturnNumberInput from '../components/legos/SaturnNumberInput';
 import SearchIcon from '../assets/icons/search.svg';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { useMegaModal } from '../providers/megaModalProvider';
 import { hexToString } from '@polkadot/util';
+import { FeeAsset } from '@invarch/saturn-sdk';
+import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
+import { useRingApisContext } from '../providers/ringApisProvider';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
@@ -20,14 +23,57 @@ export default function Management() {
   const [loading, setLoading] = createSignal<boolean>(true);
 
   const saturnContext = useSaturnContext();
+  const selectedAccount = useSelectedAccountContext();
+  const ringsApisContext = useRingApisContext();
   const modal = useMegaModal();
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
+  const selectedState = createMemo(() => selectedAccount.state);
 
-  const removeMember = (address: string) => {
-    const newMembers = members().filter((member) => member.address !== address);
-    console.log('removing member: ', address);
-    setMembers(newMembers);
+  const removeMember = async (address: string) => {
+    const tinkernetApi = ringsApisContext.state.tinkernet;
+    const saturn = saturnContext.state.saturn;
+    const account = selectedState().account;
+    const wallet = selectedState().wallet;
+    const feeAsset = selectedState().feeAsset;
+
+    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
+
+    const id = saturnContext.state.multisigId;
+
+    try {
+      if (id !== undefined && wallet?.signer) {
+        const memberBalance = await saturn.getMultisigMemberBalance({
+          id,
+          address: address,
+        });
+
+        const proposeCall = saturn.proposeMemberRemoval({
+          id,
+          address: address,
+          amount: memberBalance,
+        });
+
+        const buildCall = saturn.buildMultisigCall({
+          id,
+          call: proposeCall.call,
+        });
+
+        const result = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM);
+
+        if (result.executionResult) {
+          if (result.executionResult.isErr && result.executionResult.asErr) {
+            throw new Error(JSON.stringify(result.executionResult.asErr));
+          } else if (result.executionResult.isOk) {
+            console.log("Member removal proposed successfully");
+            const newMembers = members().filter((member) => member.address !== address);
+            setMembers(newMembers);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to propose member removal:", error);
+    }
   };
 
   const addMember = () => {
@@ -154,7 +200,7 @@ export default function Management() {
                         {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
                       </td>
                       <td class='py-3 px-4 h-full'>
-                        <button type="button" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={() => removeMember(member.address)}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>
+                        <button type="button" id="removeMember" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={[removeMember, member.address]}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>
                       </td>
                     </tr>;
                   }}
