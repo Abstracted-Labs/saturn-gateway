@@ -106,9 +106,9 @@ const SaturnNumberInput = (props: SaturnTextFieldType) => {
   }));
 
   return <div class="flex flex-row gap-1 items-center">
-    <button disabled={props.disabled} type="button" class={MATH_STYLE} onClick={decrement}>-</button>
+    <button disabled={props.disabled} type="button" class={`${ MATH_STYLE } ${ props.disabled ? 'invisible' : '' }`} onClick={decrement}>-</button>
     <input id={props.label} name={props.label} class={`${ !props.isMultisigUi ? INPUT_COMMON_STYLE : INPUT_CREATE_MULTISIG_STYLE } text-center w-11 h-10 p-2 dark:focus:text-saturn-purple focus:text-saturn-purple`} type="text" value={text()} onKeyDown={handleKeyDown} onBlur={handleBlur} onMouseLeave={handleBlur} onInput={handleInput} disabled={props.disabled} min={props.min?.toString()} max={props.max?.toString()} />
-    <button disabled={props.disabled} type="button" class={MATH_STYLE} onClick={increment}>+</button>
+    <button disabled={props.disabled} type="button" class={`${ MATH_STYLE } ${ props.disabled ? 'invisible' : '' }`} onClick={increment}>+</button>
   </div>;
 };
 

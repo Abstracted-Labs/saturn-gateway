@@ -194,10 +194,10 @@ export default function Management() {
                         <Identity address={member.address} />
                       </td>
                       <td class='py-3 px-4 h-full'>
-                        <SaturnNumberInput label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
+                        <SaturnNumberInput disabled label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
                       </td>
                       <td class='py-3 px-4'>
-                        {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
+                        {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" disabled onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
                       </td>
                       <td class='py-3 px-4 h-full'>
                         <button type="button" id="removeMember" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={[removeMember, member.address]}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>
