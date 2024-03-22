@@ -3,14 +3,14 @@ import { BigNumber } from 'bignumber.js';
 import { useSaturnContext } from "../providers/saturnProvider";
 import Identity from '../components/identity/Identity';
 import { getAllMembers } from '../utils/getAllMembers';
-import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, KusamaFeeAssetEnum } from '../utils/consts';
+import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, KusamaFeeAssetEnum, MultisigEnum } from '../utils/consts';
 import RemoveIcon from '../assets/icons/remove-member-icon.svg';
 import SaturnNumberInput from '../components/legos/SaturnNumberInput';
 import SearchIcon from '../assets/icons/search.svg';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { useMegaModal } from '../providers/megaModalProvider';
-import { hexToString } from '@polkadot/util';
-import { FeeAsset } from '@invarch/saturn-sdk';
+import { BN, hexToString } from '@polkadot/util';
+import { FeeAsset, MultisigCallResult } from '@invarch/saturn-sdk';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { useRingApisContext } from '../providers/ringApisProvider';
 
@@ -21,6 +21,7 @@ export default function Management() {
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [search, setSearch] = createSignal<string>('');
   const [loading, setLoading] = createSignal<boolean>(true);
+  const [multisigType, setMultisigType] = createSignal<MultisigEnum>(MultisigEnum.TRADITIONAL);
 
   const saturnContext = useSaturnContext();
   const selectedAccount = useSelectedAccountContext();
@@ -29,6 +30,7 @@ export default function Management() {
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
   const selectedState = createMemo(() => selectedAccount.state);
+  const saturnState = createMemo(() => saturnContext.state);
 
   const removeMember = async (address: string) => {
     const tinkernetApi = ringsApisContext.state.tinkernet;
@@ -82,9 +84,47 @@ export default function Management() {
     }
   };
 
-  const proposeNewVotingPower = (address: string, votingPower: string) => {
-    console.log('proposing to update voting power for: ', address, votingPower);
-    return;
+  const proposeNewVotingPower = async (address: string, amount: string) => {
+    const tinkernetApi = ringsApisContext.state.tinkernet;
+    const saturn = saturnState().saturn;
+    const account = selectedState().account;
+    const wallet = selectedState().wallet;
+    const feeAsset = selectedState().feeAsset;
+
+    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
+
+    const id = saturnState().multisigId;
+
+    try {
+      if (id !== undefined && wallet?.signer) {
+        const bnAmount = new BN(amount);
+        const proposeCall = saturn.proposeMemberRemoval({
+          id,
+          address,
+          amount: bnAmount,
+        });
+
+        const buildCall = saturn.buildMultisigCall({
+          id,
+          call: proposeCall.call,
+        });
+
+        const result: MultisigCallResult = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM);
+
+        if (result.executionResult) {
+          if (result.executionResult.isOk) {
+            alert("New members have been proposed. Please wait for the vote to pass.");
+          } else if (result.executionResult.isErr) {
+            const message = JSON.parse(result.executionResult.asErr.toString());
+            const err = message.module.error;
+            const error = hexToString(message.module.error);
+            throw new Error(error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to add new members to multisig:", error);
+    }
   };
 
   const handleSearch = (e: InputEvent) => {
@@ -145,6 +185,24 @@ export default function Management() {
     setMembers(filteredMembers);
   }));
 
+  createEffect(on(() => saturnState().multisigDetails, () => {
+    const details = saturnState().multisigDetails;
+
+    const loadMultisigDetails = async () => {
+      if (!details) {
+        return;
+      };
+
+      if (details.metadata && details.requiredApproval) {
+        const requiredApproval = new BigNumber(details.requiredApproval.toString());
+        const multisigType = requiredApproval.isZero() ? MultisigEnum.TRADITIONAL : MultisigEnum.GOVERNANCE;
+        setMultisigType(multisigType);
+      }
+    };
+
+    loadMultisigDetails();
+  }));
+
   return (
     <>
       <div class="flex flex-row justify-between items-center mb-3">
@@ -179,9 +237,10 @@ export default function Management() {
                     const [equals, setEquals] = createSignal<boolean>(true);
                     const [votingPower, setVotingPower] = createSignal<string>("0");
                     const hide = createMemo(() => equals());
+                    const initialVotingPower = createMemo(() => member.votes.div("1000000").decimalPlaces(2, 1).toString());
 
                     function isEqual(value: string) {
-                      if (value === member.votes.div("1000000").decimalPlaces(2, 1).toString()) {
+                      if (value === initialVotingPower()) {
                         setEquals(true);
                       } else {
                         setEquals(false);
@@ -194,10 +253,10 @@ export default function Management() {
                         <Identity address={member.address} />
                       </td>
                       <td class='py-3 px-4 h-full'>
-                        <SaturnNumberInput disabled label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={member.votes.div("1000000").decimalPlaces(2, 1).toString()} currentValue={(value) => isEqual(value)} />
+                        <SaturnNumberInput disabled={loading() || multisigType() === MultisigEnum.TRADITIONAL} label={`UpdateVotes-${ index() }`} min={1} max={50} initialValue={initialVotingPower()} currentValue={(value) => isEqual(value)} />
                       </td>
                       <td class='py-3 px-4'>
-                        {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" disabled onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
+                        {hide() ? null : <button class="py-1 px-3 flex flex-row rounded-md bg-saturn-purple text-xxs text-white hover:opacity-75 focus:outline-purple-500" type="button" disabled={loading() || multisigType() === MultisigEnum.TRADITIONAL} onClick={() => proposeNewVotingPower(member.address, votingPower())}>Submit Proposal</button>}
                       </td>
                       <td class='py-3 px-4 h-full'>
                         <button type="button" id="removeMember" class="rounded-md hover:opacity-100 opacity-50 focus:outline-saturn-red" onClick={[removeMember, member.address]}><img class="p-2" alt="delete-icon" src={RemoveIcon} /></button>

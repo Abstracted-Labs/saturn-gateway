@@ -684,7 +684,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     loadMembers();
   });
 
-
   const ToCrumb = (props: { crumb: string; }) => {
     // scroll to crumb
     return <button disabled={finishing()} onClick={[handleSetActive, props.crumb]} type="button" class="focus:outline-none ml-1 opacity-50 hover:opacity-100 p-1 rounded-md border border-px border-saturn-lightgrey"><img src={EditDataIcon} /></button>;
