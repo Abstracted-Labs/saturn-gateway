@@ -258,7 +258,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           if (result.executionResult.isOk) {
             alert("New members have been proposed. Please wait for the vote to pass.");
           } else if (result.executionResult.isErr) {
-            console.error("Failed to add new members to multisig:", result.executionResult.asErr.toHuman());
+            const message = JSON.parse(result.executionResult.asErr.toString());
+            const err = message.module.error;
+            const error = hexToString(message.module.error);
+            throw new Error(error);
           }
         }
       }
@@ -468,7 +471,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
 
     if (isValidAddress && isUnique && !isInMultisig) {
-      newMembers[memberIndex][0] = inputValue + ':' + addressFromWeb3Name;
+      newMembers[memberIndex][0] = addressFromWeb3Name ? (inputValue + ':' + addressFromWeb3Name) : inputValue;
       setMembers(newMembers);
       setHasAddressError(current => current.filter(i => i !== memberIndex));
       setDisableAddMember(false);
@@ -669,7 +672,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const hashId = loc.pathname.split('/')[1];
 
     if (!saturn || !hashId) {
-      console.log('no saturn or multisigId');
       return;
     };
 
@@ -740,7 +742,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
           <div>
             <label for="defaultVotes" class={`${ LIST_LABEL_STYLE } ml-5`}>Votes</label>
-            <SaturnNumberInput isMultisigUi label="defaultVotes" id="defaultVotes" min={1} max={50} initialValue={members()[0][1].toString()} currentValue={(votes: string) => {
+            <SaturnNumberInput isMultisigUi label="defaultVotes" id="defaultVotes" min={1} max={50} initialValue={members()[0]?.[1]?.toString() || '1'} currentValue={(votes: string) => {
               const newMembers = members();
               newMembers[0][1] = parseInt(votes);
               setMembers(newMembers);
