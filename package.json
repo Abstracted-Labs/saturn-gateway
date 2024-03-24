@@ -66,6 +66,5 @@
   "resolutions": {
     "@polkadot/types": "10.11.2",
     "@invarch/saturn-sdk": "1.0.11"
-  },
-  "packageManager": "yarn@3.6.2"
+  }
 }
