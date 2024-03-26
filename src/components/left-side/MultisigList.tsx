@@ -68,41 +68,37 @@ const MultisigList = (props: MultisigListProps) => {
       modal.hideMultisigListModal();
     }
 
-    if (activeButton() === id) {
-      return; // Do nothing if the clicked item is already active
-    } else {
-      if (id === undefined) return;
+    if (id === undefined) return;
 
-      setActiveButton(id);
+    setActiveButton(id);
 
-      saturnContext.setters.setMultisigId(id);
+    saturnContext.setters.setMultisigId(id);
 
-      try {
-        const maybeDetails = await sat.getDetails(id);
-        if (maybeDetails) {
-          console.debug("Multisig details fetched successfully:", maybeDetails);
-          saturnContext.setters.setMultisigDetails(maybeDetails);
-          saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
-        }
-      } catch (error) {
-        console.error("Failed to fetch multisig details:", error);
-      } finally {
-        navigate(`/${ id }/management`, { replace: true });
-
-        // Remove the selected item from the list and update the selected item
-        const selectedItem = originalOrder()[index];
-        setMultisigItems(originalOrder());
-
-        // Close the left drawer
-        closeLeftDrawer();
+    try {
+      const maybeDetails = await sat.getDetails(id);
+      if (maybeDetails) {
+        console.debug("Multisig details fetched successfully:", maybeDetails);
+        saturnContext.setters.setMultisigDetails(maybeDetails);
+        saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
       }
+    } catch (error) {
+      console.error("Failed to fetch multisig details:", error);
+    } finally {
+      navigate(`/${ id }/management`, { replace: true });
 
-      // Reset the scroll position
-      // const scrollContainer = scrollContainerRef;
-      // if (scrollContainer instanceof HTMLDivElement) {
-      //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-      // }
+      // Remove the selected item from the list and update the selected item
+      const selectedItem = originalOrder()[index];
+      setMultisigItems(originalOrder());
+
+      // Close the left drawer
+      closeLeftDrawer();
     }
+
+    // Reset the scroll position
+    // const scrollContainer = scrollContainerRef;
+    // if (scrollContainer instanceof HTMLDivElement) {
+    //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    // }
   };
 
   const closeLeftDrawer = () => {
@@ -223,8 +219,10 @@ const MultisigList = (props: MultisigListProps) => {
         // Set the multisigItems state in Saturn context
         saturnContext.setters.setMultisigItems(processedList);
 
-        // Set the multisigId state in Saturn context
-        saturnContext.setters.setMultisigId(selectedId);
+        // Only set the multisigId state in Saturn context if urlId matches selectedId
+        if (selectedItem) {
+          saturnContext.setters.setMultisigId(selectedId);
+        }
       } else {
         // If there are no current multisigs, reset previous state 
         setMultisigItems([]);
