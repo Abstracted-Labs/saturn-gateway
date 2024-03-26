@@ -2,6 +2,7 @@ import BasiliskIcon from '../assets/icons/basilisk-icon.svg';
 import TinkernetIcon from '../assets/icons/tinkernet-icon.svg';
 import PicassoIcon from '../assets/icons/picasso-icon.svg';
 import KusamaIcon from '../assets/icons/kusama-icon.svg';
+import KusamaAssetHubIcon from '../assets/icons/assethub-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
 import { JSXElement } from 'solid-js';
 
@@ -59,7 +60,7 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   TNKR: [TinkernetIcon, BasiliskIcon],
   BSX: [BasiliskIcon],
   PICA: [PicassoIcon],
-  KSM: [KusamaIcon, TinkernetIcon, BasiliskIcon, PicassoIcon],
+  KSM: [KusamaIcon, TinkernetIcon, BasiliskIcon, PicassoIcon, KusamaAssetHubIcon],
   DOT: [PolkadotIcon],
 };
 

@@ -195,12 +195,14 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         };
 
         // query tokens
-        break; // TODO: implement asset hub balances, currently has performance issues on UI
         if (api.query.assets) {
           const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.KUSAMA, api);
           for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
             const tokens = await api.query.assets.account(assetId, address) as unknown as { balance: string, status: string; };
             const freeTokens = tokens.balance;
+            if (new BigNumber(freeTokens).isZero() || new BigNumber(freeTokens).isNaN()) {
+              continue;
+            }
             balancesByNetwork[assetSymbol] = {
               freeBalance: freeTokens,
               reservedBalance: '0',
