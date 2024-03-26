@@ -5,6 +5,7 @@ import { WALLET_ACCOUNTS_MODAL_ID } from "./ConnectWallet";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { PROPOSE_MODAL_ID } from "../modals/ProposeModal";
 import { useNavigate } from "@solidjs/router";
+import { usePriceContext } from "../../providers/priceProvider";
 
 interface ILogoutButtonProps {
   onClick: () => any;
@@ -16,6 +17,7 @@ const LogoutButton = (props: ILogoutButtonProps) => {
   const selectedAccount = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
   const nav = useNavigate();
+  const prices = usePriceContext();
 
   const accountState = createMemo(() => selectedAccount.state);
   const accountSetter = createMemo(() => selectedAccount.setters);
@@ -23,21 +25,19 @@ const LogoutButton = (props: ILogoutButtonProps) => {
 
   const onLogout = (e: Event) => {
     e.preventDefault();
-    console.log("Attempting to logout", accountState());
+    console.log("Attempting to logout...", accountState());
 
     try {
-      console.log("Disconnecting wallet", accountState().wallet);
       accountState().wallet?.disconnect();
-      console.log("Clearing selected account");
       accountSetter().clearSelected();
-      console.log("Logging out from saturn context");
       saturnSetter().logout();
-      console.log("Triggering onClick prop");
       props.onClick();
-      console.log("Redirecting to home page");
       nav('/');
     } catch {
       console.error("Error disconnecting wallet");
+    } finally {
+      prices.clearPrices();
+      console.log('Thank you for choosing the Omniway. Goodbye!');
     }
   };
 

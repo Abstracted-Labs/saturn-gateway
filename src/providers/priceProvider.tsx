@@ -7,6 +7,7 @@ import { createStore } from "solid-js/store";
 const PriceContext = createContext<{
   prices: Record<NetworkEnum, { usd: string; }> | null;
   fetchPrices: () => Promise<void>;
+  clearPrices: () => void;
 }>();
 
 const initialPrices: Record<NetworkEnum, { usd: string; }> = {
@@ -20,7 +21,7 @@ const initialPrices: Record<NetworkEnum, { usd: string; }> = {
 
 export function PriceProvider(props: { children: JSX.Element; }) {
   const [prices, setPrices] = createStore<Record<NetworkEnum, { usd: string; }>>({ ...initialPrices });
-  const [storageState, setStorageState] = createLocalStorage<Record<NetworkEnum, { usd: string; }>>();
+  const [storageState, setStorageState, { remove }] = createLocalStorage<Record<NetworkEnum, { usd: string; }>>();
 
   const fetchPrices = async () => {
     let data = await getAllUsdPrices();
@@ -32,11 +33,16 @@ export function PriceProvider(props: { children: JSX.Element; }) {
     setPrices(data ? data : initialPrices);
   };
 
+  const clearPrices = () => {
+    remove('prices');
+    setPrices(initialPrices);
+  };
+
   createEffect(() => {
     fetchPrices();
   });
 
-  const value = createMemo(() => ({ prices, fetchPrices })); // Directly pass the prices store
+  const value = createMemo(() => ({ prices, fetchPrices, clearPrices })); // Directly pass the prices store
 
   return (
     <PriceContext.Provider value={value()}>

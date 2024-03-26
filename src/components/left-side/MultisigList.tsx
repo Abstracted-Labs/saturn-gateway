@@ -14,6 +14,7 @@ import { FALLBACK_TEXT_STYLE, MultisigItem } from '../../utils/consts';
 import LoaderAnimation from '../legos/LoaderAnimation';
 import { useMegaModal } from '../../providers/megaModalProvider';
 import { getMultisigsForAccount } from '../../utils/getMultisigs';
+import { usePriceContext } from '../../providers/priceProvider';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -51,6 +52,7 @@ const MultisigList = (props: MultisigListProps) => {
   const ringApisContext = useRingApisContext();
   const navigate = useNavigate();
   const loc = useLocation();
+  const prices = usePriceContext();
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
@@ -89,6 +91,9 @@ const MultisigList = (props: MultisigListProps) => {
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];
       setMultisigItems(originalOrder());
+
+      // Clear price cache
+      prices.clearPrices();
 
       // Close the left drawer
       closeLeftDrawer();
