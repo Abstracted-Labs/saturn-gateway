@@ -61,10 +61,12 @@ export function SelectedAccountProvider(props: any) {
       },
 
       clearSelected() {
-        setState({
-          account: undefined,
-          wallet: undefined,
-        });
+        // console.log("Clearing selected account...");
+        // if (state.account) setState("account", undefined);
+        console.log("Clearing selected wallet...");
+        if (state.wallet) setState("wallet", undefined);
+        console.log("Clearing selected account storage...");
+        remove('selectedAccount');
         setStorageState("selectedAccount", JSON.stringify({ address: '', wallet: '' }));
       }
     }
