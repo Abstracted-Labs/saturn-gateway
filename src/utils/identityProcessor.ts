@@ -106,8 +106,6 @@ export type AggregatedIdentity = {
 };
 
 export async function getBestIdentity(address: string): Promise<AggregatedIdentity> {
-  console.log("trying to get best identity for: ", address);
-
   const ringApisContext = useRingApisContext();
 
   // Wrap each identity fetch in a separate try-catch block
