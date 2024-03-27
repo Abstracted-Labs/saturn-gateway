@@ -12,6 +12,7 @@ import { createStore } from 'solid-js/store';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { usePriceContext } from '../providers/priceProvider';
+import { useBalanceContext } from '../providers/balanceProvider';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
@@ -28,6 +29,7 @@ export default function Assets() {
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
   const [usdPrices, setUsdPrices] = createStore<Record<string, string>>({});
 
+  const balanceContext = useBalanceContext();
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
   const priceContext = usePriceContext();
@@ -70,7 +72,7 @@ export default function Assets() {
       }
     }
 
-    if (total && currentMarketPrice !== null && Rings[network]?.decimals !== undefined) {
+    if (total && currentMarketPrice !== null) {
       const decimals = Rings[network]?.decimals ?? 12;
       totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals) })`;
     } else {
@@ -99,53 +101,12 @@ export default function Assets() {
   });
 
   createEffect(() => {
-    let timeout: any;
-
-    const delayUnload = () => {
-      timeout = setTimeout(() => {
-        setLoading(false);
-      }, 200);
-    };
-
     const runAsync = async () => {
-      const id = getMultisigId();
-      const address = getMultisigAddress();
-      const walletAddress = getAccountAddress();
-
-      if (typeof id !== 'number' || !address || !walletAddress) {
-        console.log('Invalid multisig id or address', id, address, walletAddress);
-        delayUnload();
-        return;
-      }
-
-      const nb = await getBalancesFromAllNetworks(address);
-      const remapped = Object.entries(nb).map(([network, assets]) => {
-        const ret: [string, [string, NetworkBalancesArray][]] = [network,
-          Object.entries(assets)
-            .map(([asset, assetBalances]) => {
-              const ret: [string, NetworkBalancesArray] = [asset, assetBalances as unknown as NetworkBalancesArray];
-              return ret;
-            })
-            .filter(([_, allBalances]) => {
-              const assetBalances = allBalances as unknown as BalanceType;
-              const totalLockAmount = !!assetBalances.locks && assetBalances.locks.length > 0 ? assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
-              const hasBalances = assetBalances.freeBalance != '0'
-                || assetBalances.reservedBalance != '0'
-                || (+totalLockAmount !== 0);
-              return hasBalances;
-            })];
-        return ret;
-      });
-
-      setBalances(remapped as unknown as NetworkAssetBalance[]);
-      delayUnload();
+      const allBalances = balanceContext?.balances;
+      setBalances(allBalances as unknown as NetworkAssetBalance[]);
     };
 
     runAsync();
-
-    onCleanup(() => {
-      clearTimeout(timeout);
-    });
   });
 
   createEffect(() => {
@@ -205,7 +166,8 @@ export default function Assets() {
             </tr>
           </thead>
           <Switch fallback={<div class="mt-4">
-            {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>}
+            {/* {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>} */}
+            <LoaderAnimation text="Loading assets..." />
           </div>}>
             <Match when={balances() && balances().length > 0}>
               <For each={balances()}>{([network, assets]) => {
