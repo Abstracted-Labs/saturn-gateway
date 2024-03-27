@@ -10,7 +10,7 @@ type ThemeContextType = {
 };
 
 const defaultThemeState = (): ThemeContextType => ({
-  colorMode: null, // default to dark mode
+  colorMode: ColorModeEnum.DARK, // default to dark mode
   setMode: () => {
     return;
   },

@@ -45,8 +45,8 @@ const walletConnectParams: WalletConnectConfiguration = {
   projectId: WC_PROJECT_ID,
   relayUrl: 'wss://relay.walletconnect.com',
   metadata: {
-    name: 'Omniyay',
-    description: 'Omniyay',
+    name: 'Omniway',
+    description: 'Omniway',
     url: 'https://invarch.network',
     icons: [
       'https://www.icon-stories.ch/quizzes/media/astronomy/images/ringed-planet.png',

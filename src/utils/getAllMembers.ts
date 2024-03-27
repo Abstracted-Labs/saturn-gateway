@@ -4,7 +4,8 @@ import BigNumber from 'bignumber.js';
 
 export async function getAllMembers(multisigId: number, saturn: Saturn) {
   if (typeof multisigId !== 'number' || !saturn) {
-    throw new Error('Invalid arguments');
+    console.error('Invalid multisigId or saturn instance');
+    return [];
   }
 
   let mems;

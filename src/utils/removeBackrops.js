@@ -15,7 +15,7 @@ export default function removeBackrops() {
 
   // Check if the DOM is ready before removing the backdrop
   if (document.readyState === 'loading') {
-    console.log('DOM is loading');
+    // console.log('DOM is loading');
     document.addEventListener('DOMContentLoaded', removeBackdrop);
   } else {
     removeBackdrop();
@@ -23,7 +23,7 @@ export default function removeBackrops() {
 
   // Remove the event listener on beforeunload to prevent memory leaks
   window.addEventListener('beforeunload', () => {
-    console.log('removed backdrop event listener!');
+    // console.log('removed backdrop event listener!');
     document.removeEventListener('DOMContentLoaded', removeBackdrop);
   });
 
