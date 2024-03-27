@@ -8,6 +8,7 @@ import defaultMultisigImage from '../../assets/images/default-multisig-image.png
 import MainContent from "./MainContent";
 import { Option } from '@polkadot/types';
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import { useBalanceContext } from "../../providers/balanceProvider";
 
 const MainContainer = () => {
   const [multisigIdentity, setMultisigIdentity] = createSignal<{
@@ -26,6 +27,7 @@ const MainContainer = () => {
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const saContext = useSelectedAccountContext();
+  const balanceContext = useBalanceContext();
 
   const selectedAddress = createMemo(() => saContext.state.account?.address);
   const ringsApiState = createMemo(() => ringApisContext.state);
@@ -88,11 +90,9 @@ const MainContainer = () => {
           id = result.unwrapOr(null)?.toNumber();
           // Ensure id is within the safe range
           if (id && id > Number.MAX_SAFE_INTEGER) {
-            // Handle the case where id exceeds the safe integer range
             return;
           }
         } else {
-          // Handle the case where result is null or undefined
           return;
         }
       } else {
@@ -103,18 +103,23 @@ const MainContainer = () => {
         }
       }
 
+      // Set multisig id in omniway context
       saturnContext.setters.setMultisigId(id);
 
       // Ensure id is a number before passing it to getDetails
       const numericId = Number(id);
       const maybeDetails = await saturnApi()?.getDetails(numericId);
 
+      // Set multisig details and address in omniway context
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
         saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
       } else {
         console.error(`No details found for ID: ${ numericId }`);
       }
+
+      // Refresh balances
+      balanceContext?.fetchBalances(true);
     };
 
     runAsync();
