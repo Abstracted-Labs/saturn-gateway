@@ -174,7 +174,6 @@ const CryptoAccounts = () => {
         try {
           let availAccounts: Account[] & { title?: string; } = await wallet.getAccounts();
           availAccounts = availAccounts.map((account) => ({ title: wallet.metadata.title, name: wallet.metadata.title, ...account }));
-          // Ensure accounts are unique
           availAccounts = availAccounts.filter((account, index, self) => self.findIndex((a) => a.address === account.address) === index);
           newAccounts.push(...availAccounts);
         } catch (error) {
@@ -183,7 +182,6 @@ const CryptoAccounts = () => {
         }
       }
 
-      // Update availableAccounts only once after all wallets are processed
       setAvailableAccounts(newAccounts);
     };
 
