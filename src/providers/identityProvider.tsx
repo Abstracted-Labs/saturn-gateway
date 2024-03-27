@@ -43,7 +43,7 @@ export function IdentityProvider(props: { children: JSX.Element; }) {
         const addresses = members.map((m) => m.address);
         setAddresses(addresses);
       } else {
-        console.error('multisigId or saturn not found', id, sat);
+        console.error('multisigId or saturn not found');
       }
     };
 

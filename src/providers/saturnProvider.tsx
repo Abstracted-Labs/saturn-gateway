@@ -1,4 +1,4 @@
-import { createContext, useContext } from "solid-js";
+import { createContext, createMemo, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { type Saturn, type MultisigDetails } from "@invarch/saturn-sdk";
 import { MultisigItem } from "../utils/consts";
@@ -47,7 +47,7 @@ export const SaturnContext = createContext<SaturnContextType>({
 export function SaturnProvider(props: any) {
   const [state, setState] = createStore<SaturnContextState>(defaultState);
 
-  const value = {
+  const value = createMemo(() => ({
     state,
     setters: {
       setSaturn(saturn: Saturn) {
@@ -71,19 +71,16 @@ export function SaturnProvider(props: any) {
       },
 
       logout() {
-        setState({
-          // saturn: undefined,
-          multisigId: undefined,
-          multisigAddress: undefined,
-          multisigDetails: undefined,
-          multisigItems: undefined,
-        });
+        setState("multisigId", undefined);
+        setState("multisigAddress", undefined);
+        setState("multisigDetails", undefined);
+        setState("multisigItems", []);
       }
     }
-  };
+  }));
 
   return (
-    <SaturnContext.Provider value={value}>
+    <SaturnContext.Provider value={value()}>
       {props.children}
     </SaturnContext.Provider>
   );
