@@ -22,6 +22,7 @@ import { FeeAsset } from "@invarch/saturn-sdk";
 import getProposalType from "../../utils/getProposalType";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import { usePriceContext } from "../../providers/priceProvider";
+import { useBalanceContext } from "../../providers/balanceProvider";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -98,6 +99,7 @@ const AssetsContext = () => {
   const modalContext = useMegaModal();
   const loc = useLocation();
   const priceContext = usePriceContext();
+  const balanceContext = useBalanceContext();
 
   const getUsdPrices = createMemo(() => priceContext.prices);
   const forNetworks = createMemo(() => {
@@ -400,26 +402,8 @@ const AssetsContext = () => {
     }
 
     const runAsync = async () => {
-      const nb = await getBalancesFromAllNetworks(address);
-      const remapped = Object.entries(nb).map(([network, assets]) => {
-        const ret: [string, [string, NetworkBalancesArray][]] = [network,
-          Object.entries(assets)
-            .map(([asset, assetBalances]) => {
-              const ret: [string, NetworkBalancesArray] = [asset, assetBalances as unknown as NetworkBalancesArray];
-              return ret;
-            })
-            .filter(([_, allBalances]) => {
-              const assetBalances = allBalances as unknown as BalanceType;
-              const totalLockAmount = !!assetBalances.locks && assetBalances.locks.length > 0 ? assetBalances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
-              const hasBalances = assetBalances.freeBalance != '0'
-                || assetBalances.reservedBalance != '0'
-                || (+totalLockAmount !== 0);
-              return hasBalances;
-            })];
-        return ret;
-      });
-
-      setBalances(remapped as unknown as NetworkAssetBalance[]);
+      const allBalances = balanceContext?.balances;
+      setBalances(allBalances as unknown as NetworkAssetBalance[]);
     };
 
     runAsync();

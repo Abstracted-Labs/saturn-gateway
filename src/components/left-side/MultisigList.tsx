@@ -16,6 +16,7 @@ import { useMegaModal } from '../../providers/megaModalProvider';
 import { getMultisigsForAccount } from '../../utils/getMultisigs';
 import { usePriceContext } from '../../providers/priceProvider';
 import { useIdentityContext } from '../../providers/identityProvider';
+import { useBalanceContext } from '../../providers/balanceProvider';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -55,6 +56,7 @@ const MultisigList = (props: MultisigListProps) => {
   const loc = useLocation();
   const prices = usePriceContext();
   const identity = useIdentityContext();
+  const balances = useBalanceContext();
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
@@ -96,6 +98,9 @@ const MultisigList = (props: MultisigListProps) => {
 
       // Clear price cache
       prices.clearPrices();
+
+      // Clear balance cache
+      balances?.clearBalances();
 
       // Clear identity cache
       identity.actions.clearIdentities();
