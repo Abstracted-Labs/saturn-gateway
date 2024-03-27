@@ -40,7 +40,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
       try {
         const storedBalances = JSON.parse(sessionBalances['omniwayBalances']);
         if (Array.isArray(storedBalances) && storedBalances.length > 0) {
-          console.log('Using stored balances');
           setBalances(storedBalances);
           setLoading(false);
           return;
@@ -54,7 +53,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     }
 
     try {
-      console.log('Fetching new balances');
       const nb = await getBalancesFromAllNetworks(address);
       const remapped = Object.entries(nb).map(([network, assets]) => {
         return [network, Object.entries(assets).map(([asset, assetBalances]) => {
@@ -62,7 +60,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
         })];
       });
 
-      console.log('Setting new balances');
       setBalances(remapped as unknown as NetworkAssetBalance[]);
       setSessionBalances('omniwayBalances', JSON.stringify(remapped));
       setLoading(false);
