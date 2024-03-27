@@ -26,7 +26,7 @@ const CryptoAccounts = () => {
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
-  const [availableAccounts, setAvailableAccounts] = createSignal<Account[] & { title?: string; }>([]);
+  const [availableAccounts, setAvailableAccounts] = createSignal<(Account & { title?: string; })[]>([]);
   const [isLoggedIn, setIsLoggedIn] = createSignal(false);
   const [hasMultisigs, setHasMultisigs] = createSignal(false);
 
@@ -37,60 +37,12 @@ const CryptoAccounts = () => {
 
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
 
-  function isActiveAccount(account: Account) {
+  const isActiveAccount = (account: Account) => {
     const selectedAccount = saContext.state.account;
     return selectedAccount ? account.address === selectedAccount.address && account : false;
-  }
+  };
 
-  async function getAllAccounts() {
-    try {
-      if (!availableWallets() || !Array.isArray(availableWallets())) {
-        throw new Error('availableWallets is not an array');
-      }
-
-      // filter Sporran titled entries from wallets
-      const filteredWallets = availableWallets().filter((w) => w.metadata.title !== 'Sporran');
-      for (const wallet of filteredWallets) {
-        if (!wallet || typeof wallet.getAccounts !== 'function') {
-          throw new Error('wallet is not valid or getAccounts is not a function');
-        }
-
-        if (wallet.type !== WalletType.WALLET_CONNECT) {
-          try {
-            // Connect to each substrate wallet and add accounts to availableAccounts
-            await wallet.connect();
-          } catch (error) {
-            console.error('connect error: ', error);
-            continue;
-          }
-        }
-        // else {
-        //   if (!!wallet && wallet.autoConnect) {
-        //     await wallet.autoConnect();
-        //   }
-        // }
-
-        try {
-          // Include the wallet title and name in Account object to display in UI
-          let accounts: Account[] & { title?: string; } = await wallet.getAccounts();
-          accounts = accounts.map((account) => ({ title: wallet.metadata.title, name: wallet.metadata.title, ...account }));
-
-          // Accounts should only be an array of unique addresses despite wallet type
-          accounts = accounts.filter((account, index, self) => self.findIndex((a) => a.address === account.address) === index);
-
-          // Merge updated accounts into all available accounts
-          setAvailableAccounts([...availableAccounts(), ...accounts]);
-        } catch (error) {
-          console.error('getAccounts error: ', error);
-          continue;
-        }
-      }
-    } catch (error) {
-      console.error('error: ', error);
-    }
-  }
-
-  async function connectUserAccount(acc: Account) {
+  const connectUserAccount = async (acc: Account) => {
     try {
       // First, logout of current multisig
       saturnContext.setters.logout();
@@ -121,9 +73,9 @@ const CryptoAccounts = () => {
     } finally {
       removeModal();
     }
-  }
+  };
 
-  async function connectWalletConnect() {
+  const connectWalletConnect = async () => {
     // Logout of any existing WalletConnect session
     try {
       const wcWallet = availableWallets().find((w) => w.type === WalletType.WALLET_CONNECT);
@@ -159,21 +111,21 @@ const CryptoAccounts = () => {
     } finally {
       removeModal();
     }
-  }
+  };
 
-  function handleLogout() {
+  const handleLogout = () => {
     removeModal();
-  }
+  };
 
-  function handleOpenWalletConnect() {
+  const handleOpenWalletConnect = () => {
     connectWalletConnect();
-  }
+  };
 
-  function removeModal() {
+  const removeModal = () => {
     if (modal) {
       modal.hide();
     }
-  }
+  };
 
   onMount(() => {
     initModals();
@@ -185,26 +137,57 @@ const CryptoAccounts = () => {
   });
 
   createEffect(() => {
-    setIsLoggedIn(!!saContext.state.account?.address);
+    const hasAddress = !!saContext.state.account?.address;
+    setIsLoggedIn(hasAddress);
   });
 
   createEffect(() => {
-    setHasMultisigs(!!(saturnContext.state.multisigItems && saturnContext.state.multisigItems.length > 0));
+    const multisigItems = saturnContext.state.multisigItems;
+    setHasMultisigs(!!(multisigItems && multisigItems.length > 0));
+  });
+
+  createEffect(async () => {
+    const allWallets = await walletAggregator.getWallets();
+    setAvailableWallets(allWallets as BaseWallet[]);
   });
 
   createEffect(() => {
-    let timeout: any;
-    timeout = setTimeout(async () => {
-      if (walletAggregator) {
-        const allWallets = await walletAggregator.getWallets();
-        setAvailableWallets(allWallets as BaseWallet[]);
-        getAllAccounts();
+    const getAllAccounts = async () => {
+      const wallets = availableWallets();
+      let newAccounts = [];
+
+      for (const wallet of wallets) {
+        if (!wallet || typeof wallet.getAccounts !== 'function') {
+          console.error('wallet is not valid or getAccounts is not a function');
+          continue;
+        }
+
+        if (wallet.type !== WalletType.WALLET_CONNECT) {
+          try {
+            await wallet.connect();
+          } catch (error) {
+            console.error('connect error: ', error);
+            continue;
+          }
+        }
+
+        try {
+          let availAccounts: Account[] & { title?: string; } = await wallet.getAccounts();
+          availAccounts = availAccounts.map((account) => ({ title: wallet.metadata.title, name: wallet.metadata.title, ...account }));
+          // Ensure accounts are unique
+          availAccounts = availAccounts.filter((account, index, self) => self.findIndex((a) => a.address === account.address) === index);
+          newAccounts.push(...availAccounts);
+        } catch (error) {
+          console.error('getAccounts error: ', error);
+          continue;
+        }
       }
-    }, 100);
 
-    onCleanup(() => {
-      clearTimeout(timeout);
-    });
+      // Update availableAccounts only once after all wallets are processed
+      setAvailableAccounts(newAccounts);
+    };
+
+    getAllAccounts();
   });
 
   createEffect(on(() => wcContext.state.w3w, () => {
@@ -273,9 +256,9 @@ const CryptoAccounts = () => {
               <span class="sr-only">Close modal</span>
             </button>
           </div>
-          <div class={`mx-4 ${ availableAccounts().length > 2 ? 'h-[500px]' : 'h-auto' }`}>
+          <div class={`mx-4 ${ availableAccounts().length > 0 ? 'h-[500px]' : 'h-auto' }`}>
             <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
-              <Show when={availableAccounts().length > 2}>
+              <Show when={availableAccounts().length > 0}>
                 <For each={availableAccounts()}>
                   {account => {
                     return (
@@ -295,7 +278,7 @@ const CryptoAccounts = () => {
           </div>
           <div class="flex flex-row justify-end gap-2 items-center m-6">
             <LogoutButton onClick={handleLogout} />
-            <WalletConnectButton onClick={handleOpenWalletConnect} />
+            {/* <WalletConnectButton onClick={handleOpenWalletConnect} /> */}
           </div>
         </div>
       </div>

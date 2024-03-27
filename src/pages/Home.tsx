@@ -4,10 +4,10 @@ import ColorSwitch from '../components/left-side/ColorSwitch';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { useNavigate } from '@solidjs/router';
 import { useSaturnContext } from '../providers/saturnProvider';
+import { walletAggregator } from '../App';
+import { Account, WalletType } from '@polkadot-onboard/core';
 
 const Home = () => {
-  // let cleanup = () => { };
-  // const [container, setContainer] = createSignal<HTMLElement>();
   const [isHovered, setHovered] = createSignal(false);
 
   const theme = useThemeContext();
@@ -16,23 +16,68 @@ const Home = () => {
   const selectedAccount = useSelectedAccountContext();
 
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
-  const alreadyLoggedIn = createMemo(() => !!selectedAccount.state.account);
   const multisigId = createMemo(() => saturnContext.state.multisigId);
 
-  function enterGateway() {
+  const selectDefaultAccount = async () => {
+    const allWallets = await walletAggregator.getWallets();
+    let newAccounts: (Account & { title?: string; })[] = [];
+
+    for (const wallet of allWallets) {
+      if (!wallet || typeof wallet.getAccounts !== 'function') {
+        console.error('wallet is not valid or getAccounts is not a function');
+        continue;
+      }
+
+      if (wallet.type !== WalletType.WALLET_CONNECT) {
+        try {
+          await wallet.connect();
+        } catch (error) {
+          console.error('connect error: ', error);
+          continue;
+        }
+      }
+
+      try {
+        let availAccounts: Account[] & { title?: string; } = await wallet.getAccounts();
+        availAccounts = availAccounts.map(account => ({
+          title: wallet.metadata.title,
+          name: wallet.metadata.title,
+          ...account
+        }));
+        // Ensure accounts are unique
+        availAccounts = availAccounts.filter((account, index, self) =>
+          self.findIndex(a => a.address === account.address) === index
+        );
+        newAccounts.push(...availAccounts); // Accumulate accounts
+      } catch (error) {
+        console.error('getAccounts error: ', error);
+      }
+    }
+
+    if (newAccounts.length > 0) {
+      const defaultAccount = newAccounts[0];
+      selectedAccount.setters.setSelected(defaultAccount, allWallets.find(w => w.metadata.title === defaultAccount.title));
+    }
+  };
+
+  const enterGateway = async () => {
+    const id = multisigId();
     setHovered(true);
 
     try {
-      if (!!multisigId()) {
-        nav(`/${ multisigId() }/assets`);
+      if (!!id) {
+        nav(`/${ id }/assets`);
       } else {
+        console.error('No multisig id found');
         nav(`${ undefined }/assets`);
       }
     } catch (error) {
       console.error(error);
     }
-
-  }
+    // finally {
+    //   selectDefaultAccount();
+    // }
+  };
 
   // createEffect(() => {
   //   cleanup(); // Clean up the previous scene

@@ -23,10 +23,6 @@ const LogoutButton = (props: ILogoutButtonProps) => {
   const identity = useIdentityContext();
   const balances = useBalanceContext();
 
-  const accountState = createMemo(() => selectedAccount.state);
-  const accountSetter = createMemo(() => selectedAccount.setters);
-  const saturnSetter = createMemo(() => saturnContext.setters);
-
   const onLogout = (e: Event) => {
     e.preventDefault();
 
@@ -51,7 +47,7 @@ const LogoutButton = (props: ILogoutButtonProps) => {
         props.onClick();
       }
 
-      nav('/');
+      window.location.href = '/';
     } catch {
       console.error("Error disconnecting wallet");
     } finally {
