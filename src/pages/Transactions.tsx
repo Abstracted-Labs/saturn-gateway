@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount } from 'solid-js';
+import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
@@ -19,6 +19,7 @@ import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
 import SaturnProgress from '../components/legos/SaturnProgress';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
+import { SubmittableResult } from '@polkadot/api';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -38,8 +39,9 @@ export default function Transactions() {
   const multisigHashId = loc.pathname.split('/')[1];
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
+  const hasVoted = createMemo(() => pendingProposals().some(pc => Object.keys(pc.details.tally.records).includes(selectedAccountContext.state.account?.address || '')));
 
-  function totalVotes(records: ParsedTallyRecords): number {
+  const totalVotes = (records: ParsedTallyRecords): number => {
     let total = 0;
     for (let record of Object.values(records)) {
       if (record.aye) {
@@ -51,9 +53,9 @@ export default function Transactions() {
     }
 
     return total / 1000000;
-  }
+  };
 
-  function totalAyeVotes(records: ParsedTallyRecords): number {
+  const totalAyeVotes = (records: ParsedTallyRecords): number => {
     let total = 0;
 
     for (let record of Object.values(records)) {
@@ -69,9 +71,9 @@ export default function Transactions() {
     const roundedPercentage = Math.round(percentage);
 
     return roundedPercentage;
-  }
+  };
 
-  function totalNayVotes(records: ParsedTallyRecords): number {
+  const totalNayVotes = (records: ParsedTallyRecords): number => {
     let total = 0;
 
     for (let record of Object.values(records)) {
@@ -87,9 +89,9 @@ export default function Transactions() {
     const roundedPercentage = Math.round(percentage);
 
     return roundedPercentage;
-  }
+  };
 
-  function handleAccordionClick(index: number) {
+  const handleAccordionClick = (index: number) => {
     try {
       if (document.querySelector(`#content${ index }`)) {
         accordion.toggle(`#content${ (index) }`);
@@ -99,10 +101,44 @@ export default function Transactions() {
     } catch (e) {
       return null;
     }
-  }
+  };
+
+  const withdrawVote = async (pc: CallDetailsWithHash) => {
+    const selectedAccountAddress = selectedAccountContext.state.account?.address;
+    const saturn = saturnContext.state.saturn;
+    const multisigId = saturnContext.state.multisigId;
+    const callHash = pc.callHash.toString();
+
+    if (!selectedAccountAddress) {
+      console.error('No account selected');
+      return;
+    }
+
+    const isVoter = Object.keys(pc.details.tally.records).includes(selectedAccountAddress);
+
+    if (!isVoter) {
+      console.error('Selected account is not a voter for this proposal');
+      return;
+    }
+
+    if (!saturn || typeof multisigId !== 'number') {
+      console.error('Invalid state for withdrawing vote');
+      return;
+    }
+
+    try {
+      const result = saturn.withdrawVote({
+        id: multisigId,
+        callHash,
+      });
+      console.log('Withdraw vote result:', result);
+      await result.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer });
+    } catch (error) {
+      console.error('Error withdrawing vote:', error);
+    }
+  };
 
   const vote = async (callHash: string, aye: boolean) => {
-
     const selected = selectedAccountContext.state;
 
     if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number') {
@@ -320,10 +356,21 @@ export default function Transactions() {
                     </div>
                   </dl>
                 </div>
-                <div class='flex flex-row gap-3 my-3'>
-                  <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
-                  <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
-                </div>
+                <Show when={!hasVoted()}>
+                  <div class='flex flex-row gap-3 my-3 actions'>
+                    <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
+                    <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
+                  </div>
+                </Show>
+                <Show when={hasVoted()}>
+                  <button
+                    type="button"
+                    class="rounded-md hover:opacity-75 bg-saturn-purple p-2 text-xs text-white justify-center w-full focus:outline-none"
+                    onClick={[withdrawVote, pc]}
+                  >
+                    Withdraw Vote
+                  </button>
+                </Show>
               </SaturnAccordionItem>
               }
             </For>
