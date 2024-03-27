@@ -27,6 +27,7 @@ import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
 import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
 import { createApis } from './utils/createApis';
 import { PriceProvider } from './providers/priceProvider';
+import { BalanceProvider } from './providers/balanceProvider';
 
 interface ExtendedWallet extends BaseWallet {
   autoConnect: () => Promise<void>;
@@ -351,17 +352,19 @@ const App = () => (
     <RingApisProvider>
       <ProposeProvider>
         <WalletConnectProvider>
-          <PriceProvider>
-            <SelectedAccountProvider>
-              <IdentityProvider>
-                <ThemeProvider>
-                  <MegaModalProvider>
-                    <HomePlanet />
-                  </MegaModalProvider>
-                </ThemeProvider>
-              </IdentityProvider>
-            </SelectedAccountProvider>
-          </PriceProvider>
+          <SelectedAccountProvider>
+            <IdentityProvider>
+              <ThemeProvider>
+                <MegaModalProvider>
+                  <PriceProvider>
+                    <BalanceProvider>
+                      <HomePlanet />
+                    </BalanceProvider>
+                  </PriceProvider>
+                </MegaModalProvider>
+              </ThemeProvider>
+            </IdentityProvider>
+          </SelectedAccountProvider>
         </WalletConnectProvider>
       </ProposeProvider>
     </RingApisProvider>
