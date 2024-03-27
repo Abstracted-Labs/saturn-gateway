@@ -42,7 +42,7 @@ export function PriceProvider(props: { children: JSX.Element; }) {
     fetchPrices();
   });
 
-  const value = createMemo(() => ({ prices, fetchPrices, clearPrices })); // Directly pass the prices store
+  const value = createMemo(() => ({ prices, fetchPrices, clearPrices }));
 
   return (
     <PriceContext.Provider value={value()}>

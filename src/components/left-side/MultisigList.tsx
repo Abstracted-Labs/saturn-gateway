@@ -15,6 +15,7 @@ import LoaderAnimation from '../legos/LoaderAnimation';
 import { useMegaModal } from '../../providers/megaModalProvider';
 import { getMultisigsForAccount } from '../../utils/getMultisigs';
 import { usePriceContext } from '../../providers/priceProvider';
+import { useIdentityContext } from '../../providers/identityProvider';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -53,6 +54,7 @@ const MultisigList = (props: MultisigListProps) => {
   const navigate = useNavigate();
   const loc = useLocation();
   const prices = usePriceContext();
+  const identity = useIdentityContext();
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
@@ -94,6 +96,9 @@ const MultisigList = (props: MultisigListProps) => {
 
       // Clear price cache
       prices.clearPrices();
+
+      // Clear identity cache
+      identity.actions.clearIdentities();
 
       // Close the left drawer
       closeLeftDrawer();

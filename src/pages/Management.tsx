@@ -157,7 +157,7 @@ export default function Management() {
         return;
       };
 
-      const members = await getAllMembers(multisigId, saturn);
+      const members: MembersType[] = await getAllMembers(multisigId, saturn);
       originalMembers = members;
       setMembers(members);
 

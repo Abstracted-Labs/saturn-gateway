@@ -7,16 +7,15 @@ import { stringShorten } from '@polkadot/util';
 const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
 export default function Identity(props: { address: string; }) {
-  // const identityContext = useIdentityContext();
+  const idContext = useIdentityContext();
 
-  const getAddress = createMemo(() => {
-    return props.address;
+  const identity = createMemo(() => {
+    return idContext.state.identities?.find(id => id.address === props.address);
   });
-
-  const [identity, { mutate, refetch }] = createResource(getAddress, getBestIdentity);
 
   const image = createMemo(() => identity()?.image?.value);
   const name = createMemo(() => identity()?.name);
+  const address = createMemo(() => props.address);
 
   const openIdentityCard = () => {
     console.log('open identity card disabled');
@@ -29,22 +28,22 @@ export default function Identity(props: { address: string; }) {
     <div onClick={openIdentityCard}>
       <Suspense fallback={
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
-          <TalismanIdenticon value={getAddress()} size={34} />
-          <CopyAddress name={name()} address={getAddress()} length={10} />
+          <TalismanIdenticon value={address()} size={34} />
+          <CopyAddress name={name()} address={address()} length={10} />
         </div>
       }>
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
           <Show
             when={image()}
             fallback={
-              <TalismanIdenticon value={getAddress()} size={34} />
+              <TalismanIdenticon value={address()} size={34} />
             }
           >
             <img class="max-h-[34px] max-w-[34px] rounded-full"
               src={image()}
             />
           </Show>
-          <CopyAddress name={name()} address={getAddress()} length={10} />
+          <CopyAddress name={name()} address={address()} length={10} />
         </div>
       </Suspense>
     </div>
