@@ -101,9 +101,12 @@ export default function Assets() {
   });
 
   createEffect(() => {
+    const allBalances = balanceContext?.balances;
+    const isLoading = balanceContext?.loading;
+
     const runAsync = async () => {
-      const allBalances = balanceContext?.balances;
       setBalances(allBalances as unknown as NetworkAssetBalance[]);
+      if (!isLoading) setLoading(false);
     };
 
     runAsync();
@@ -148,9 +151,6 @@ export default function Assets() {
 
   onCleanup(() => {
     setLoading(true);
-    setBalances([]);
-    setUsdValues({});
-    setTotalValues({});
   });
 
   return (
@@ -166,8 +166,7 @@ export default function Assets() {
             </tr>
           </thead>
           <Switch fallback={<div class="mt-4">
-            {/* {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>} */}
-            <LoaderAnimation text="Loading assets..." />
+            {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>}
           </div>}>
             <Match when={balances() && balances().length > 0}>
               <For each={balances()}>{([network, assets]) => {

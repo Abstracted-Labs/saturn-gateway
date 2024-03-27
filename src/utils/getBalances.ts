@@ -201,7 +201,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
             const tokens = await api.query.assets.account(assetId, address) as unknown as { balance: string, status: string; };
             const freeTokens = tokens.balance;
             if (new BigNumber(freeTokens).isZero() || new BigNumber(freeTokens).isNaN()) {
-              console.log(`Asset ${ assetSymbol } has zero or invalid balance`);
+              // console.log(`Asset ${ assetSymbol } has zero or invalid balance`);
               continue;
             }
             balancesByNetwork[assetSymbol] = {
