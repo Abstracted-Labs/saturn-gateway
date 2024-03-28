@@ -188,7 +188,7 @@ const AssetsContext = () => {
     // XcmBridge: Handle bridging assets between other chains.
     if (pair.from !== NetworkEnum.TINKERNET && pair.from !== pair.to) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: bridgeToSelf() ? undefined : targetAddress() })
+        new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing XCM Bridge from another chain', proposeContext.state.proposal);
       modalContext.showProposeModal();
@@ -217,8 +217,8 @@ const AssetsContext = () => {
   const copySelfAddress = () => {
     if (!isLoggedIn()) return;
     setBridgeToSelf(true);
-    if (saturnContext.state.multisigAddress) {
-      setTargetAddress(saturnContext.state.multisigAddress);
+    if (saContext.state.account?.address) {
+      setTargetAddress(saContext.state.account?.address);
     }
   };
 
@@ -343,7 +343,7 @@ const AssetsContext = () => {
               destinationChain: finalNetworkPair().to,
               asset: asset(),
               amount: new BigNumber(amount()).times(BigNumber('10').pow(BigNumber(Rings[finalNetworkPair().from as keyof typeof Rings]?.decimals ?? 0))),
-              to: bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress(),
+              to: targetAddress(),
             }
           },
 
@@ -661,7 +661,7 @@ const AssetsContext = () => {
               id="recipient-address"
               name="recipient-address"
               placeholder="Destination address"
-              value={bridgeToSelf() ? saturnContext.state.multisigAddress : targetAddress()}
+              value={targetAddress()}
               class={`rounded-l-md rounded-r-none grow ${ INPUT_COMMON_STYLE }`}
               disabled={!isLoggedIn()}
               onInput={e => updateTargetAddress(e.currentTarget.value)}

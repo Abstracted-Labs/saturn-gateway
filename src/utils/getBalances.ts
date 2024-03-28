@@ -204,6 +204,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
               // console.log(`Asset ${ assetSymbol } has zero or invalid balance`);
               continue;
             }
+            console.log(`${ assetSymbol } has balance ${ freeTokens } in AssetHub`);
             balancesByNetwork[assetSymbol] = {
               freeBalance: freeTokens,
               reservedBalance: '0',
