@@ -106,10 +106,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   });
   const disableCrumbs = createMemo(() => {
     // check if any fields are invalid and disable crumbs accordingly
-    const party = members();
-    const isMinimumSupportInvalid = minimumSupportField() === '0' || minimumSupportField() === '';
-    const isRequiredApprovalInvalid = (multisigType() === MultisigEnum.GOVERNANCE && requiredApprovalField() === '0') || requiredApprovalField() === '';
-
     if (multisigName() === '' || nameError()) {
       return accessibleSteps().filter(crumb => crumb !== accessibleSteps()[0]);
     }
@@ -120,6 +116,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
 
     if (finishing()) {
+      console.log('finishing');
       // disable everything
       return accessibleSteps();
     }
@@ -329,7 +326,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     if (nextIndex < steps.length) {
       return steps[nextIndex];
     }
-    return null; // Return null if there's no next accessible step
+    return null;
   };
 
   const isNextToLastStep = () => {
