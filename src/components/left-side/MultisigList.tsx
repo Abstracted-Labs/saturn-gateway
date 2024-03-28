@@ -85,7 +85,7 @@ const MultisigList = (props: MultisigListProps) => {
       if (maybeDetails) {
         console.debug("Multisig details fetched successfully:", maybeDetails);
         saturnContext.setters.setMultisigDetails(maybeDetails);
-        saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+        saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       }
     } catch (error) {
       console.error("Failed to fetch multisig details:", error);
@@ -191,7 +191,7 @@ const MultisigList = (props: MultisigListProps) => {
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
         const multisigDetails = await sat.getDetails(m);
 
-        const address = multisigDetails?.account.toHuman() as string;
+        const address = multisigDetails?.parachainAccount.toHuman() as string;
 
         iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
           info: {

@@ -38,7 +38,7 @@ const MainContainer = () => {
   const details = createMemo(() => saturnState().multisigDetails);
 
   createEffect(() => {
-    const acc = details()?.account;
+    const acc = details()?.parachainAccount;
 
     if (!acc) return;
 
@@ -113,7 +113,7 @@ const MainContainer = () => {
       // Set multisig details and address in omniway context
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
-        saturnContext.setters.setMultisigAddress(maybeDetails.account.toHuman());
+        saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       } else {
         console.error(`No details found for ID: ${ numericId }`);
       }
@@ -127,7 +127,7 @@ const MainContainer = () => {
 
   createEffect(() => {
     const name = multisigIdentity().name;
-    const address = details()?.account.toHuman();
+    const address = details()?.parachainAccount.toHuman();
 
     if (!address || name === "Multisig") {
       return;

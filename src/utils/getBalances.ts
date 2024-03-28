@@ -64,14 +64,14 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
       break;
     }
 
-    case NetworkEnum.KUSAMA: {
+    case NetworkEnum.ASSETHUB: {
       if (api.query.assets && api.query.assets.metadata) {
         const registryMap = await api.query.assets.metadata.entries();
         registryMap.reduce((acc: Record<string, string | FeeAsset | number>, [key, value]: [any, any]) => {
           const metadata = value.toJSON();
           const assetId = Number(key.toHuman());
           const symbol = hexToString(metadata.symbol);
-          if (!Number.isNaN(assetId) && symbol) {
+          if (!Number.isNaN(assetId) && (symbol === 'BILL' || symbol === 'BAILEGO')) {
             acc[symbol] = assetId;
           }
           return acc;
@@ -196,7 +196,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
 
         // query tokens
         if (api.query.assets) {
-          const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.KUSAMA, api);
+          const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.ASSETHUB, api);
           for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
             const tokens = await api.query.assets.account(assetId, address) as unknown as { balance: string, status: string; };
             const freeTokens = tokens.balance;

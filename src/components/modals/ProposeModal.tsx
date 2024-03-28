@@ -1,6 +1,6 @@
 import { Accessor, createEffect, createMemo, createSignal, Match, Show, Switch } from 'solid-js';
-import { FeeAsset } from '@invarch/saturn-sdk';
-import type { Call } from '@polkadot/types/interfaces';
+import { FeeAsset, MultisigCallResult } from '@invarch/saturn-sdk';
+import type { Call, DispatchResult } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
 import { useProposeContext, ProposalType, ProposeContextType, ProposalData } from "../../providers/proposeProvider";
@@ -207,20 +207,30 @@ export const proposeCall = async (props: IProposalProps) => {
 
       const localTransferCall = ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString()));
 
-      if (!preview) {
-        await localTransferCall.signAndSend(selected.account.address, { signer: selected.wallet.signer }, (result: ISubmittableResult) => {
-          modalContext.hideProposeModal();
-
-          if (result.isInBlock || result.isFinalized) {
-            console.log("Proposal submitted to chain: ", chain);
-            return;
-          }
-
-          if (result.isError) {
-            console.error("Error submitting proposal: ", result);
-            return;
-          }
+      const multisigCall = saturnContext.state.saturn
+        .buildMultisigCall({
+          id: saturnContext.state.multisigId,
+          call: localTransferCall,
+          proposalMetadata,
+          feeAsset: FeeAsset[feeAsset()] as unknown as FeeAsset,
         });
+
+      if (!preview) {
+        const result: MultisigCallResult = await multisigCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+
+        if (result && result.executionResult) {
+          const dispatchResult: DispatchResult = result.executionResult;
+
+          if (dispatchResult.isOk) {
+            console.log("Proposal submitted to chain: ", chain);
+          }
+
+          if (dispatchResult.isErr) {
+            console.error("Error submitting proposal: ", result);
+          }
+        }
+
+        modalContext.hideProposeModal();
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
