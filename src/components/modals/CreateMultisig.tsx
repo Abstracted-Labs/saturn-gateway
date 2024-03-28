@@ -188,8 +188,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     if (multisigParty && typeof multisigParty === 'object') {
       // loop through multisigParty and add vote weight for each member
       for (const [address, weight] of multisigParty) {
-        const votes = weight * 1000000;
-        innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, address));
+        if (address !== account.address) {
+          const votes = weight * 1000000;
+          innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, address));
+        }
       }
     }
 
