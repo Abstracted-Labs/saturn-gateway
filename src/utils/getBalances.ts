@@ -84,8 +84,8 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
 
     // NetworkEnum.TINKERNET
     default: {
-      assetRegistry[AssetEnum.TNKR] = FeeAsset.TNKR;
-      assetRegistry[AssetEnum.KSM] = FeeAsset.KSM;
+      assetRegistry[AssetEnum.TNKR] = FeeAsset.Native;
+      assetRegistry[AssetEnum.KSM] = FeeAsset.Relay;
       break;
     }
   }

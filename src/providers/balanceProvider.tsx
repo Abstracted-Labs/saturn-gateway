@@ -1,10 +1,8 @@
-import { createContext, useContext, JSX, createMemo, onCleanup, createEffect, createSignal, onMount } from 'solid-js';
+import { createContext, useContext, JSX, createMemo, createEffect, createSignal } from 'solid-js';
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
 import { useSaturnContext } from "./saturnProvider";
-import { useSelectedAccountContext } from './selectedAccountProvider';
 import { createStore } from 'solid-js/store';
 import { NetworkAssetBalance } from '../pages/Assets';
-import { createLocalStorage } from '@solid-primitives/storage';
 
 export interface BalanceContextType {
   balances: NetworkAssetBalance[];
@@ -17,13 +15,11 @@ const BalanceContext = createContext<BalanceContextType>();
 
 export function BalanceProvider(props: { children: JSX.Element; }) {
   const [balances, setBalances] = createStore<NetworkAssetBalance[]>([]);
-  const [sessionBalances, setSessionBalances, { remove }] = createLocalStorage<NetworkAssetBalance[]>({});
   const [loading, setLoading] = createSignal<boolean>(true);
 
   const saturnContext = useSaturnContext();
 
   const clearBalances = () => {
-    remove('omniwayBalances');
     setBalances([]);
   };
 
@@ -36,22 +32,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
       return;
     }
 
-    if (sessionBalances['omniwayBalances'] && !refetch) {
-      try {
-        const storedBalances = JSON.parse(sessionBalances['omniwayBalances']);
-        if (Array.isArray(storedBalances) && storedBalances.length > 0) {
-          setBalances(storedBalances);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing stored balances', error);
-        setLoading(false);
-      }
-    } else {
-      console.log('No stored balances found');
-    }
-
+    setLoading(true);
     try {
       const nb = await getBalancesFromAllNetworks(address);
       const remapped = Object.entries(nb).map(([network, assets]) => {
@@ -61,7 +42,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
       });
 
       setBalances(remapped as unknown as NetworkAssetBalance[]);
-      setSessionBalances('omniwayBalances', JSON.stringify(remapped));
       setLoading(false);
     } catch (error) {
       console.error('Error fetching balances', error);
@@ -83,9 +63,5 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
 }
 
 export function useBalanceContext() {
-  if (!BalanceContext) {
-    throw new Error("useBalanceContext must be used within a BalanceProvider");
-  }
-
   return useContext(BalanceContext);
 }
