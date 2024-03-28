@@ -56,12 +56,7 @@ export default function Management() {
           amount: memberBalance,
         });
 
-        const buildCall = saturn.buildMultisigCall({
-          id,
-          call: proposeCall.call,
-        });
-
-        const result = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+        const result = await proposeCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
 
         if (result.executionResult) {
           if (result.executionResult.isErr && result.executionResult.asErr) {
@@ -104,12 +99,7 @@ export default function Management() {
           amount: bnAmount,
         });
 
-        const buildCall = saturn.buildMultisigCall({
-          id,
-          call: proposeCall.call,
-        });
-
-        const result: MultisigCallResult = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+        const result: MultisigCallResult = await proposeCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
 
         if (result.executionResult) {
           if (result.executionResult.isOk) {
