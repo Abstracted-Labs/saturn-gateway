@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@hope-ui/solid": "^0.6.7",
-    "@invarch/saturn-sdk": "1.0.11",
+    "@invarch/saturn-sdk": "1.0.12",
     "@kiltprotocol/sdk-js": "^0.33.0",
     "@polkadot-onboard/core": "^1.1.0",
     "@polkadot-onboard/injected-wallets": "1.1.0",

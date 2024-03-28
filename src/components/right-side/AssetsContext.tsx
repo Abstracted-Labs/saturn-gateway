@@ -353,7 +353,7 @@ const AssetsContext = () => {
       ringApisContext,
       modalContext,
       message: () => '',
-      feeAsset: () => feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM,
+      feeAsset: () => feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay,
     };
 
     const paymentInfo = await proposeCall(proposalProps);

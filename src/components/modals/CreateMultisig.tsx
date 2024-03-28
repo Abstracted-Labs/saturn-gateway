@@ -173,7 +173,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const createMultisigResult = await saturn.createMultisig({
       minimumSupport: new BN(ms),
       requiredApproval: new BN(ra),
-      creationFeeAsset: feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM,
+      creationFeeAsset: feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay,
     }).signAndSend(account.address, wallet.signer);
 
     console.log("createMultisigResult: ", createMultisigResult);
@@ -252,7 +252,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           call,
         });
 
-        const result: MultisigCallResult = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.TNKR : FeeAsset.KSM);
+        const result: MultisigCallResult = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
 
         if (result.executionResult) {
           if (result.executionResult.isOk) {
