@@ -305,29 +305,31 @@ export default function Transactions() {
                   </div>
 
                   {/* Votes history */}
-                  <For each={Object.entries(pc.details.tally.records)}>
-                    {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
-                      const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
-                      return <div class='relative items-start flex shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12'>
-                        <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
-                          {vote.aye
-                            ? <img src={AyeIcon} />
-                            : <img src={NayIcon} />
-                          }
-                        </div>
-                        <div class='flex flex-col pt-2'>
-                          <div
-                            class='text-xs font-bold text-black dark:text-white'
-                          >
-                            {stringShorten(voter, 4)}
+                  <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12 h-32 overflow-y-scroll saturn-scrollbar'>
+                    <For each={Object.entries(pc.details.tally.records)}>
+                      {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
+                        const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
+                        return <div class="flex flex-row">
+                          <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
+                            {vote.aye
+                              ? <img src={AyeIcon} />
+                              : <img src={NayIcon} />
+                            }
                           </div>
-                          <div class="text-xxs text-saturn-lightgrey leading-none">
-                            {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                          <div class='flex flex-col pt-2'>
+                            <div
+                              class='text-xs font-bold text-black dark:text-white'
+                            >
+                              {stringShorten(voter, 4)}
+                            </div>
+                            <div class="text-xxs text-saturn-lightgrey leading-none">
+                              {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                            </div>
                           </div>
-                        </div>
-                      </div>;
-                    }}
-                  </For>
+                        </div>;
+                      }}
+                    </For>
+                  </div>
                 </div>
                 <div class="flex flex-row justify-between">
                   {/* Vote breakdown */}
