@@ -53,6 +53,7 @@ const allTheNetworks = (): Record<string, JSXElement> => ({
   [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
   [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
   [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
+  [NetworkEnum.ASSETHUB]: getNetworkBlock(NetworkEnum.ASSETHUB),
 });
 
 const allTheAssets = (): Record<string, JSXElement> => ({
@@ -61,6 +62,7 @@ const allTheAssets = (): Record<string, JSXElement> => ({
   [AssetEnum.DOT]: getAssetBlock(AssetEnum.DOT),
   [AssetEnum.BSX]: getAssetBlock(AssetEnum.BSX),
   [AssetEnum.PICA]: getAssetBlock(AssetEnum.PICA),
+  [AssetEnum.ASSETHUB]: getAssetBlock(AssetEnum.ASSETHUB),
 });
 
 const AssetsContext = () => {

@@ -54,6 +54,7 @@ export const AssetIconByCurrency: Record<string, string> = {
   PICA: PicassoIcon,
   KSM: KusamaIcon,
   DOT: PolkadotIcon,
+  ASSETHUB: KusamaAssetHubIcon,
 };
 
 export const NetworkIconByCurrency: Record<string, string[]> = {
@@ -62,6 +63,7 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   PICA: [PicassoIcon],
   KSM: [KusamaIcon, TinkernetIcon, BasiliskIcon, PicassoIcon, KusamaAssetHubIcon],
   DOT: [PolkadotIcon],
+  ASSETHUB: [KusamaAssetHubIcon],
 };
 
 export enum KusamaFeeAssetEnum {

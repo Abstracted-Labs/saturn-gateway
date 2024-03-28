@@ -67,6 +67,7 @@ export enum AssetEnum {
   PICA = 'PICA',
   KSM = 'KSM',
   DOT = 'DOT',
+  ASSETHUB = 'ASSETHUB',
 }
 
 export type NetworksByAssetType = Record<AssetEnum, NetworkEnum[]>;
@@ -77,6 +78,7 @@ export const NetworksByAsset: NetworksByAssetType = {
   PICA: [NetworkEnum.KUSAMA, NetworkEnum.PICASSO],
   KSM: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET, NetworkEnum.PICASSO],
   DOT: [NetworkEnum.POLKADOT],
+  ASSETHUB: [NetworkEnum.ASSETHUB],
 };
 
 export const RingAssets = {
