@@ -20,12 +20,12 @@ const RightContent = (props: { inDrawer: boolean; }) => {
         <Match when={currentPage().endsWith(`/${ PagesEnum.ASSETS }`)}>
           <AssetsContext />
         </Match>
-        <Match when={currentPage().endsWith(`/${ PagesEnum.TRANSACTIONS }`)}>
+        {/* <Match when={currentPage().endsWith(`/${ PagesEnum.TRANSACTIONS }`)}>
           <TransactionsContext />
-        </Match>
-        <Match when={currentPage().endsWith(`/${ PagesEnum.MANAGEMENT }`)}>
+        </Match> */}
+        {/* <Match when={currentPage().endsWith(`/${ PagesEnum.MANAGEMENT }`)}>
           <ManagementContext />
-        </Match>
+        </Match> */}
       </Switch>
     </div>
   </div>;
