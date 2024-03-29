@@ -33,9 +33,9 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const addMemberModalElement = () => document.getElementById(ADD_MEMBER_MODAL_ID);
   const createMultisigModalElement = () => document.getElementById(MULTISIG_MODAL_ID);
 
-  // onMount(() => {
-  //   initModals();
-  // });
+  onMount(() => {
+    initModals();
+  });
 
   createEffect(() => {
     const modal = multisigListModalElement();

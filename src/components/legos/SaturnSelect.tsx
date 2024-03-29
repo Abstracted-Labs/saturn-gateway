@@ -1,5 +1,6 @@
-import { JSX, JSXElement, children, createEffect, createMemo, createSignal, mergeProps } from 'solid-js';
+import { JSX, JSXElement, children, createEffect, createMemo, createSignal, mergeProps, onMount } from 'solid-js';
 import { BUTTON_COMMON_STYLE } from '../../utils/consts';
+import { initDropdowns } from 'flowbite';
 
 export type DropdownOptionsType = JSXElement | string | null | undefined | number;
 
@@ -22,6 +23,10 @@ const SaturnSelect = (props: SaturnSelectType) => {
   const isOpen = createMemo(() => mergedProps.isOpen);
   const kids = children(() => mergedProps.children);
   const isDisabled = createMemo(() => mergedProps.disabled || false);
+
+  onMount(() => {
+    initDropdowns();
+  });
 
   createEffect(() => {
     const active = isOpen();
