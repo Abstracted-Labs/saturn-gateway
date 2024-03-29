@@ -24,6 +24,7 @@ import { useMegaModal } from "../../providers/megaModalProvider";
 import { usePriceContext } from "../../providers/priceProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
 import { formatBalance } from "@polkadot/util";
+import { encodeNativeAddress } from "../../utils/encodeNativeAddress";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -222,7 +223,8 @@ const AssetsContext = () => {
     if (!isLoggedIn()) return;
     setBridgeToSelf(true);
     if (saContext.state.account?.address) {
-      setTargetAddress(saContext.state.account?.address);
+      const nativeAddress = encodeNativeAddress(saContext.state.account?.address, 117);
+      setTargetAddress(nativeAddress);
     }
   };
 
@@ -322,7 +324,9 @@ const AssetsContext = () => {
     }
 
     if (address) {
-      setTargetAddress(address);
+      const nativeAddress = encodeNativeAddress(address, 117);
+      console.log('nativeAddress', nativeAddress);
+      setTargetAddress(nativeAddress);
     }
   };
 
