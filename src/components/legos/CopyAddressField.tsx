@@ -1,14 +1,16 @@
 import { stringShorten } from "@polkadot/util";
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { createEffect, createMemo, createSignal, on } from "solid-js";
+import { encodeNativeAddress } from "../../utils/encodeNativeAddress";
 
 type CopyAddressFieldProps = { address: string | undefined; length: number; name?: string; isInModal?: boolean; };
 
 const CopyAddressField = (props: CopyAddressFieldProps) => {
   const [copied, setCopied] = createSignal<boolean>(false);
   const hasName = createMemo(() => props.name !== undefined);
+  const [encodedAddress, setEncodedAddress] = createSignal<string | undefined>(undefined);
 
-  function copyToClipboard(e: MouseEvent) {
+  const copyToClipboard = (e: MouseEvent) => {
     // Prevent the click event from bubbling up to the parent element
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -23,11 +25,18 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
     setTimeout(() => {
       setCopied(false);
     }, 3000);
-  }
+  };
+
+  createEffect(() => {
+    const address = props.address;
+    if (!address) return;
+    const nativeAddress = encodeNativeAddress(address, 117);
+    setEncodedAddress(nativeAddress);
+  });
 
   return <>
     <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
-      <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(props.address ?? '--', props.isInModal ? 16 : 5)}</span>
+      <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedAddress() ?? '--', props.isInModal ? 16 : 5)}</span>
       <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyToClipboard(e)}>
         {copied() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
         </span>}
