@@ -272,6 +272,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   };
 
   const handleSetActive = (crumb: string) => {
+    // 
     if (accessibleSteps().includes(crumb)) {
       setActive(crumb);
     }
@@ -280,21 +281,15 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const handleSetMultisigName = (e: any) => {
     // set multisig name
     try {
-      // first clear any previous errors
       setNameError('');
-      // throw an error if it's too long
-      if (e.target.value.length > 20) {
-        throw new Error('Multisig name cannot be longer than 20 characters.');
+      const value = e.target.value.replace(/[\r\n]+/gm, ""); // Remove line breaks
+      if (value.length > 25) {
+        throw new Error('Multisig name cannot be longer than 25 characters.');
       }
-      // throw an error if it's empty
-      if (e.target.value === '') {
+      if (value === '') {
         throw new Error('Multisig name cannot be empty.');
       }
-      // throw an error if it's not alphanumeric
-      if (!e.target.value.match(/^[a-z0-9]+$/i)) {
-        throw new Error('Multisig name must be alphanumeric (letters and numbers).');
-      }
-      setMultisigName(e.target.value);
+      setMultisigName(value);
     } catch (error) {
       console.error(error);
       setNameError((error as any).message);
@@ -302,6 +297,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   };
 
   const handleSetMinimumThreshold = (threshold: string) => {
+    // set minimum voting threshold
     if (threshold) {
       setMinimumThreshold(threshold);
       const totalMembers = members().length;
