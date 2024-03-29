@@ -23,6 +23,7 @@ import getProposalType from "../../utils/getProposalType";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import { usePriceContext } from "../../providers/priceProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
+import { formatBalance } from "@polkadot/util";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -153,9 +154,10 @@ const AssetsContext = () => {
       return;
     }
 
-    const amountPlank = new BigNumber(amount()).times(BigNumber('10').pow(
-      BigNumber(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0),
-    ));
+    const bnAmount = new BigNumber(amount()).times(BigNumber('10').pow(
+      BigNumber(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0),));
+
+    const amountPlank = new BigNumber(bnAmount.toString().split('.')[0]);
 
     // XcmTransfer: Handle bridging TNKR or KSM from Tinkernet to other chains.
     if (pair.from === NetworkEnum.TINKERNET && pair.to !== NetworkEnum.TINKERNET) {
@@ -328,7 +330,8 @@ const AssetsContext = () => {
     setLoadingFee(true);
 
     if (!targetAddress() || !asset() || !amount()) return;
-
+    const bnAmount = new BigNumber(amount().toString()).multipliedBy(new BigNumber('10').pow(Rings[finalNetworkPair().from as keyof typeof Rings]?.decimals ?? 0));
+    const finalAmount = new BigNumber(bnAmount.toString().split('.')[0]);
     const proposalProps = {
       preview: true,
       selectedAccountContext: saContext,
@@ -344,7 +347,7 @@ const AssetsContext = () => {
               chain: finalNetworkPair().from,
               destinationChain: finalNetworkPair().to,
               asset: asset(),
-              amount: new BigNumber(amount()).times(BigNumber('10').pow(BigNumber(Rings[finalNetworkPair().from as keyof typeof Rings]?.decimals ?? 0))),
+              amount: finalAmount,
               to: targetAddress(),
             }
           },

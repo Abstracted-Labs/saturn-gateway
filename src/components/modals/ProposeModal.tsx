@@ -194,7 +194,7 @@ export const proposeCall = async (props: IProposalProps) => {
       console.log("in LocalTransfer");
 
       const chain = (proposalData as { chain: string; }).chain;
-      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
+      const amount = (proposalData as { amount: BN | BigNumber; }).amount;
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
 
@@ -202,9 +202,9 @@ export const proposeCall = async (props: IProposalProps) => {
         console.error("Multisig address is undefined. Exiting early.");
         return;
       };
-
+      console.log('amount.toString()', amount.toString());
       const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-
+      console.log("Partial fee: ", partialFee);
       const localTransferCall = ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString()));
 
       const multisigCall = saturnContext.state.saturn
