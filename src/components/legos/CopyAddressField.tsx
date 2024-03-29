@@ -64,9 +64,9 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
     return <div class="flex flex-col gap-2">
       <div>
         <span class="text-xs">Native Parachain (Tinkernet)</span>
-        <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
+        <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs hover:cursor-copy" onClick={(e) => copyNativeToClipboard(e, encodedNativeAddress())}>
           <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedNativeAddress() ?? '--', 16)}</span>
-          <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyNativeToClipboard(e, encodedNativeAddress())}>
+          <span class={`ml-2 text-saturn-purple hover:opacity-50`}>
             {copiedNative() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
             </span>}
           </span>
@@ -74,9 +74,9 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
       </div>
       <div>
         <span class="text-xs">Relay Chain (Kusama)</span>
-        <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
+        <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs hover:cursor-copy" onClick={(e) => copyRelayToClipboard(e, encodedRelayAddress())}>
           <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedRelayAddress() ?? '--', 16)}</span>
-          <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyRelayToClipboard(e, encodedRelayAddress())}>
+          <span class={`ml-2 text-saturn-purple hover:opacity-50`}>
             {copiedRelay() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
             </span>}
           </span>
