@@ -30,7 +30,7 @@ import BigNumber from "bignumber.js";
 import { FeeAsset, MultisigCallResult } from "@invarch/saturn-sdk";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import debounce from "../../utils/debounce";
-import { encodeNativeAddress } from "../../utils/encodeNativeAddress";
+import { getEncodedAddress } from "../../utils/getEncodedAddress";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -417,7 +417,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const selected = selectedAccountContext.state;
     const address = selected.account?.address;
     if (address) {
-      const visualAddress = encodeNativeAddress(address, 117);
+      const visualAddress = getEncodedAddress(address, 117);
       setMembers([[visualAddress, 1]]);
     }
   };
@@ -456,7 +456,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     try {
       if (!isValidAddress) {
         const web3Name = await isValidKiltWeb3Name(inputValue);
-        addressFromWeb3Name = encodeNativeAddress(web3Name, 117);
+        addressFromWeb3Name = getEncodedAddress(web3Name, 117);
         isValidAddress = web3Name !== '';
       } else {
         setHasAddressError(current => current.filter(i => i !== memberIndex));

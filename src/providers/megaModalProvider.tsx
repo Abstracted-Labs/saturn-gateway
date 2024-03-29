@@ -5,6 +5,7 @@ import { MULTISIG_LIST_MODAL_ID } from '../components/left-side/MultisigList';
 import { FEE_ASSET_MODAL_ID } from '../components/modals/FeeAssetModal';
 import { PROPOSE_MODAL_ID } from '../components/modals/ProposeModal';
 import { ADD_MEMBER_MODAL_ID, MULTISIG_MODAL_ID } from '../components/left-side/AddMultisigButton';
+import { ADDRESS_SELECTOR_MODAL_ID } from '../components/modals/AddressSelectorModal';
 
 export type MegaModalContextType = {
   showMultisigListModal: () => void;
@@ -17,6 +18,8 @@ export type MegaModalContextType = {
   hideAddMemberModal: () => void;
   showCreateMultisigModal: () => void;
   hideCreateMultisigModal: () => void;
+  showAddressSelectorModal: () => void;
+  hideAddressSelectorModal: () => void;
 };
 
 const MegaModalContext = createContext<MegaModalContextType>();
@@ -27,11 +30,14 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const [proposedModalInstance, setProposedModalInstance] = createSignal<ModalInterface>();
   const [addMemberModalInstance, setAddMemberModalInstance] = createSignal<ModalInterface>();
   const [createMultisigModalInstance, setCreateMultisigModalInstance] = createSignal<ModalInterface>();
+  const [addressSelectorModalInstance, setAddressSelectorModalInstance] = createSignal<ModalInterface>();
+
   const multisigListModalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
   const feeAssetModalElement = () => document.getElementById(FEE_ASSET_MODAL_ID);
   const proposedModalElement = () => document.getElementById(PROPOSE_MODAL_ID);
   const addMemberModalElement = () => document.getElementById(ADD_MEMBER_MODAL_ID);
   const createMultisigModalElement = () => document.getElementById(MULTISIG_MODAL_ID);
+  const addressSelectorModalElement = () => document.getElementById(ADDRESS_SELECTOR_MODAL_ID);
 
   onMount(() => {
     initModals();
@@ -74,6 +80,14 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     if (createMultisigModalElement()) {
       const instance = new Modal(modal);
       setCreateMultisigModalInstance(instance);
+    }
+  });
+
+  createEffect(() => {
+    const modal = addressSelectorModalElement();
+    if (addressSelectorModalElement()) {
+      const instance = new Modal(modal);
+      setAddressSelectorModalInstance(instance);
     }
   });
 
@@ -157,6 +171,22 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   };
 
+  const showAddressSelectorModal = () => {
+    const instance = addressSelectorModalInstance();
+    if (instance) {
+      instance.init();
+      instance.show();
+    }
+  };
+
+  const hideAddressSelectorModal = () => {
+    const instance = addressSelectorModalInstance();
+    if (instance) {
+      instance.hide();
+      instance.destroy();
+    }
+  };
+
   const store = createMemo(() => ({
     showMultisigListModal,
     hideMultisigListModal,
@@ -168,6 +198,8 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     hideAddMemberModal,
     showCreateMultisigModal,
     hideCreateMultisigModal,
+    showAddressSelectorModal,
+    hideAddressSelectorModal,
   }));
 
   return (

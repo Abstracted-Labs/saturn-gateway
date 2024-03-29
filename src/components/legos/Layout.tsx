@@ -9,6 +9,7 @@ import { Portal } from "solid-js/web";
 import CreateMultisig, { MULTISIG_CRUMB_TRAIL } from "../modals/CreateMultisig";
 import MultisigListModal from "../modals/MultisigListModal";
 import FeeAssetModal from "../modals/FeeAssetModal";
+import AddressSelectorModal from "../modals/AddressSelectorModal";
 
 const Layout = ({ children }: { children: any; }) => {
   const loc = useLocation();
@@ -39,6 +40,9 @@ const Layout = ({ children }: { children: any; }) => {
     </Portal>
     <Portal mount={document.getElementById('addMemberWindow') || undefined}>
       <CreateMultisig limitSteps={[MULTISIG_CRUMB_TRAIL[2], MULTISIG_CRUMB_TRAIL[4]]} />
+    </Portal>
+    <Portal mount={document.getElementById('addressSelectorWindow') || undefined}>
+      <AddressSelectorModal />
     </Portal>
 
     {/* Top nav */}

@@ -1,10 +1,15 @@
-import { createContext, createMemo, useContext } from "solid-js";
+import { JSX, createContext, createMemo, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { createLocalStorage } from "@solid-primitives/storage";
 import { Account, BaseWallet } from "@polkadot-onboard/core";
 import { KusamaFeeAssetEnum, WalletNameEnum } from "../utils/consts";
 
-export interface SelectedAccountState { account?: Account; wallet?: BaseWallet; feeAsset?: KusamaFeeAssetEnum; }
+export interface SelectedAccountState {
+  account?: Account;
+  wallet?: BaseWallet;
+  feeAsset?: KusamaFeeAssetEnum;
+  addressToCopy?: JSX.Element;
+}
 
 export const SelectedAccountContext = createContext<{
   state: SelectedAccountState,
@@ -35,6 +40,14 @@ export function SelectedAccountProvider(props: any) {
         }
       },
 
+      setAddressToCopy(address: string) {
+        setState("addressToCopy", address);
+      },
+
+      getAddressToCopy() {
+        return state.addressToCopy;
+      },
+
       setSelected(account: Account, wallet: BaseWallet) {
         try {
           if (account && wallet) {
@@ -63,9 +76,7 @@ export function SelectedAccountProvider(props: any) {
       clearSelected() {
         // console.log("Clearing selected account...");
         // if (state.account) setState("account", undefined);
-        console.log("Clearing selected wallet...");
         if (state.wallet) setState("wallet", undefined);
-        console.log("Clearing selected account storage...");
         remove('selectedAccount');
         setStorageState("selectedAccount", JSON.stringify({ address: '', wallet: '' }));
       }

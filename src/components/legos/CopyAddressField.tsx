@@ -1,45 +1,96 @@
 import { stringShorten } from "@polkadot/util";
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { createEffect, createMemo, createSignal, on } from "solid-js";
-import { encodeNativeAddress } from "../../utils/encodeNativeAddress";
+import { getEncodedAddress } from "../../utils/getEncodedAddress";
+import { useMegaModal } from "../../providers/megaModalProvider";
+import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 
 type CopyAddressFieldProps = { address: string | undefined; length: number; name?: string; isInModal?: boolean; };
 
 const CopyAddressField = (props: CopyAddressFieldProps) => {
-  const [copied, setCopied] = createSignal<boolean>(false);
-  const hasName = createMemo(() => props.name !== undefined);
-  const [encodedAddress, setEncodedAddress] = createSignal<string | undefined>(undefined);
+  const modal = useMegaModal();
+  const saContext = useSelectedAccountContext();
 
-  const copyToClipboard = (e: MouseEvent) => {
-    // Prevent the click event from bubbling up to the parent element
+  const [copiedNative, setCopiedNative] = createSignal<boolean>(false);
+  const [copiedRelay, setCopiedRelay] = createSignal<boolean>(false);
+  const hasName = createMemo(() => props.name !== undefined);
+  const [encodedNativeAddress, setEncodedNativeAddress] = createSignal<string | undefined>(undefined);
+  const [encodedRelayAddress, setEncodedRelayAddress] = createSignal<string | undefined>(undefined);
+
+  const copyNativeToClipboard = (e: MouseEvent, address: string | undefined) => {
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    // Copy the address to the clipboard
-    navigator.clipboard.writeText(props.address ?? '--');
+    navigator.clipboard.writeText(address ?? '--');
 
-    // Set the copiedIndex state to the index of the copied item
-    setCopied(true);
+    setCopiedNative(true);
 
-    // Revert the isCopied state back to false after 5 seconds
     setTimeout(() => {
-      setCopied(false);
+      setCopiedNative(false);
     }, 3000);
+  };
+
+  const copyRelayToClipboard = (e: MouseEvent, address: string | undefined) => {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    navigator.clipboard.writeText(address ?? '--');
+
+    setCopiedRelay(true);
+
+    setTimeout(() => {
+      setCopiedRelay(false);
+    }, 3000);
+  };
+
+  const openAddressSelectorModal = () => {
+    modal.showAddressSelectorModal();
   };
 
   createEffect(() => {
     const address = props.address;
     if (!address) return;
-    const nativeAddress = encodeNativeAddress(address, 117);
-    setEncodedAddress(nativeAddress);
+
+    const nativeAddress = getEncodedAddress(address, 117);
+    setEncodedNativeAddress(nativeAddress);
+
+    const relayAddress = getEncodedAddress(address, 2);
+    setEncodedRelayAddress(relayAddress);
+
+    saContext.setters.setAddressToCopy(<ModalAddressSelector></ModalAddressSelector>);
   });
+
+  const ModalAddressSelector = () => {
+    return <div class="flex flex-col gap-2">
+      <div>
+        <span class="text-xs">Native Parachain</span>
+        <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
+          <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedNativeAddress() ?? '--', 16)}</span>
+          <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyNativeToClipboard(e, encodedNativeAddress())}>
+            {copiedNative() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
+            </span>}
+          </span>
+        </div>
+      </div>
+      <div>
+        <span class="text-xs">Relay Chain</span>
+        <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
+          <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedRelayAddress() ?? '--', 16)}</span>
+          <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyRelayToClipboard(e, encodedRelayAddress())}>
+            {copiedRelay() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
+            </span>}
+          </span>
+        </div>
+      </div>
+    </div>;
+  };
 
   return <>
     <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
-      <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedAddress() ?? '--', props.isInModal ? 16 : 5)}</span>
-      <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyToClipboard(e)}>
-        {copied() ? <span class="text-[8px]">Copied!</span> : <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
-        </span>}
+      <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedNativeAddress() ?? '--', props.isInModal ? 16 : 5)}</span>
+      <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={openAddressSelectorModal}>
+        <span><img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
+        </span>
       </span>
     </div>
   </>;
