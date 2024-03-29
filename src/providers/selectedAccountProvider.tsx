@@ -1,6 +1,6 @@
-import { batch, createContext, createMemo, useContext } from "solid-js";
-import { createStore, reconcile } from "solid-js/store";
-import { StorageObject, createLocalStorage } from "@solid-primitives/storage";
+import { createContext, createMemo, useContext } from "solid-js";
+import { createStore } from "solid-js/store";
+import { createLocalStorage } from "@solid-primitives/storage";
 import { Account, BaseWallet } from "@polkadot-onboard/core";
 import { KusamaFeeAssetEnum, WalletNameEnum } from "../utils/consts";
 
