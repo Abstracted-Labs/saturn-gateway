@@ -63,7 +63,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
   const ModalAddressSelector = () => {
     return <div class="flex flex-col gap-2">
       <div>
-        <span class="text-xs">Native Parachain</span>
+        <span class="text-xs">Native Parachain (Tinkernet)</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
           <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedNativeAddress() ?? '--', 16)}</span>
           <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyNativeToClipboard(e, encodedNativeAddress())}>
@@ -73,7 +73,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
         </div>
       </div>
       <div>
-        <span class="text-xs">Relay Chain</span>
+        <span class="text-xs">Relay Chain (Kusama)</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs">
           <span class="mx-2 truncate ellipsis">{hasName() ? props.name : stringShorten(encodedRelayAddress() ?? '--', 16)}</span>
           <span class={`ml-2 text-saturn-purple hover:opacity-50 hover:cursor-copy`} onClick={(e) => copyRelayToClipboard(e, encodedRelayAddress())}>
