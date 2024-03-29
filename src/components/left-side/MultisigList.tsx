@@ -44,7 +44,6 @@ const MultisigList = (props: MultisigListProps) => {
   const [activeButton, setActiveButton] = createSignal<number | null>(null);
   const [multisigItems, setMultisigItems] = createSignal<MultisigItem[]>([]);
   const [originalOrder, setOriginalOrder] = createSignal<MultisigItem[]>([]);
-  const [copiedIndex, setCopiedIndex] = createSignal<number | null>(null);
   const [mutateButton, setMutateButton] = createSignal(false);
   const [loading, setLoading] = createSignal<boolean>(true);
 
@@ -110,10 +109,10 @@ const MultisigList = (props: MultisigListProps) => {
     }
 
     // Reset the scroll position
-    // const scrollContainer = scrollContainerRef;
-    // if (scrollContainer instanceof HTMLDivElement) {
-    //   scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    // }
+    const scrollContainer = scrollContainerRef;
+    if (scrollContainer instanceof HTMLDivElement) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const closeLeftDrawer = () => {
@@ -125,22 +124,6 @@ const MultisigList = (props: MultisigListProps) => {
 
   const setScrollContainerRef = (ref: HTMLDivElement | null) => {
     scrollContainerRef = ref;
-  };
-
-  const copyAddressToClipboard = (e: MouseEvent, selectedAddress: string, index: number) => {
-    // Prevent the click event from bubbling up to the parent element
-    e.stopPropagation();
-
-    // Copy the address to the clipboard
-    navigator.clipboard.writeText(selectedAddress);
-
-    // Set the copiedIndex state to the index of the copied item
-    setCopiedIndex(index);
-
-    // Revert the isCopied state back to false after 5 seconds
-    setTimeout(() => {
-      setCopiedIndex(null);
-    }, 3000);
   };
 
   createEffect(on(getMultisigId, () => {
@@ -244,9 +227,6 @@ const MultisigList = (props: MultisigListProps) => {
 
         // Reset multisigItems state in Saturn context
         saturnContext.setters.setMultisigItems([]);
-
-        // Redirect to the create multisig page
-        // navigate('/assets', { replace: true });
       }
 
       setLoading(false);
@@ -268,29 +248,29 @@ const MultisigList = (props: MultisigListProps) => {
     }
   });
 
-  /* createEffect(() => {
-   *   const updatedItems = Array(10).fill(null).map((item, index) => {
-   *     const name = `John Doe ${ index + 1 }`; // Example name for testing
-   *     const address = randomAsHex(32); // Example address for testing
-   *     const copyIcon = <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />;
-  
-   *     // Defensive code to handle empty or undefined name
-   *     const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
-  
-   *     return {
-   *       address,
-   *       capitalizedFirstName,
-   *       copyIcon
-   *     };
-   *   });
-  
-   *   setMultisigItems(updatedItems);
-  
-   *   // Set the activeButton to the address of the first item
-   *   if (updatedItems.length > 0) {
-   *     setActiveButton(updatedItems[0].address);
-   *   }
-   * }); */
+  // createEffect(() => {
+  //   const id = activeButton();
+  //   if (id !== null && originalOrder().find(item => item.id === id) === undefined) {
+  //     const selectedItem = originalOrder().find(item => item.id === id);
+  //     if (selectedItem) {
+  //       const updatedItems: MultisigItem[] = [selectedItem, ...originalOrder().filter(item => item.id !== id)];
+  //       setMultisigItems(updatedItems);
+  //     }
+  //   }
+  // });
+
+  createEffect(on(activeButton, (id) => {
+    console.log(`Active button ID: ${ id }`);
+    if (id !== null) {
+      const selectedItem = originalOrder().find(item => item.id === id);
+      console.log(`Selected item:`, selectedItem);
+      if (selectedItem) {
+        const updatedItems: MultisigItem[] = [selectedItem, ...originalOrder().filter(item => item.id !== id)];
+        console.log(`Updated items:`, updatedItems);
+        setMultisigItems(updatedItems);
+      }
+    }
+  }));
 
   onCleanup(() => {
     // Clean up the scrollContainerRef when the component is unmounted
