@@ -1,8 +1,6 @@
-import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on, onMount } from 'solid-js';
-import { getBalancesFromAllNetworks } from '../utils/getBalances';
+import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on } from 'solid-js';
 import { AssetEnum, NetworksByAsset, Rings } from '../data/rings';
-import { useSaturnContext } from "../providers/saturnProvider";
-import type { BalanceType, NetworkBalances, ResultBalances } from "../utils/getBalances";
+import type { BalanceType } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
 import { getAssetIcon } from '../utils/getAssetIcon';
 import { getNetworkIcon } from '../utils/getNetworkIcon';
@@ -10,7 +8,6 @@ import { FALLBACK_TEXT_STYLE, NetworkEnum } from '../utils/consts';
 import BigNumber from 'bignumber.js';
 import { createStore } from 'solid-js/store';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
-import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { usePriceContext } from '../providers/priceProvider';
 import { useBalanceContext } from '../providers/balanceProvider';
 
@@ -30,15 +27,8 @@ export default function Assets() {
   const [usdPrices, setUsdPrices] = createStore<Record<string, string>>({});
 
   const balanceContext = useBalanceContext();
-  const saturnContext = useSaturnContext();
-  const saContext = useSelectedAccountContext();
   const priceContext = usePriceContext();
 
-  const saturnState = createMemo(() => saturnContext.state);
-  const accountState = createMemo(() => saContext.state);
-  const getMultisigAddress = createMemo(() => saturnState().multisigAddress);
-  const getMultisigId = createMemo(() => saturnState().multisigId);
-  const getAccountAddress = createMemo(() => accountState().account?.address);
   const getUsdPrices = createMemo(() => priceContext.prices);
 
   const convertAssetTotalToUsd = async (asset: AssetEnum, network: NetworkEnum, total: string) => {
@@ -101,6 +91,8 @@ export default function Assets() {
   });
 
   createEffect(() => {
+    setLoading(true);
+    setBalances([]);
     const allBalances = balanceContext?.balances;
     const isLoading = balanceContext?.loading;
 

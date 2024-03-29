@@ -1,4 +1,4 @@
-import { createContext, useContext, JSX, createMemo, createEffect, createSignal } from 'solid-js';
+import { createContext, useContext, JSX, createMemo, createEffect, createSignal, onCleanup } from 'solid-js';
 import { getBalancesFromAllNetworks } from '../utils/getBalances';
 import { useSaturnContext } from "./saturnProvider";
 import { createStore } from 'solid-js/store';
@@ -51,6 +51,10 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
 
   createEffect(() => {
     fetchBalances();
+  });
+
+  onCleanup(() => {
+    clearBalances();
   });
 
   const value = createMemo(() => ({ balances, loading: loading(), clearBalances, fetchBalances }));
