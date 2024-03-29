@@ -79,6 +79,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const [coreCreationFee, setCoreCreationFee] = createSignal<string>("100");
   const [tnkrBalance, setTnkrBalance] = createSignal<string>("0");
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
+  const [minimumThreshold, setMinimumThreshold] = createSignal<string>('1');
 
   const getCurrentStep = () => {
     // get current step in crumb trail
@@ -297,6 +298,15 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     } catch (error) {
       console.error(error);
       setNameError((error as any).message);
+    }
+  };
+
+  const handleSetMinimumThreshold = (threshold: string) => {
+    if (threshold) {
+      setMinimumThreshold(threshold);
+      const totalMembers = members().length;
+      const thresholdPercentage = totalMembers > 0 ? (parseInt(threshold) / totalMembers) * 100 : 0;
+      setMinimumSupportField(thresholdPercentage.toFixed(0));
     }
   };
 
@@ -809,20 +819,35 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const STEP_4_VOTE_THRESHOLD = () => (
     <div class="text-black dark:text-white" id={MULTISIG_CRUMB_TRAIL[3]}>
       <div class={SECTION_TEXT_STYLE}>Now, set the voting thresholds.</div>
-      <p class="text-xs/none">Minimum support is the minimum number of votes required to pass a proposal.</p>
-      {multisigType() === MultisigEnum.GOVERNANCE && <p class="text-xs/none mt-3">Required approval is the minimum number of votes required to approve a proposal.</p>}
-      <div class="flex flex-row items-center justify-start gap-2 sm:gap-5 my-4">
-        <div class="flex flex-row items-center gap-1">
-          <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Minimum Support (%)</label>
-          <SaturnNumberInput isMultisigUi label="minimumSupport" initialValue={minimumSupportField()} currentValue={(support) => setMinimumSupportField(support)} min={1} max={100} />
-        </div>
-        <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
-          <div class="flex flex-row items-center gap-1">
-            <label for="requiredApproval" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Required Approval (%)</label>
-            <SaturnNumberInput isMultisigUi label="requiredApproval" disabled={multisigType() === MultisigEnum.TRADITIONAL} initialValue={requiredApprovalField()} currentValue={(approval) => setRequiredApprovalField(approval)} min={1} max={100} />
+      <Show when={multisigType() === MultisigEnum.TRADITIONAL}>
+        <div>
+          <p class="text-xs/none">Minimum threshold is the number of votes required to execute a proposal.</p>
+          <div class="flex flex-row items-center justify-start gap-2 sm:gap-5 my-4">
+            <div class="flex flex-row items-center gap-1">
+              <SaturnNumberInput isMultisigUi label="minimumThreshold" initialValue={minimumThreshold()} currentValue={(threshold) => handleSetMinimumThreshold(threshold)} min={1} max={members().length} />
+              <label for="minimumThreshold" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>
+                {`${ minimumThreshold() } vote${ minimumThreshold() === '1' ? '' : 's' } from ${ members().length } member${ members().length === 1 ? '' : 's' }`}
+              </label>
+            </div>
           </div>
-        </Show>
-      </div>
+        </div>
+      </Show>
+      <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
+        <div>
+          <p class="text-xs/none">Minimum support is the smallest amount of votes needed to pass a proposal.</p>
+          <p class="text-xs/none mt-3">Required approval is the percentage of members needed to execute a proposal.</p>
+          <div class="flex flex-row items-center justify-start gap-2 sm:gap-5 my-4">
+            <div class="flex flex-row items-center gap-1">
+              <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Minimum Support (%)</label>
+              <SaturnNumberInput isMultisigUi label="minimumSupport" initialValue={minimumSupportField()} currentValue={(support) => setMinimumSupportField(support)} min={1} max={100} />
+            </div>
+            <div class="flex flex-row items-center gap-1">
+              <label for="requiredApproval" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Required Approval (%)</label>
+              <SaturnNumberInput isMultisigUi label="requiredApproval" disabled={multisigType() === MultisigEnum.TRADITIONAL} initialValue={requiredApprovalField()} currentValue={(approval) => setRequiredApprovalField(approval)} min={1} max={100} />
+            </div>
+          </div>
+        </div>
+      </Show>
     </div>
   );
 
