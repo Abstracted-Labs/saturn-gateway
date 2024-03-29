@@ -89,7 +89,7 @@ const MultisigList = (props: MultisigListProps) => {
     } catch (error) {
       console.error("Failed to fetch multisig details:", error);
     } finally {
-      navigate(`/${ id }/management`, { replace: true });
+      navigate(`/${ id }/assets`, { replace: true });
 
       // Remove the selected item from the list and update the selected item
       const selectedItem = originalOrder()[index];
@@ -259,18 +259,20 @@ const MultisigList = (props: MultisigListProps) => {
   //   }
   // });
 
-  createEffect(on(activeButton, (id) => {
-    console.log(`Active button ID: ${ id }`);
-    if (id !== null) {
-      const selectedItem = originalOrder().find(item => item.id === id);
-      console.log(`Selected item:`, selectedItem);
-      if (selectedItem) {
-        const updatedItems: MultisigItem[] = [selectedItem, ...originalOrder().filter(item => item.id !== id)];
-        console.log(`Updated items:`, updatedItems);
-        setMultisigItems(updatedItems);
-      }
-    }
-  }));
+  // createEffect(on(activeButton, (id) => {
+  //   if (id !== null) {
+  //     const currentOrder = multisigItems();
+  //     const selectedItemIndex = currentOrder.findIndex(item => item.id === id);
+  //     if (selectedItemIndex > 0) { // Ensures the selected item is not already the first item
+  //       const selectedItem = currentOrder[selectedItemIndex];
+  //       const updatedItems = [selectedItem, ...currentOrder.filter((_, index) => index !== selectedItemIndex)];
+  //       setMultisigItems(updatedItems);
+  //     } else if (selectedItemIndex === -1) { // If the item is not found in the current list, it might need fetching or a different handling
+  //       console.log(`Selected item with ID ${ id } not found in the current list.`);
+  //       // Handle the case where the selected item is not in the list, if necessary
+  //     }
+  //   }
+  // }));
 
   onCleanup(() => {
     // Clean up the scrollContainerRef when the component is unmounted
