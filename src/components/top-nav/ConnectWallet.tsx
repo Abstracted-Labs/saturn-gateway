@@ -72,9 +72,9 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
     megaModal.showFeeAssetModal();
   };
 
-  onMount(() => {
-    initModals();
-  });
+  // onMount(() => {
+  //   initModals();
+  // });
 
   createEffect(() => {
     const selectedAsset = selectedAccount.setters.getFeeAsset() as KusamaFeeAssetEnum;

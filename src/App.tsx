@@ -20,7 +20,7 @@ import { Web3WalletTypes, IWeb3Wallet, Web3Wallet } from '@walletconnect/web3wal
 import { setupSaturnConnect } from './utils/setupSaturnConnect';
 import { NetworkEnum, WC_PROJECT_ID, WalletNameEnum, toWalletAccount } from './utils/consts';
 import { WalletConnectConfiguration, WalletConnectProvider as WcProvider, WcAccount } from '@polkadot-onboard/wallet-connect';
-import { initDrawers } from 'flowbite';
+import { initDrawers, initFlowbite } from 'flowbite';
 import NotFound from './pages/NotFound';
 import { MegaModalProvider, useMegaModal } from './providers/megaModalProvider';
 import { InjectedWalletProvider } from '@polkadot-onboard/injected-wallets';
@@ -156,7 +156,7 @@ const HomePlanet: Component = () => {
   };
 
   onMount(() => {
-    initDrawers();
+    initFlowbite();
   });
 
   onMount(() => {

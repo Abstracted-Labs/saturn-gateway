@@ -368,21 +368,21 @@ const AssetsContext = () => {
     setLoadingFee(false);
   };
 
-  onMount(() => {
-    initDropdowns();
-  });
+  // createEffect(() => {
+  //   initDropdowns();
+  // });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(fromDropdownElement(), fromToggleElement(), options);
     setDropdownFrom(instance);
   });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(toDropdownElement(), toToggleElement(), options);
     setDropdownTo(instance);
   });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(assetDropdownElement(), assetToggleElement(), assetOptions);
     setDropdownAsset(instance);
   });
@@ -430,7 +430,7 @@ const AssetsContext = () => {
     }
   }));
 
-  createEffect(on([() => finalNetworkPair().from, balances, asset], () => {
+  createEffect(() => {
     // Setting the max asset amount based on the selected asset
     const currentNetwork = finalNetworkPair().from;
     const currentAsset = asset();
@@ -455,7 +455,7 @@ const AssetsContext = () => {
         setMaxAssetAmount(null);
       }
     }
-  }));
+  });
 
   createEffect(() => {
     setIsLoggedIn(!!saContext.state.account?.address);

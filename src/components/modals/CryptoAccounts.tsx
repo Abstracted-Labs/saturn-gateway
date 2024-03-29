@@ -127,8 +127,8 @@ const CryptoAccounts = () => {
     }
   };
 
-  onMount(() => {
-    initModals();
+  createEffect(() => {
+    // initModals();
     const instance = $modalElement();
     modal = new Modal(instance);
 

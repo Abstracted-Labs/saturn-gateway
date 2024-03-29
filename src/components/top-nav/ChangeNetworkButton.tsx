@@ -70,8 +70,8 @@ const ChangeNetworkButton = () => {
     }
   }
 
-  onMount(() => {
-    initDropdowns();
+  createEffect(() => {
+    // initDropdowns();
     dropdown = new Dropdown($dropdown(), $toggle(), networkOptions);
   });
 

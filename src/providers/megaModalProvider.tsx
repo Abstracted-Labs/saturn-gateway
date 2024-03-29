@@ -33,11 +33,11 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const addMemberModalElement = () => document.getElementById(ADD_MEMBER_MODAL_ID);
   const createMultisigModalElement = () => document.getElementById(MULTISIG_MODAL_ID);
 
-  onMount(() => {
-    initModals();
-  });
+  // onMount(() => {
+  //   initModals();
+  // });
 
-  onMount(() => {
+  createEffect(() => {
     const modal = multisigListModalElement();
     if (multisigListModalElement()) {
       const instance = new Modal(modal);
@@ -45,7 +45,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   });
 
-  onMount(() => {
+  createEffect(() => {
     const modal = feeAssetModalElement();
     if (feeAssetModalElement()) {
       const instance = new Modal(modal);
@@ -53,7 +53,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   });
 
-  onMount(() => {
+  createEffect(() => {
     const modal = proposedModalElement();
     if (proposedModalElement()) {
       const instance = new Modal(modal);
@@ -61,7 +61,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   });
 
-  onMount(() => {
+  createEffect(() => {
     const modal = addMemberModalElement();
     if (addMemberModalElement()) {
       const instance = new Modal(modal);
@@ -69,7 +69,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   });
 
-  onMount(() => {
+  createEffect(() => {
     const modal = createMultisigModalElement();
     if (createMultisigModalElement()) {
       const instance = new Modal(modal);

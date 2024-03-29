@@ -48,11 +48,11 @@ const FeeAssetModal = () => {
     }
   };
 
-  onMount(() => {
-    initDropdowns();
-  });
+  // createEffect(() => {
+  //   initDropdowns();
+  // });
 
-  onMount(() => {
+  createEffect(() => {
     const instance = new Dropdown(feeDropdownElement(), feeToggleElement(), dropdownOptions);
     setFeeDropdown(instance);
   });
