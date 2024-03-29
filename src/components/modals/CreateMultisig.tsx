@@ -662,14 +662,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
   });
 
-  createEffect(on(members, () => {
+  createEffect(on([multisigModalType, getCurrentStep, accessibleSteps], () => {
     // When navigating away from the members step, clear members with blank addresses
-    if (getCurrentStep() !== (multisigModalType() === ADD_MEMBER_MODAL_ID ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[2]) && members().length > 1) {
+    if (getCurrentStep() !== (multisigModalType() === ADD_MEMBER_MODAL_ID ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[2])) {
       const filteredMembers = members().filter(([address, _], index) => {
-        // return !hasAddressError().includes(index) && address !== '';
         return address !== '';
       });
-      console.log('filteredMembers: ', filteredMembers);
       setMembers(filteredMembers);
 
       // Reset the error state as well
@@ -772,7 +770,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
               const shouldShow = () => {
                 if (multisigModalType() === ADD_MEMBER_MODAL_ID && index() === 0) {
                   return false;
-                } else if (multisigModalType() === MULTISIG_MODAL_ID && address === selectedState().account?.address) {
+                } else if (multisigModalType() === MULTISIG_MODAL_ID && index() === 0) {
                   return false;
                 }
                 return true;
@@ -857,7 +855,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       <dl class="mt-2 text-xs final-checklist max-h-[200px] overflow-y-scroll saturn-scrollbar pr-3">
         <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
           <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
-            <dt class="text-xxs text-right w-24 mr-5">Name <ToCrumb crumb="Choose a Name" /></dt>
+            <dt class="text-xxs text-right w-24 mr-5">Name <ToCrumb crumb="Choose Name" /></dt>
             <dd class="text-black dark:text-white">{multisigName()}</dd>
           </div>
         </Show>
@@ -884,10 +882,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         </div>
         <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
           <div class="flex flex-row items-center place-items-stretch pb-4 text-saturn-lightgrey">
-            <dt class="text-xxs text-right w-24 mr-5">Thresholds <ToCrumb crumb="Set Voting Thresholds" /></dt>
+            <dt class="text-xxs text-right w-24 mr-5">Thresholds <ToCrumb crumb="Set Thresholds" /></dt>
             <dd>
               <div>
-                <span class="text-saturn-lightgrey text-xxs">Minimum Support:
+                <span class="text-saturn-lightgrey text-xxs">
+                  {multisigType() === MultisigEnum.TRADITIONAL ? "Minimum Threshold:" : "Minimum Support:"}
                   <span class="text-black dark:text-white ml-2 text-xs float-right">
                     {minimumSupportField()}%
                   </span>
@@ -1007,7 +1006,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
                     <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || notEnoughBalance() || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || (inReviewStep() && notEnoughBalance()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
                   </div>
                 </div>
               </Show>
