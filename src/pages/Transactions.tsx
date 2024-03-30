@@ -20,6 +20,7 @@ import NayIcon from '../assets/icons/nay-icon-17x17.svg';
 import SaturnProgress from '../components/legos/SaturnProgress';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { SubmittableResult } from '@polkadot/api';
+import { getEncodedAddress } from '../utils/getEncodedAddress';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -37,9 +38,10 @@ export default function Transactions() {
   const selectedAccountContext = useSelectedAccountContext();
   const loc = useLocation();
   const multisigHashId = loc.pathname.split('/')[1];
+  const encodedAddress = createMemo(() => getEncodedAddress(selectedAccountContext.state.account?.address || '', 117));
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
-  const hasVoted = createMemo(() => pendingProposals().some(pc => Object.keys(pc.details.tally.records).includes(selectedAccountContext.state.account?.address || '')));
+  const hasVoted = createMemo(() => pendingProposals().some(pc => Object.keys(pc.details.tally.records).includes(encodedAddress())));
 
   const totalVotes = (records: ParsedTallyRecords): number => {
     let total = 0;
@@ -114,9 +116,7 @@ export default function Transactions() {
       return;
     }
 
-    const isVoter = Object.keys(pc.details.tally.records).includes(selectedAccountAddress);
-
-    if (!isVoter) {
+    if (!hasVoted()) {
       console.error('Selected account is not a voter for this proposal');
       return;
     }
