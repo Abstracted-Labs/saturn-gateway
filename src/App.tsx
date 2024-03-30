@@ -243,12 +243,11 @@ const HomePlanet: Component = () => {
 
     const runAsync = async () => {
       const current = getSelectedStorage();
-      // Get all available accounts
       if (current && walletAggregator) {
         const { address, wallet } = current;
+        const enabledExtensions = selectedAccountContext.state.enabledExtensions;
         const wallets = await walletAggregator.getWallets();
         const matchedWallet = wallets.find((w) => {
-          // Handle WalletConnect id differently
           if (wallet === WalletNameEnum.WALLETCONNECT) {
             return w.metadata.id === wallet;
           } else {
@@ -256,16 +255,14 @@ const HomePlanet: Component = () => {
           }
         });
 
-        if (matchedWallet) {
-          // prevent certain wallets from connecting
+        if (matchedWallet && enabledExtensions && (enabledExtensions.includes(matchedWallet.metadata.id) || (matchedWallet.metadata.id === WalletNameEnum.NOVAWALLET && enabledExtensions.includes(WalletNameEnum.PJS)))) {
           if (matchedWallet.metadata.id !== WalletNameEnum.CRUSTWALLET &&
             matchedWallet.metadata.id !== WalletNameEnum.WALLETCONNECT &&
             matchedWallet.metadata.id !== WalletNameEnum.SPORRAN) {
             await matchedWallet.connect();
           }
 
-          if (matchedWallet.metadata && matchedWallet.metadata.id === WalletNameEnum.WALLETCONNECT) {
-            // If WalletConnect, check for last active session and autoConnect
+          if (matchedWallet.metadata.id === WalletNameEnum.WALLETCONNECT) {
             const client = wcContext.state.w3w;
             if (!client) return;
             const sessions = client.getActiveSessions();
@@ -302,22 +299,6 @@ const HomePlanet: Component = () => {
 
     runAsync();
   }));
-
-  // createEffect(() => {
-  //   const checkMultisigsExist = async () => {
-  //     const sat = saturnContext.state.saturn;
-  //     const address = selectedAccountContext.state.account?.address;
-
-  //     if (!sat || !address) {
-  //       return;
-  //     }
-
-  //     const multisigs = await getMultisigsForAccount(address, sat.api);
-  //     setHasMultisigs(multisigs.length > 0);
-  //   };
-
-  //   checkMultisigsExist();
-  // });
 
   createEffect(() => {
     const loggedIn = isLoggedIn();

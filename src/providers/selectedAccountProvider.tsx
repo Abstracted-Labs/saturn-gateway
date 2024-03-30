@@ -1,4 +1,4 @@
-import { JSX, createContext, createMemo, useContext } from "solid-js";
+import { JSX, createContext, createEffect, createMemo, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { createLocalStorage } from "@solid-primitives/storage";
 import { Account, BaseWallet } from "@polkadot-onboard/core";
@@ -9,6 +9,7 @@ export interface SelectedAccountState {
   wallet?: BaseWallet;
   feeAsset?: KusamaFeeAssetEnum;
   addressToCopy?: JSX.Element;
+  enabledExtensions?: string[];
 }
 
 export const SelectedAccountContext = createContext<{
@@ -19,6 +20,25 @@ export const SelectedAccountContext = createContext<{
 export function SelectedAccountProvider(props: any) {
   const [state, setState] = createStore<SelectedAccountState>({});
   const [storageState, setStorageState, { remove }] = createLocalStorage();
+
+  createEffect(() => {
+    const storedExtensions = storageState["enabledExtensions"];
+    if (storedExtensions) {
+      const parsedExtensions = JSON.parse(storedExtensions);
+      setState("enabledExtensions", parsedExtensions);
+    } else {
+      setState("enabledExtensions", []);
+    }
+  });
+
+  createEffect(() => {
+    const storedFeeAsset = storageState["feeAsset"];
+    if (storedFeeAsset) {
+      setState("feeAsset", storedFeeAsset as KusamaFeeAssetEnum);
+    } else {
+      setState("feeAsset", KusamaFeeAssetEnum.TNKR);
+    }
+  });
 
   const value = createMemo(() => ({
     state,
@@ -46,6 +66,23 @@ export function SelectedAccountProvider(props: any) {
 
       getAddressToCopy() {
         return state.addressToCopy;
+      },
+
+      setEnabledWallets(wallets: string[]) {
+        setState("enabledExtensions", wallets);
+        setStorageState("enabledExtensions", JSON.stringify(wallets));
+      },
+
+      getEnabledWallets() {
+        const storageData = storageState;
+        if (storageData && storageData.enabledExtensions) {
+          const wallets = JSON.parse(storageData.enabledExtensions);
+          setState("enabledExtensions", wallets);
+          return wallets;
+        }
+
+        setStorageState("enabledExtensions", JSON.stringify([]));
+        return [];
       },
 
       setSelected(account: Account, wallet: BaseWallet) {
@@ -78,6 +115,8 @@ export function SelectedAccountProvider(props: any) {
         // if (state.account) setState("account", undefined);
         if (state.wallet) setState("wallet", undefined);
         remove('selectedAccount');
+        remove('feeAsset');
+        remove('enabledExtensions');
         setStorageState("selectedAccount", JSON.stringify({ address: '', wallet: '' }));
       }
     }

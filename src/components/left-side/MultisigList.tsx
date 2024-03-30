@@ -332,12 +332,18 @@ const MultisigList = (props: MultisigListProps) => {
                         </Show>
                       </div>
                       <div class="grid grid-rows-2 ml-3">
-                        <span class={`text-sm ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>{item.capitalizedFirstName}</span>
+                        <div class="flex flex-row items-center gap-x-2">
+                          <span class={`text-sm ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
+                            {item.capitalizedFirstName}
+                          </span>
+                          <span>
+                            {item.activeTransactions > 0 ? <div class="leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1">{item.activeTransactions}</div> : null}
+                          </span>
+                        </div>
                         <Show when={item.address}>
                           <CopyAddress address={item.address} length={4} isInModal={isInModal()} />
                         </Show>
                       </div>
-                      {item.activeTransactions > 0 ? <div class="basis-1/4 leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1 absolute right-4">{item.activeTransactions}</div> : null}
                     </div>
                   </>
                 )}

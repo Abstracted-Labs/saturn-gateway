@@ -17,12 +17,14 @@ import { Account, WalletType, BaseWallet } from "@polkadot-onboard/core";
 import { WalletNameEnum, WcAccount, toWalletAccount } from "../../utils/consts";
 import { pages } from "../../pages/pages";
 import { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
+import { matchTypeToIcon } from "../../utils/matchTypeToIcon";
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
   let multisigModal: ModalInterface;
   const $modalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
   const $multisigModalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
+  const [activeWallets, setActiveWallets] = createSignal<BaseWallet[]>([]);
   const [availableWallets, setAvailableWallets] = createSignal<BaseWallet[]>(
     [],
   );
@@ -127,6 +129,44 @@ const CryptoAccounts = () => {
     }
   };
 
+  const handleWalletExtensionClick = async (walletName: string) => {
+    if (!walletName) {
+      console.error("Wallet name is not provided");
+      return;
+    }
+
+    if (!Object.values(WalletNameEnum).includes(walletName as WalletNameEnum)) {
+      console.error("Invalid wallet name");
+      return;
+    }
+
+    const currentWallets = saContext.state.enabledExtensions;
+    if (!currentWallets) return;
+
+    if (walletName === WalletNameEnum.NOVAWALLET) {
+      const updatedExtensions = [...currentWallets, WalletNameEnum.NOVAWALLET, WalletNameEnum.PJS].filter((value, index, self) => self.indexOf(value) === index);
+      saContext.setters.setEnabledWallets(updatedExtensions);
+    } else if (!currentWallets.includes(walletName)) {
+      saContext.setters.setEnabledWallets([...currentWallets, walletName]);
+    } else {
+      saContext.setters.setEnabledWallets(currentWallets.filter((extension) => extension !== walletName));
+
+      const selectedAccount = saContext.state.account;
+      if (selectedAccount && selectedAccount.type === walletName) {
+        saContext.setters.setSelectedAccount(null);
+      }
+    }
+  };
+
+  createEffect(() => {
+    const activeExtensions = saContext.state.enabledExtensions;
+    const wallets = availableWallets();
+    if (wallets && wallets.length > 0 && activeExtensions && activeExtensions.length > 0) {
+      const activeWallets = wallets.filter((w) => activeExtensions.includes(w.metadata.title));
+      setActiveWallets(activeWallets);
+    }
+  });
+
   createEffect(() => {
     // initModals();
     const instance = $modalElement();
@@ -154,11 +194,16 @@ const CryptoAccounts = () => {
   createEffect(() => {
     const getAllAccounts = async () => {
       const wallets = availableWallets();
+      const enabledExtensions = saContext.state.enabledExtensions;
       let newAccounts = [];
 
       for (const wallet of wallets) {
         if (!wallet || typeof wallet.getAccounts !== 'function') {
           console.error('wallet is not valid or getAccounts is not a function');
+          continue;
+        }
+
+        if (enabledExtensions && !enabledExtensions.includes(wallet.metadata.title)) {
           continue;
         }
 
@@ -238,6 +283,22 @@ const CryptoAccounts = () => {
     }
   }));
 
+  const EnableWallets = () => {
+    return (
+      <div class="flex flex-row justify-center items-center gap-3 mb-5">
+        {Object.values(WalletNameEnum).filter(walletName => ![WalletNameEnum.CRUSTWALLET, WalletNameEnum.SPORRAN, WalletNameEnum.WALLETCONNECT].includes(walletName.toLowerCase() as WalletNameEnum)).map((walletName) => {
+          const Icon = matchTypeToIcon(walletName);
+          const isActive = activeWallets().some(w => w.metadata.title === walletName || (walletName === WalletNameEnum.NOVAWALLET && w.metadata.title === WalletNameEnum.PJS));
+          return (
+            <button onClick={() => handleWalletExtensionClick(walletName)} id={walletName} class={`${ isActive ? 'border-2 border-saturn-purple bg-opacity-70 hover:bg-opacity-80' : 'opacity-30 hover:opacity-40 border-2 border-gray-400' } w-12 h-12 p-2 bg-gradient-to-b from-saturn-darkpurple via-saturn-purple to-white rounded-lg flex flex-row items-center focus:outline-none`}>
+              {Icon ? <img src={Icon} class="w-6 h-6 mx-auto" alt={walletName} /> : <span>{walletName}</span>}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <>
       <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
@@ -255,7 +316,8 @@ const CryptoAccounts = () => {
             </button>
           </div>
           <div class={`mx-4 ${ availableAccounts().length > 0 ? 'h-[500px]' : 'h-auto' }`}>
-            <div class={`saturn-scrollbar h-full pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+            <EnableWallets></EnableWallets>
+            <div class={`saturn-scrollbar h-[90%] pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
               <Show when={availableAccounts().length > 0}>
                 <For each={availableAccounts()}>
                   {account => {
