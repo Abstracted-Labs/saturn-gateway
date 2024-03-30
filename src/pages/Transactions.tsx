@@ -170,6 +170,15 @@ export default function Transactions() {
     console.log('result: ', result);
   };
 
+  const killProposal = async (callHash: string) => {
+    const saturn = saturnContext.state.saturn;
+    if (!saturn || selectedAccountContext.state.account?.address === undefined || selectedAccountContext.state.wallet === undefined) {
+      return;
+    }
+    const call = saturn.api.tx.inv4.cancelMultisigProposal(callHash);
+    await call.signAndSend(selectedAccountContext.state.account?.address, { signer: selectedAccountContext.state.wallet.signer });
+  };
+
   const processCallDescription = (call: Call): string => {
     switch (call.method) {
       case 'sendCall':
@@ -358,21 +367,33 @@ export default function Transactions() {
                     </span>} color='bg-saturn-purple' label='Voter Turnout' />
                   </div>
 
-                  {/* Support breakdown */}
-                  <dl class="text-xs w-3/12 ml-3 py-2">
-                    <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
-                      <dt>Support needed:</dt>
-                      <dd class="text-black dark:text-white">
-                        {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                      </dd>
+                  {/* Support breakdown and Kill button */}
+                  <div class="flex flex-col justify-between ml-3">
+                    <dl class="flex flex-col text-xs py-2">
+                      <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
+                        <dt class="w-full">Support needed:</dt>
+                        <dd class="text-black dark:text-white">
+                          {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
+                        </dd>
+                      </div>
+                      <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
+                        <dt class="w-full">Approval needed:</dt>
+                        <dd class="text-black dark:text-white">
+                          {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div>
+                      <button
+                        type="button"
+                        class="rounded-md hover:opacity-75 border-2 border-saturn-red p-2 text-xs text-saturn-red justify-center w-full focus:outline-none"
+                        onClick={() => killProposal(pc.callHash.toString())}
+                        disabled={loading()}
+                      >
+                        Kill Proposal
+                      </button>
                     </div>
-                    <div class="flex flex-row justify-between mb-3 text-saturn-lightgrey">
-                      <dt>Approval needed:</dt>
-                      <dd class="text-black dark:text-white">
-                        {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
-                      </dd>
-                    </div>
-                  </dl>
+                  </div>
                 </div>
                 <Show when={!hasVoted(pc)}>
                   <div class='flex flex-row gap-3 my-3 actions'>
