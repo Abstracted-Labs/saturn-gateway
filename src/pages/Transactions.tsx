@@ -41,7 +41,23 @@ export default function Transactions() {
   const encodedAddress = createMemo(() => getEncodedAddress(selectedAccountContext.state.account?.address || '', 117));
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
-  const hasVoted = createMemo(() => pendingProposals().some(pc => Object.keys(pc.details.tally.records).includes(encodedAddress())));
+
+  const hasVoted = (pc: CallDetailsWithHash) => {
+    const address = encodedAddress();
+    if (!address) {
+      console.error('No address found for the selected account');
+      return false;
+    }
+    const voterRecord = pc.details.tally.records[address];
+    if (!voterRecord) {
+      console.warn(`No voter record found for address: ${ address }`, pc.details.tally.records);
+      return false;
+    }
+    const hasAye = 'aye' in voterRecord && voterRecord.aye !== undefined;
+    const hasNay = 'nay' in voterRecord && voterRecord.nay !== undefined;
+    console.log('voteRecord found:', voterRecord);
+    return hasAye || hasNay;
+  };
 
   const totalVotes = (records: ParsedTallyRecords): number => {
     let total = 0;
@@ -116,7 +132,7 @@ export default function Transactions() {
       return;
     }
 
-    if (!hasVoted()) {
+    if (!hasVoted(pc)) {
       console.error('Selected account is not a voter for this proposal');
       return;
     }
@@ -358,20 +374,22 @@ export default function Transactions() {
                     </div>
                   </dl>
                 </div>
-                <Show when={!hasVoted()}>
+                <Show when={!hasVoted(pc)}>
                   <div class='flex flex-row gap-3 my-3 actions'>
                     <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
                     <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
                   </div>
                 </Show>
-                <Show when={hasVoted()}>
-                  <button
-                    type="button"
-                    class="rounded-md hover:opacity-75 bg-saturn-purple p-2 text-xs text-white justify-center w-full focus:outline-none"
-                    onClick={[withdrawVote, pc]}
-                  >
-                    Withdraw Vote
-                  </button>
+                <Show when={hasVoted(pc)}>
+                  <div class='flex flex-row gap-3 my-3 actions'>
+                    <button
+                      type="button"
+                      class="rounded-md hover:opacity-75 bg-saturn-purple p-2 text-xs text-white justify-center w-full focus:outline-none"
+                      onClick={[withdrawVote, pc]}
+                    >
+                      Withdraw Vote
+                    </button>
+                  </div>
                 </Show>
               </SaturnAccordionItem>
               }
