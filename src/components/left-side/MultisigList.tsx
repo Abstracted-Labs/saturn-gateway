@@ -195,7 +195,7 @@ const MultisigList = (props: MultisigListProps) => {
               name = parsedData.name;
             }
           } catch (error) {
-            console.error("Error parsing multisigDetails.metadata.name:", error);
+            console.warn("Error parsing name from multisigDetails.metadata.name:", error);
           }
         }
 

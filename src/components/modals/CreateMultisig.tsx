@@ -631,7 +631,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
             }
           }
         } catch (error) {
-          console.error("Error parsing metadata:", error);
+          console.warn("Error parsing name from metadata:", error);
           multisigName = `Multisig ${ details.id }`;
         }
         const requiredApproval = new BigNumber(details.requiredApproval.toString());
@@ -1137,25 +1137,25 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         </span>
                       </h3>
                       <dl class="mt-4 text-xs w-full">
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-1 border-gray-700 border-dashed pt-2">
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
                           <dt>Omnisig Account Costs</dt>
                           <dd class="text-white">
                             {coreCreationFeeFormatted()}
                           </dd>
                         </div>
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-1 border-gray-700 border-dashed pt-2">
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
                           <dt>Estimated Transaction Fees</dt>
                           <dd class="text-white">
                             {estTxFeesFormatted()}
                           </dd>
                         </div>
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-1 border-gray-700 border-dashed pt-2">
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
                           <dt>Initial Omnisig Funding</dt>
                           <dd class="text-white">
                             {coreInitialFundingFormatted()}
                           </dd>
                         </div>
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey font-bold border-y border-1 border-gray-700 border-dashed py-2">
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey font-bold border-y border border-gray-700 border-dashed py-2">
                           <dt>TOTAL ({feeAsset()})</dt>
                           <dd class="text-white">
                             {totalCosts()}

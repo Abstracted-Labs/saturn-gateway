@@ -15,9 +15,9 @@ import { useWalletConnectContext } from "../../providers/walletConnectProvider";
 import { walletAggregator } from "../../App";
 import { Account, WalletType, BaseWallet } from "@polkadot-onboard/core";
 import { WalletNameEnum, WcAccount, toWalletAccount } from "../../utils/consts";
-import { pages } from "../../pages/pages";
 import { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
 import { matchTypeToIcon } from "../../utils/matchTypeToIcon";
+import { useToast } from "../../providers/toastProvider";
 
 const CryptoAccounts = () => {
   let modal: ModalInterface;
@@ -301,7 +301,7 @@ const CryptoAccounts = () => {
 
   return (
     <>
-      <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
+      <div id={WALLET_ACCOUNTS_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-auto z-[60]">
         <div id="accountsModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
         <div class={`relative h-auto px-4 bg-saturn-offwhite dark:bg-black border border-gray-900  rounded-md w-full m-5 md:m-auto`}>
           <div class="flex flex-row items-start justify-between p-4">

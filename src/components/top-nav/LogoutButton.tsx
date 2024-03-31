@@ -8,6 +8,7 @@ import { useNavigate } from "@solidjs/router";
 import { usePriceContext } from "../../providers/priceProvider";
 import { useIdentityContext } from "../../providers/identityProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
+import { useToast } from "../../providers/toastProvider";
 
 interface ILogoutButtonProps {
   onClick: () => any;
@@ -18,12 +19,13 @@ interface ILogoutButtonProps {
 const LogoutButton = (props: ILogoutButtonProps) => {
   const selectedAccount = useSelectedAccountContext();
   const saturnContext = useSaturnContext();
-  const nav = useNavigate();
   const prices = usePriceContext();
   const identity = useIdentityContext();
   const balances = useBalanceContext();
+  const toast = useToast();
 
   const onLogout = (e: Event) => {
+    toast.addToast("Logging out...", "loading");
     e.preventDefault();
 
     const accState = selectedAccount.state;
@@ -47,9 +49,18 @@ const LogoutButton = (props: ILogoutButtonProps) => {
         props.onClick();
       }
 
-      window.location.href = '/';
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast("Successfully logged out", "success");
+      }, 2000);
+
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
     } catch {
       console.error("Error disconnecting wallet");
+      toast.hideToast();
+      toast.addToast("Error logging out", "error");
     } finally {
       identity.actions.clearIdentities();
       prices.clearPrices();

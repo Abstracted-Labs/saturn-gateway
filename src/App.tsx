@@ -28,6 +28,7 @@ import { WalletAggregator, BaseWallet } from '@polkadot-onboard/core';
 import { createApis } from './utils/createApis';
 import { PriceProvider } from './providers/priceProvider';
 import { BalanceProvider } from './providers/balanceProvider';
+import { ToastProvider } from './providers/toastProvider';
 
 interface ExtendedWallet extends BaseWallet {
   autoConnect: () => Promise<void>;
@@ -339,7 +340,9 @@ const App = () => (
                 <MegaModalProvider>
                   <PriceProvider>
                     <BalanceProvider>
-                      <HomePlanet />
+                      <ToastProvider>
+                        <HomePlanet />
+                      </ToastProvider>
                     </BalanceProvider>
                   </PriceProvider>
                 </MegaModalProvider>

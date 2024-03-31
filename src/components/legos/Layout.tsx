@@ -10,6 +10,7 @@ import CreateMultisig, { MULTISIG_CRUMB_TRAIL } from "../modals/CreateMultisig";
 import MultisigListModal from "../modals/MultisigListModal";
 import FeeAssetModal from "../modals/FeeAssetModal";
 import AddressSelectorModal from "../modals/AddressSelectorModal";
+import OmniToast from "./OmniToast";
 
 const Layout = ({ children }: { children: any; }) => {
   const loc = useLocation();
@@ -23,6 +24,9 @@ const Layout = ({ children }: { children: any; }) => {
 
   return <div>
     {/* Portal elements */}
+    <Portal mount={document.getElementById('toastWindow') || undefined}>
+      <OmniToast />
+    </Portal>
     <Portal mount={document.getElementById('accountsWindow') || undefined}>
       <CryptoAccounts />
     </Portal>

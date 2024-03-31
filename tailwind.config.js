@@ -24,6 +24,7 @@ module.exports = {
           'green': '#2EFFA7', // green success
           'red': '#FF2E79', // red error
           'yellow': '#ECC265', // yellow
+          'blue': '#65BFFF', // blue
         },
       },
       fontFamily: {

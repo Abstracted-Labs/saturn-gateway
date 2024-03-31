@@ -39,7 +39,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const createMultisigModalElement = () => document.getElementById(MULTISIG_MODAL_ID);
   const addressSelectorModalElement = () => document.getElementById(ADDRESS_SELECTOR_MODAL_ID);
 
-  onMount(() => {
+  createEffect(() => {
     initModals();
   });
 
@@ -94,96 +94,84 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const showMultisigListModal = () => {
     const instance = multisigListModalInstance();
     if (instance) {
-      instance.init();
-      instance.show();
+      instance.toggle();
     }
   };
 
   const hideMultisigListModal = () => {
     const instance = multisigListModalInstance();
     if (instance) {
-      instance.hide();
-      instance.destroy();
+      instance.toggle();
     }
   };
 
   const showFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
     if (instance) {
-      instance.init();
-      instance.show();
+      instance.toggle();
     }
   };
 
   const hideFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
     if (instance) {
-      instance.hide();
-      instance.destroy();
+      instance.toggle();
     }
   };
 
   const showProposeModal = () => {
     const instance = proposedModalInstance();
     if (instance) {
-      instance.init();
-      instance.show();
+      instance.toggle();
     }
   };
 
   const hideProposeModal = () => {
     const instance = proposedModalInstance();
     if (instance) {
-      instance.hide();
-      instance.destroy();
+      instance.toggle();
     }
   };
 
   const showAddMemberModal = () => {
     const instance = addMemberModalInstance();
     if (instance) {
-      instance.init();
-      instance.show();
+      instance.toggle();
     }
   };
 
   const hideAddMemberModal = () => {
     const instance = addMemberModalInstance();
     if (instance) {
-      instance.hide();
-      instance.destroy();
+      instance.toggle();
     }
   };
 
   const showCreateMultisigModal = () => {
     const instance = createMultisigModalInstance();
     if (instance) {
-      instance.init();
-      instance.show();
+      instance.toggle();
     }
   };
 
   const hideCreateMultisigModal = () => {
     const instance = createMultisigModalInstance();
     if (instance) {
-      instance.hide();
-      instance.destroy();
+      instance.toggle();
     }
   };
 
   const showAddressSelectorModal = () => {
     const instance = addressSelectorModalInstance();
     if (instance) {
-      instance.init();
-      instance.show();
+      instance.toggle();
     }
   };
 
   const hideAddressSelectorModal = () => {
     const instance = addressSelectorModalInstance();
     if (instance) {
-      instance.hide();
-      instance.destroy();
+      instance.toggle();
     }
   };
 

@@ -46,14 +46,14 @@ export type IProposalProps = {
 const TransferProposal = (props: TransferProposalProps) => {
   return (
     <div class="flex flex-col gap-2">
-      <p class="border-t border-1 border-gray-700 border-dashed pt-2">Amount: <span class="capitalize text-black dark:text-white float-right font-bold">{
+      <p class="border-t border border-gray-700 border-dashed pt-2">Amount: <span class="capitalize text-black dark:text-white float-right font-bold">{
         BigNumber(props.amount.toString()).div(
           BigNumber('10').pow(
             BigNumber(RingAssets[props.asset as keyof typeof RingAssets].decimals),
           ),
         ).decimalPlaces(2, 1).toString()
       } {props.asset}</span></p>
-      <p class="border-t border-b border-1 border-gray-700 border-dashed py-2">To: <span class="capitalize text-black dark:text-white float-right font-bold">{props.to}</span></p>
+      <p class="border-t border-b border border-gray-700 border-dashed py-2">To: <span class="capitalize text-black dark:text-white float-right font-bold">{props.to}</span></p>
     </div>
   );
 };
@@ -343,9 +343,9 @@ export default function ProposeModal() {
   });
 
   const ModalBody = () => <div class='flex flex-col gap-2 p-4 text-xs'>
-    <p class="border-t border-1 border-gray-700 border-dashed pt-2">Proposal type: <span class="capitalize text-black dark:text-white float-right font-bold">{processHeader()}</span></p>
-    <p class="border-t border-1 border-gray-700 border-dashed pt-2">Fees paid in: <span class="capitalize text-black dark:text-white float-right font-bold">{feeAsset()}</span></p>
-    <p class="border-t border-1 border-gray-700 border-dashed pt-2">Network: <span class="capitalize text-black dark:text-white float-right font-bold">{networkName() || '--'}</span></p>
+    <p class="border-t border border-gray-700 border-dashed pt-2">Proposal type: <span class="capitalize text-black dark:text-white float-right font-bold">{processHeader()}</span></p>
+    <p class="border-t border border-gray-700 border-dashed pt-2">Fees paid in: <span class="capitalize text-black dark:text-white float-right font-bold">{feeAsset()}</span></p>
+    <p class="border-t border border-gray-700 border-dashed pt-2">Network: <span class="capitalize text-black dark:text-white float-right font-bold">{networkName() || '--'}</span></p>
     <Switch>
       <Match when={
         proposeContext.state.proposal?.proposalType === ProposalType.LocalCall ||
