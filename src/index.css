@@ -5,6 +5,13 @@ code {
     monospace;
 }
 
+body {
+  background-image: url('./assets/images/omniway-bg.png');
+  background-size: cover;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -670,13 +670,13 @@ const AssetsContext = () => {
               name="recipient-address"
               placeholder="Destination address"
               value={targetAddress()}
-              class={`rounded-l-md rounded-r-none grow ${ INPUT_COMMON_STYLE }`}
+              class={`rounded-l-md rounded-r-none grow focus:outline-none focus:ring-0  focus:ring-saturn-purple ${ INPUT_COMMON_STYLE }`}
               disabled={!isLoggedIn()}
               onInput={e => updateTargetAddress(e.currentTarget.value)}
               onBlur={getPaymentInfo}
               onMouseLeave={getPaymentInfo}
             />
-            <span onClick={clearAddress} class="inline-flex items-center px-3 text-xxs text-saturn-lightgrey bg-gray-200 rounded-r-md dark:bg-gray-800 hover:cursor-pointer opacity-50 hover:opacity-100">
+            <span onClick={clearAddress} class="inline-flex items-center px-3 text-xxs text-saturn-lightgrey bg-gray-200 rounded-r-md dark:bg-gray-800 hover:cursor-pointer opacity-50 hover:opacity-100 border border-gray-700">
               clear
             </span>
           </div>

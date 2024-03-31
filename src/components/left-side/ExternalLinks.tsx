@@ -18,7 +18,7 @@ function renderExternalLink(name: string, href: string) {
 }
 
 const ExternalLinks = () => {
-  return <ul class="text-xs flex flex-row gap-5 items-center">
+  return <ul class="text-xs flex flex-row gap-3 items-center justify-between rounded-lg bg-white border border-gray-900 dark:bg-saturn-darkgrey px-3 py-1">
     <For each={links}>
       {(link) => renderExternalLink(link[0], link[1])}
     </For>

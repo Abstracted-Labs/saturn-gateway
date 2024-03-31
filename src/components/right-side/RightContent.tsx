@@ -10,7 +10,7 @@ const RightContent = (props: { inDrawer: boolean; }) => {
 
   const currentPage = createMemo(() => loc.pathname);
 
-  return <div class="h-full px-5 py-2 overflow-y-auto bg-saturn-offwhite dark:bg-saturn-black">
+  return <div class="h-full px-5 py-3 overflow-y-auto bg-transparent">
     <Show when={props.inDrawer}>
       <span id="inDrawer" />
     </Show>
