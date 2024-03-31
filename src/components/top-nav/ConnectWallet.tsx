@@ -30,17 +30,15 @@ const modalOptions: ModalOptions = {
 };
 
 const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) => void; }) => {
-  const walletModalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
   const walletToggleElement = () => document.getElementById(WALLET_TOGGLE_ID);
   const walletDropdownElement = () => document.getElementById(WALLET_DROPDOWN_ID);
 
-  const [accountSelectorModal, setAccountSelectorModal] = createSignal<ModalInterface | null>(null);
   const [connectDropdown, setConnectDropdown] = createSignal<DropdownInterface | null>(null);
   const [isConnectDropdownActive, setIsConnectDropdownActive] = createSignal(false);
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>();
 
   const selectedAccount = useSelectedAccountContext();
-  const megaModal = useMegaModal();
+  const modal = useMegaModal();
 
   const isInMultisig = createMemo(() => props.inMultisig);
   const isLoggedIn = createMemo(() => !!selectedAccount.state.account?.address);
@@ -60,37 +58,16 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
   };
 
   const openAccountSelectorModal = () => {
-    console.log("Attempting to open account selector modal.");
-    if (!accountSelectorModal()) {
-      console.log("Account selector modal instance not found.");
-      return;
-    }
-    if (accountSelectorModal()?.isHidden()) {
-      console.log("Account selector modal is hidden, showing now.");
-      accountSelectorModal()?.show();
-    } else {
-      console.log("Account selector modal is already visible.");
-    }
+    modal.showCryptoAccountsModal();
   };
 
   const openFeeAssetModal = () => {
-    megaModal.showFeeAssetModal();
+    modal.showFeeAssetModal();
   };
-
-  // onMount(() => {
-  //   initModals();
-  // });
 
   createEffect(() => {
     const selectedAsset = selectedAccount.setters.getFeeAsset() as KusamaFeeAssetEnum;
     setFeeAsset(selectedAsset);
-  });
-
-  createEffect(() => {
-    if (walletModalElement()) {
-      const instance = new Modal(walletModalElement(), modalOptions);
-      setAccountSelectorModal(instance);
-    }
   });
 
   createEffect(() => {
@@ -119,7 +96,7 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
 
   const ConnectButton = () => {
     return <div class={isInMultisig() ? "my-3" : "mx-4 my-3"}>
-      <button type="button" onClick={openAccountSelectorModal} data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>{selectedAccount.state.account ? 'Change Account' : 'Connect Wallet'}</button>
+      <button type="button" onClick={openAccountSelectorModal} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>{selectedAccount.state.account ? 'Change Account' : 'Connect Wallet'}</button>
     </div>;
   };
 

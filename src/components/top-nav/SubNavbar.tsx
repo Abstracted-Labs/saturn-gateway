@@ -9,7 +9,7 @@ const SubNavbar = (props: any) => {
   const loc = useLocation();
 
   const showRightSide = createMemo(() => {
-    return loc.pathname !== '/' && !loc.pathname.endsWith('create') && !loc.pathname.endsWith('settings');
+    return loc.pathname !== '/' && !loc.pathname.endsWith('create') && !loc.pathname.endsWith('settings') && !loc.pathname.endsWith('management') && !loc.pathname.endsWith('transactions');
   });
 
   return <div>

@@ -1084,105 +1084,103 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   );
 
   return (
-    <>
-      <div id={multisigModalType()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
-        <div id="multisigModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1 w-full" />
-        <div class="absolute top-[10px] right-2.5 mb-8 z-[90]">
-          <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={removeModal}>
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-            </svg>
-            <span class="sr-only">Close modal</span>
-          </button>
-        </div>
-        <div class="flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
-          <Show when={!!getCurrentStep()}>
-            <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
-              <SaturnCrumb trail={accessibleSteps()} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
-            </Show>
-            <SaturnCard noPadding>
-              <div class={`p-5 ${ lessThan1200() ? 'h-auto' : 'h-96' }`}>
-                <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
-                  <Show when={!finishing()}>
-                    <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
-                      <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[30px] xs:min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
-                        <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
-                          {
-                            !isNextToLastStep() ?
-                              <span>
-                                Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
-                              </span> :
-                              <span class="flex flex-col items-center">
-                                <img src={CheckIcon} width={80} height={80} />
-                                <span class="mt-5 break-words">You're All Set!</span>
-                              </span>
-                          }
-                        </Show>
-                        <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                          <span>
-                            Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
-                          </span>
-                        </Show>
-                      </h3>
-                      <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                        <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
-                      </Show>
-                    </div>
-                  </Show>
-                  <Show when={finishing()}>
-                    <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1' } px-3`}>
-                      <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/tight font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-3`}>
-                        <span>
-                          Review and Sign
-                        </span>
-                      </h3>
-                      <dl class="mt-4 text-xs w-full">
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
-                          <dt>Omnisig Account Costs</dt>
-                          <dd class="text-white">
-                            {coreCreationFeeFormatted()}
-                          </dd>
-                        </div>
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
-                          <dt>Estimated Transaction Fees</dt>
-                          <dd class="text-white">
-                            {estTxFeesFormatted()}
-                          </dd>
-                        </div>
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
-                          <dt>Initial Omnisig Funding</dt>
-                          <dd class="text-white">
-                            {coreInitialFundingFormatted()}
-                          </dd>
-                        </div>
-                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey font-bold border-y border border-gray-700 border-dashed py-2">
-                          <dt>TOTAL ({feeAsset()})</dt>
-                          <dd class="text-white">
-                            {totalCosts()}
-                          </dd>
-                        </div>
-                      </dl>
-                      <div class="flex flex-row items-center justify-between mt-5 gap-3">
-                        <button disabled={!enableCreateMultisig()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMultisig, false]}>
-                          <span class="rounded-full border border-white px-2 py-[3px] mr-2">1</span>
-                          <span>Create Multisig</span>
-                        </button>
-                        <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
-                          <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
-                          <span>Add Members</span>
-                        </button>
-                      </div>
-                    </div>
-                  </Show>
-                  <CONTENT_AREA />
-                </div>
-              </div>
-              <BOTTOM_BAR />
-            </SaturnCard>
-          </Show>
-        </div>
+    <div id={multisigModalType()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
+      <div id="multisigModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1 w-full" />
+      <div class="absolute top-[10px] right-2.5 mb-8 z-[90]">
+        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={removeModal}>
+          <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"></path>
+          </svg>
+          <span class="sr-only">Close modal</span>
+        </button>
       </div>
-    </>
+      <div class="flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
+        <Show when={!!getCurrentStep()}>
+          <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
+            <SaturnCrumb trail={accessibleSteps()} disabledCrumbs={disableCrumbs()} active={getCurrentStep()} setActive={handleSetActive} trailWidth="max-w-full" />
+          </Show>
+          <SaturnCard noPadding>
+            <div class={`p-5 ${ lessThan1200() ? 'h-auto' : 'h-96' }`}>
+              <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
+                <Show when={!finishing()}>
+                  <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
+                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[30px] xs:min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
+                      <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
+                        {
+                          !isNextToLastStep() ?
+                            <span>
+                              Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                            </span> :
+                            <span class="flex flex-col items-center">
+                              <img src={CheckIcon} width={80} height={80} />
+                              <span class="mt-5 break-words">You're All Set!</span>
+                            </span>
+                        }
+                      </Show>
+                      <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
+                        <span>
+                          Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                        </span>
+                      </Show>
+                    </h3>
+                    <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
+                      <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
+                    </Show>
+                  </div>
+                </Show>
+                <Show when={finishing()}>
+                  <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1' } px-3`}>
+                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/tight font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-3`}>
+                      <span>
+                        Review and Sign
+                      </span>
+                    </h3>
+                    <dl class="mt-4 text-xs w-full">
+                      <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
+                        <dt>Omnisig Account Costs</dt>
+                        <dd class="text-white">
+                          {coreCreationFeeFormatted()}
+                        </dd>
+                      </div>
+                      <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
+                        <dt>Estimated Transaction Fees</dt>
+                        <dd class="text-white">
+                          {estTxFeesFormatted()}
+                        </dd>
+                      </div>
+                      <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border border-gray-700 border-dashed pt-2">
+                        <dt>Initial Omnisig Funding</dt>
+                        <dd class="text-white">
+                          {coreInitialFundingFormatted()}
+                        </dd>
+                      </div>
+                      <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey font-bold border-y border border-gray-700 border-dashed py-2">
+                        <dt>TOTAL ({feeAsset()})</dt>
+                        <dd class="text-white">
+                          {totalCosts()}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div class="flex flex-row items-center justify-between mt-5 gap-3">
+                      <button disabled={!enableCreateMultisig()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMultisig, false]}>
+                        <span class="rounded-full border border-white px-2 py-[3px] mr-2">1</span>
+                        <span>Create Multisig</span>
+                      </button>
+                      <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
+                        <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
+                        <span>Add Members</span>
+                      </button>
+                    </div>
+                  </div>
+                </Show>
+                <CONTENT_AREA />
+              </div>
+            </div>
+            <BOTTOM_BAR />
+          </SaturnCard>
+        </Show>
+      </div>
+    </div>
   );
 };
 

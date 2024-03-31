@@ -332,12 +332,12 @@ const HomePlanet: Component = () => {
 const App = () => (
   <SaturnProvider>
     <RingApisProvider>
-      <ProposeProvider>
-        <WalletConnectProvider>
-          <SelectedAccountProvider>
-            <IdentityProvider>
-              <ThemeProvider>
-                <MegaModalProvider>
+      <MegaModalProvider>
+        <ProposeProvider>
+          <WalletConnectProvider>
+            <SelectedAccountProvider>
+              <IdentityProvider>
+                <ThemeProvider>
                   <PriceProvider>
                     <BalanceProvider>
                       <ToastProvider>
@@ -345,12 +345,12 @@ const App = () => (
                       </ToastProvider>
                     </BalanceProvider>
                   </PriceProvider>
-                </MegaModalProvider>
-              </ThemeProvider>
-            </IdentityProvider>
-          </SelectedAccountProvider>
-        </WalletConnectProvider>
-      </ProposeProvider>
+                </ThemeProvider>
+              </IdentityProvider>
+            </SelectedAccountProvider>
+          </WalletConnectProvider>
+        </ProposeProvider>
+      </MegaModalProvider>
     </RingApisProvider>
   </SaturnProvider>
 );

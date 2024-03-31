@@ -37,7 +37,7 @@ function OmniToast() {
             </Show>
             <span>{toast.message}</span>
           </div>
-          <button id={`toast-hide-${ toast.id }`} type="button" data-dismmiss-target={`#toast-${ index() }`} onClick={hideToast} class="focus:outline-none opacity-60 hover:opacity-90 hover:pointer-cursor">
+          <button id={`toast-hide-${ toast.id }`} aria-label="Close" type="button" data-dismmiss-target={`#toast-${ index() }`} onClick={hideToast} class="focus:outline-none opacity-60 hover:opacity-90 hover:pointer-cursor">
             <svg class="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
             </svg>

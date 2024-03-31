@@ -4,14 +4,15 @@ import { Show, createMemo } from "solid-js";
 import { WALLET_ACCOUNTS_MODAL_ID } from "./ConnectWallet";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { PROPOSE_MODAL_ID } from "../modals/ProposeModal";
-import { useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { usePriceContext } from "../../providers/priceProvider";
 import { useIdentityContext } from "../../providers/identityProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
 import { useToast } from "../../providers/toastProvider";
+import { useMegaModal } from "../../providers/megaModalProvider";
 
 interface ILogoutButtonProps {
-  onClick: () => any;
+  onClick?: () => void;
   cancel?: boolean | undefined;
   proposeModal?: boolean | undefined;
 }
@@ -23,6 +24,7 @@ const LogoutButton = (props: ILogoutButtonProps) => {
   const identity = useIdentityContext();
   const balances = useBalanceContext();
   const toast = useToast();
+  const modal = useMegaModal();
 
   const onLogout = (e: Event) => {
     toast.addToast("Logging out...", "loading");
@@ -34,38 +36,41 @@ const LogoutButton = (props: ILogoutButtonProps) => {
 
     try {
       if (accState.wallet) {
+        console.log("Disconnecting wallet...");
         accState.wallet.disconnect();
+        console.log("Wallet disconnected.");
       }
 
       if (accSetter.clearSelected) {
+        console.log("Clearing selected account...");
         accSetter.clearSelected();
+        console.log("Selected account cleared.");
       }
 
       if (satSetter.logout) {
+        console.log("Logging out from Saturn context...");
         satSetter.logout();
+        console.log("Logged out from Saturn context.");
       }
 
-      if (props.onClick) {
-        props.onClick();
-      }
+      modal.hideMultisigListModal();
+      // modal.hideCryptoAccountsModal(); // TODO: Fix bug causing disconnect issue here
 
       setTimeout(() => {
         toast.hideToast();
         toast.addToast("Successfully logged out", "success");
-      }, 2000);
-
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
+      }, 1000);
     } catch {
       console.error("Error disconnecting wallet");
-      toast.hideToast();
-      toast.addToast("Error logging out", "error");
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast("Error logging out", "error");
+      }, 1000);
     } finally {
       identity.actions.clearIdentities();
       prices.clearPrices();
       balances?.clearBalances();
-      console.log('Thank you for choosing the Omniway. Goodbye!');
+      window.location.href = "/"; // Redirect to home page as workaround for now
     }
   };
 

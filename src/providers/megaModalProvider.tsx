@@ -6,6 +6,7 @@ import { FEE_ASSET_MODAL_ID } from '../components/modals/FeeAssetModal';
 import { PROPOSE_MODAL_ID } from '../components/modals/ProposeModal';
 import { ADD_MEMBER_MODAL_ID, MULTISIG_MODAL_ID } from '../components/left-side/AddMultisigButton';
 import { ADDRESS_SELECTOR_MODAL_ID } from '../components/modals/AddressSelectorModal';
+import { WALLET_ACCOUNTS_MODAL_ID } from '../components/top-nav/ConnectWallet';
 
 export type MegaModalContextType = {
   showMultisigListModal: () => void;
@@ -20,6 +21,8 @@ export type MegaModalContextType = {
   hideCreateMultisigModal: () => void;
   showAddressSelectorModal: () => void;
   hideAddressSelectorModal: () => void;
+  showCryptoAccountsModal: () => void;
+  hideCryptoAccountsModal: () => void;
 };
 
 const MegaModalContext = createContext<MegaModalContextType>();
@@ -31,6 +34,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const [addMemberModalInstance, setAddMemberModalInstance] = createSignal<ModalInterface>();
   const [createMultisigModalInstance, setCreateMultisigModalInstance] = createSignal<ModalInterface>();
   const [addressSelectorModalInstance, setAddressSelectorModalInstance] = createSignal<ModalInterface>();
+  const [cryptoAccountsModalInstance, setCryptoAccountsModalInstance] = createSignal<ModalInterface>();
 
   const multisigListModalElement = () => document.getElementById(MULTISIG_LIST_MODAL_ID);
   const feeAssetModalElement = () => document.getElementById(FEE_ASSET_MODAL_ID);
@@ -38,15 +42,16 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const addMemberModalElement = () => document.getElementById(ADD_MEMBER_MODAL_ID);
   const createMultisigModalElement = () => document.getElementById(MULTISIG_MODAL_ID);
   const addressSelectorModalElement = () => document.getElementById(ADDRESS_SELECTOR_MODAL_ID);
+  const cryptoAccountsModalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
 
-  // createEffect(() => {
-  //   initModals();
-  // });
+  onMount(() => {
+    initModals();
+  });
 
   createEffect(() => {
     const modal = multisigListModalElement();
     if (multisigListModalElement()) {
-      const instance = new Modal(modal);
+      const instance = new Modal(modal, undefined, { override: true, id: MULTISIG_LIST_MODAL_ID });
       setMultisigListModalInstance(instance);
     }
   });
@@ -91,9 +96,18 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   });
 
+  createEffect(() => {
+    const modal = cryptoAccountsModalElement();
+    if (cryptoAccountsModalElement()) {
+      const instance = new Modal(modal, undefined, { id: WALLET_ACCOUNTS_MODAL_ID });
+      setCryptoAccountsModalInstance(instance);
+    }
+  });
+
   const showMultisigListModal = () => {
     const instance = multisigListModalInstance();
     if (instance) {
+      instance.init();
       instance.show();
     }
   };
@@ -102,7 +116,6 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     const instance = multisigListModalInstance();
     if (instance) {
       instance.hide();
-      instance.destroy();
     }
   };
 
@@ -118,7 +131,6 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     const instance = feeAssetModalInstance();
     if (instance) {
       instance.hide();
-      instance.destroy();
     }
   };
 
@@ -134,7 +146,6 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     const instance = proposedModalInstance();
     if (instance) {
       instance.hide();
-      instance.destroy();
     }
   };
 
@@ -186,6 +197,22 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   };
 
+  const showCryptoAccountsModal = () => {
+    const instance = cryptoAccountsModalInstance();
+    if (instance) {
+      instance.init();
+      instance.show();
+    }
+  };
+
+  const hideCryptoAccountsModal = () => {
+    const instance = cryptoAccountsModalInstance();
+    if (instance) {
+      instance.hide();
+      instance.destroy();
+    }
+  };
+
   const store = createMemo(() => ({
     showMultisigListModal,
     hideMultisigListModal,
@@ -199,6 +226,8 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     hideCreateMultisigModal,
     showAddressSelectorModal,
     hideAddressSelectorModal,
+    showCryptoAccountsModal,
+    hideCryptoAccountsModal,
   }));
 
   return (

@@ -74,9 +74,7 @@ export default function Management() {
   };
 
   const addMember = () => {
-    if (modal.showAddMemberModal) {
-      modal.showAddMemberModal();
-    }
+    modal.showAddMemberModal();
   };
 
   const proposeNewVotingPower = async (address: string, amount: string) => {
