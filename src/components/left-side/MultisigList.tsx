@@ -1,6 +1,6 @@
 import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
-import { stringShorten } from '@polkadot/util';
+import { hexToString, stringShorten } from '@polkadot/util';
 import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy, on, Switch, Match } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import { A, useLocation, useNavigate, useParams } from '@solidjs/router';
@@ -185,14 +185,14 @@ const MultisigList = (props: MultisigListProps) => {
         })?.info);
 
         let name = `Multisig ${ m }`;
-
-        if (iden?.display?.Raw) {
+        if (!!iden && iden?.display?.Raw) {
           name = iden.display.Raw;
         } else {
           try {
-            const metadata = multisigDetails && multisigDetails.metadata ? JSON.parse(multisigDetails.metadata) : null;
-            if (metadata && metadata.name) {
-              name = metadata.name;
+            const metadata = multisigDetails && multisigDetails.metadata ? JSON.parse(hexToString(multisigDetails.metadata)) : null;
+            if (metadata) {
+              const parsedData = JSON.parse(metadata);
+              name = parsedData.name;
             }
           } catch (error) {
             console.error("Error parsing multisigDetails.metadata.name:", error);

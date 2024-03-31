@@ -6,7 +6,7 @@ import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useThemeContext } from "../../providers/themeProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
-import { ApiTypes, FALLBACK_TEXT_STYLE, INPUT_CREATE_MULTISIG_STYLE, KusamaFeeAssetEnum, MultisigEnum } from "../../utils/consts";
+import { ApiTypes, BUTTON_COMMON_STYLE, BUTTON_LARGE_SMALL_PAD_STYLE, BUTTON_LARGE_STYLE, FALLBACK_TEXT_STYLE, INPUT_CREATE_MULTISIG_STYLE, KusamaFeeAssetEnum, MultisigEnum } from "../../utils/consts";
 import SaturnCard from "../legos/SaturnCard";
 import SaturnNumberInput from "../legos/SaturnNumberInput";
 import SaturnRadio from "../legos/SaturnRadio";
@@ -24,7 +24,7 @@ import LoaderAnimation from "../legos/LoaderAnimation";
 import ConnectWallet from "../top-nav/ConnectWallet";
 import { ADD_MEMBER_MODAL_ID, MULTISIG_MODAL_ID } from "../left-side/AddMultisigButton";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
-import { Call } from "@polkadot/types/interfaces";
+import { Call, RuntimeDispatchInfo } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import BigNumber from "bignumber.js";
 import { FeeAsset, MultisigCallResult, MultisigCreateResult } from "@invarch/saturn-sdk";
@@ -43,6 +43,8 @@ export const MULTISIG_CRUMB_TRAIL = ['Choose Name', 'Select Type', 'Add Members'
 interface CreateMultisigProps {
   limitSteps?: string[];
 }
+
+const INITIAL_CORE_FUNDING = 7000000000000;
 
 const CreateMultisig = (props: CreateMultisigProps) => {
   const navigate = useNavigate();
@@ -69,17 +71,22 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const [members, setMembers] = createSignal<[string, number][]>([], { equals: false });
   const [currentMembers, setCurrentMembers] = createSignal<string[]>([]);
   const [minimumSupportField, setMinimumSupportField] = createSignal<string>('50');
-  const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('50');
+  const [requiredApprovalField, setRequiredApprovalField] = createSignal<string>('0');
   const [multisigType, setMultisigType] = createSignal<MultisigEnum>(MultisigEnum.TRADITIONAL);
   const [textHint, setTextHint] = createSignal<string>('');
   const [nameError, setNameError] = createSignal<string>('');
   const [hasAddressError, setHasAddressError] = createSignal<number[]>([]);
   const [finishing, setFinishing] = createSignal<boolean>(false);
   const [disableAddMember, setDisableAddMember] = createSignal<boolean>(false);
-  const [coreCreationFee, setCoreCreationFee] = createSignal<string>("100");
   const [tnkrBalance, setTnkrBalance] = createSignal<string>("0");
+  const [coreCreationFee, setCoreCreationFee] = createSignal<string>("0");
+  const [coreInitialFunding, setCoreInitialFunding] = createSignal<BigNumber>(new BigNumber(INITIAL_CORE_FUNDING));
+  const [estTxFees, setEstTxFees] = createSignal<BigNumber>(new BigNumber(0));
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
   const [minimumThreshold, setMinimumThreshold] = createSignal<string>('1');
+  const [enableCreateMultisig, setEnableCreateMultisig] = createSignal<boolean>(false);
+  const [enableCreateMembership, setEnableCreateMembership] = createSignal<boolean>(false);
+  const [createMultiSigResult, setCreateMultiSigResult] = createSignal<MultisigCreateResult | null>(null);
 
   const getCurrentStep = () => {
     // get current step in crumb trail
@@ -136,17 +143,34 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
     return false;
   });
+  const coreCreationFeeFormatted = createMemo(() => formatBalance(new BigNumber(coreCreationFee()).toString(), { withSi: false, withUnit: feeAsset() as string }));
+  const estTxFeesFormatted = createMemo(() => {
+    const txFees = new BigNumber(estTxFees().toString());
+    const coreFee = new BigNumber(coreCreationFee()).multipliedBy(new BigNumber(10).pow(12));
+    const result = coreFee.minus(txFees);
+    return formatBalance(result.toString(), { withSi: false, decimals: 12 });
+  });
+  const coreInitialFundingFormatted = createMemo(() => formatBalance(coreInitialFunding().toString(), { withSi: false }));
+  const totalCosts = createMemo(() => {
+    const coreFee = new BigNumber(coreCreationFeeFormatted());
+    const txFees = new BigNumber(estTxFeesFormatted());
+    const initialFunding = new BigNumber(coreInitialFundingFormatted());
+    return coreFee.plus(txFees).plus(initialFunding).toString();
+  });
 
-  const createMultisig = async () => {
-    // create multisig
+
+  const finishCreation = () => {
     setFinishing(true);
+    setEnableCreateMultisig(true);
+    createMultisig(true);
+  };
 
+  const createMultisig = async (previewTxFee: boolean) => {
     if (accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length) return;
 
     const account = selectedState().account;
     const wallet = selectedState().wallet;
     const saturn = saturnState().saturn;
-    const tinkernetApi = ringApisContext.state.tinkernet;
 
     if (!saturn || !wallet || !account) return;
 
@@ -155,7 +179,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const name = multisigName();
     const requiredApproval = requiredApprovalField();
     const minimumSupport = minimumSupportField();
-    const multisigParty = members();
+    const creationFeeAsset = feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay;
 
     if (!name || !wallet.signer) {
       return;
@@ -170,14 +194,53 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     ms = ms * 10000000;
     ra = ra * 10000000;
 
-    const createMultisigResult: MultisigCreateResult = await saturn.createMultisig({
+    const createMultisigCall = saturn.createMultisig({
       minimumSupport: new BN(ms),
       requiredApproval: new BN(ra),
-      creationFeeAsset: feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay,
+      creationFeeAsset,
       metadata,
-    }).signAndSend(account.address, wallet.signer);
+    });
 
-    console.log("createMultisigResult: ", createMultisigResult);
+    if (previewTxFee) {
+      try {
+        const info = await createMultisigCall.paymentInfo(account.address, creationFeeAsset) as RuntimeDispatchInfo;
+        const partialFee = new BigNumber(info.partialFee.toString());
+        setEstTxFees(partialFee);
+      } catch (error) {
+        console.error(error);
+      }
+      return;
+    }
+
+    try {
+      const createMultisigResult: MultisigCreateResult = await createMultisigCall.signAndSend(account.address, wallet.signer);
+
+      if (createMultisigResult) {
+        setCreateMultiSigResult(createMultisigResult);
+        setEnableCreateMembership(true);
+        setEnableCreateMultisig(false);
+        createMembership(true);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      wallet.disconnect();
+    }
+  };
+
+  const createMembership = async (previewTxFee: boolean) => {
+    if (accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length) return;
+
+    const account = selectedState().account;
+    const wallet = selectedState().wallet;
+    const saturn = saturnState().saturn;
+    const tinkernetApi = ringApisContext.state.tinkernet;
+    const multisigParty = members();
+    const createMultisigResult = createMultiSigResult();
+
+    if (!saturn || !wallet || !account || !createMultisigResult) return;
+
+    wallet.connect();
 
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
@@ -194,21 +257,48 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       }
     }
 
-    const calls = [
-      tinkernetApi.tx.balances.transferKeepAlive(multisigAddress, new BN("7000000000000")),
+    const innerCallsBatch = tinkernetApi.tx.utility.batchAll(innerCalls);
+
+    const finalCalls = [
+      tinkernetApi.tx.balances.transferKeepAlive(multisigAddress, new BN(INITIAL_CORE_FUNDING)),
       saturn.buildMultisigCall({
         id: multisigId,
-        call: tinkernetApi.tx.utility.batchAll(innerCalls) as unknown as SubmittableExtrinsic<ApiTypes, ISubmittableResult>,
+        call: innerCallsBatch as unknown as SubmittableExtrinsic<ApiTypes, ISubmittableResult>,
       }).call as Uint8Array | Call | SubmittableExtrinsic<ApiTypes, ISubmittableResult>
     ];
 
+    const finalCallsBatch = tinkernetApi.tx.utility.batchAll(finalCalls);
+
+    if (previewTxFee) {
+      try {
+        const info = await finalCallsBatch.paymentInfo(account.address, { signer: wallet.signer });
+        const partialFee = new BigNumber(info.partialFee.toString());
+        setEstTxFees(partialFee);
+      } catch (error) {
+        console.error(error);
+      }
+      return;
+    }
+
     try {
-      tinkernetApi.tx.utility.batchAll(calls).signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
+      await finalCallsBatch.signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
         setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
 
-        if (result.status.isFinalized || result.status.isInBlock) {
-          navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
+        if (result.isError && result.dispatchError) {
+          const error = result.dispatchError.toHuman();
+          if (error) {
+            const errorEntries = Object.entries(error);
+            for (const [key, value] of errorEntries) {
+              if (value === true) {
+                throw new Error(key);
+              }
+            }
+          }
+        }
 
+        if (result.status.isFinalized || result.status.isInBlock) {
+          abortUi();
+          navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
           setTimeout(() => {
             window.location.reload();
           }, 100);
@@ -353,6 +443,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   };
 
   const goBack = () => {
+    setFinishing(false);
     let currentIndex = accessibleSteps().indexOf(getCurrentStep());
     let prevIndex = currentIndex - 1;
     while (prevIndex >= 0 && !isStepAccessible(accessibleSteps()[prevIndex])) {
@@ -407,9 +498,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     setMultisigName('');
     setMembers([]);
     setMinimumSupportField('50');
-    setRequiredApprovalField('50');
+    setRequiredApprovalField('0');
     setActive(accessibleSteps()[0]);
     setSelfAddress();
+    setEnableCreateMultisig(false);
+    setEnableCreateMembership(false);
     setFinishing(false);
   };
 
@@ -513,7 +606,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const saturn = saturnState().saturn;
 
     const loadMultisigDetails = async () => {
-      if (!details || !saturn || !details) {
+      if (!details || !saturn) {
         return;
       };
 
@@ -528,10 +621,18 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       if (inAddMemberModal && details) {
         let multisigName;
         try {
-          const metadata = details.metadata ? JSON.parse(details.metadata) : null;
-          multisigName = metadata && metadata.name ? metadata.name : identity && identity.display && identity.display.Raw ? identity.display.Raw : hexToString(details.metadata);
-        } catch {
-          multisigName = identity && identity.display && identity.display.Raw ? identity.display.Raw : hexToString(details.metadata);
+          const metadata = details.metadata ? JSON.parse(hexToString(details.metadata)) : null;
+          if (metadata && metadata.name) {
+            multisigName = metadata.name;
+          } else {
+            const identityDisplay = identity && identity.display && identity.display.Raw ? identity.display.Raw : null;
+            if (identityDisplay) {
+              multisigName = identityDisplay;
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing metadata:", error);
+          multisigName = `Multisig ${ details.id }`;
         }
         const requiredApproval = new BigNumber(details.requiredApproval.toString());
         const multisigType = requiredApproval.isZero() ? MultisigEnum.TRADITIONAL : MultisigEnum.GOVERNANCE;
@@ -620,6 +721,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
       if (multisigType() === MultisigEnum.TRADITIONAL) {
         setRequiredApprovalField('0');
+      } else {
+        setRequiredApprovalField('50');
       }
 
       // if (multisigType() === MultisigEnum.TRADITIONAL) {
@@ -662,7 +765,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setTextHint('Vote thresholds are the minimum number of votes required to pass a proposal.');
         break;
       case accessibleSteps()[4]:
-        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } TNKR in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } TNKR required).`);
+        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } ${ feeAsset() } in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } TNKR required).`);
         break;
       case accessibleSteps()[5]:
         setFinishing(false);
@@ -925,6 +1028,61 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     </div>
   );
 
+  const BOTTOM_BAR = () => (<Show when={(multisigModalType() === MULTISIG_MODAL_ID && getCurrentStep() !== accessibleSteps()[5]) || multisigModalType() === ADD_MEMBER_MODAL_ID}>
+    <div class={`flex ${ lessThan1200() ? 'flex-col' : 'flex-row' } items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg`}>
+      <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
+      <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
+        <button type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
+        <button disabled={disableCrumbs().includes(getNextStep() ?? "") || (multisigModalType() === MULTISIG_MODAL_ID && inReviewStep() && notEnoughBalance()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? finishCreation : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+      </div>
+    </div>
+  </Show>);
+
+  const CONTENT_AREA = () => (
+    <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>
+      <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
+        <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
+          <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
+            <Match when={!isLoggedIn()}>
+              <STEP_LOGIN />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]}>
+              <STEP_1_NAME />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[1]}>
+              <STEP_2_SELECT_TYPE />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
+              <STEP_3_MEMBERS />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[3]}>
+              <STEP_4_VOTE_THRESHOLD />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
+              <STEP_5_CONFIRM />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[5]}>
+              <STEP_6_SUCCESS />
+            </Match>
+          </Switch>
+        </Show>
+        <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
+          <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
+            <Match when={!isLoggedIn()}>
+              <STEP_LOGIN />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
+              <STEP_3_MEMBERS />
+            </Match>
+            <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
+              <STEP_5_CONFIRM />
+            </Match>
+          </Switch>
+        </Show>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div id={multisigModalType()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
@@ -945,83 +1103,81 @@ const CreateMultisig = (props: CreateMultisigProps) => {
             <SaturnCard noPadding>
               <div class={`p-5 ${ lessThan1200() ? 'h-auto' : 'h-96' }`}>
                 <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
-                  <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
-                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[30px] xs:min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
-                      <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
-                        {
-                          !isNextToLastStep() ?
-                            <span>
-                              Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
-                            </span> :
-                            <span class="flex flex-col items-center">
-                              <img src={CheckIcon} width={80} height={80} />
-                              <span class="mt-5 break-words">You're All Set!</span>
-                            </span>
-                        }
-                      </Show>
-                      <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                        <span>
-                          Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
-                        </span>
-                      </Show>
-                    </h3>
-                    <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                      <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
-                    </Show>
-                  </div>
-                  <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>
-                    <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
-                      <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
-                        <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
-                          <Match when={!isLoggedIn()}>
-                            <STEP_LOGIN />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[0]}>
-                            <STEP_1_NAME />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[1]}>
-                            <STEP_2_SELECT_TYPE />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
-                            <STEP_3_MEMBERS />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[3]}>
-                            <STEP_4_VOTE_THRESHOLD />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
-                            <STEP_5_CONFIRM />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[5]}>
-                            <STEP_6_SUCCESS />
-                          </Match>
-                        </Switch>
-                      </Show>
-                      <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                        <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
-                          <Match when={!isLoggedIn()}>
-                            <STEP_LOGIN />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[2]}>
-                            <STEP_3_MEMBERS />
-                          </Match>
-                          <Match when={getCurrentStep() === MULTISIG_CRUMB_TRAIL[4]}>
-                            <STEP_5_CONFIRM />
-                          </Match>
-                        </Switch>
+                  <Show when={!finishing()}>
+                    <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
+                      <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[30px] xs:min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
+                        <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
+                          {
+                            !isNextToLastStep() ?
+                              <span>
+                                Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                              </span> :
+                              <span class="flex flex-col items-center">
+                                <img src={CheckIcon} width={80} height={80} />
+                                <span class="mt-5 break-words">You're All Set!</span>
+                              </span>
+                          }
+                        </Show>
+                        <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
+                          <span>
+                            Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                          </span>
+                        </Show>
+                      </h3>
+                      <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
+                        <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
                       </Show>
                     </div>
-                  </div>
+                  </Show>
+                  <Show when={finishing()}>
+                    <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1' } px-3`}>
+                      <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/tight font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] mb-3`}>
+                        <span>
+                          Review and Sign
+                        </span>
+                      </h3>
+                      <dl class="mt-4 text-xs w-full">
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-1 border-gray-700 border-dashed pt-2">
+                          <dt>Omnisig Account Costs</dt>
+                          <dd class="text-white">
+                            {coreCreationFeeFormatted()}
+                          </dd>
+                        </div>
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-1 border-gray-700 border-dashed pt-2">
+                          <dt>Estimated Transaction Fees</dt>
+                          <dd class="text-white">
+                            {estTxFeesFormatted()}
+                          </dd>
+                        </div>
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-1 border-gray-700 border-dashed pt-2">
+                          <dt>Initial Omnisig Funding</dt>
+                          <dd class="text-white">
+                            {coreInitialFundingFormatted()}
+                          </dd>
+                        </div>
+                        <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey font-bold border-y border-1 border-gray-700 border-dashed py-2">
+                          <dt>TOTAL ({feeAsset()})</dt>
+                          <dd class="text-white">
+                            {totalCosts()}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div class="flex flex-row items-center justify-between mt-5 gap-3">
+                        <button disabled={!enableCreateMultisig()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMultisig, false]}>
+                          <span class="rounded-full border border-white px-2 py-[3px] mr-2">1</span>
+                          <span>Create Multisig</span>
+                        </button>
+                        <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
+                          <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
+                          <span>Add Members</span>
+                        </button>
+                      </div>
+                    </div>
+                  </Show>
+                  <CONTENT_AREA />
                 </div>
               </div>
-              <Show when={(multisigModalType() === MULTISIG_MODAL_ID && getCurrentStep() !== accessibleSteps()[5]) || multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                <div class={`flex ${ lessThan1200() ? 'flex-col' : 'flex-row' } items-center justify-between bg-gray-200 dark:bg-gray-900 rounded-b-lg`}>
-                  <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
-                  <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
-                    <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || (multisigModalType() === MULTISIG_MODAL_ID && inReviewStep() && notEnoughBalance()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
-                  </div>
-                </div>
-              </Show>
+              <BOTTOM_BAR />
             </SaturnCard>
           </Show>
         </div>
