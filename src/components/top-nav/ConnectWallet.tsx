@@ -60,11 +60,16 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
   };
 
   const openAccountSelectorModal = () => {
-    if (!accountSelectorModal()) return;
-    if (accountSelectorModal()) {
-      if (accountSelectorModal()?.isHidden()) {
-        accountSelectorModal()?.show();
-      }
+    console.log("Attempting to open account selector modal.");
+    if (!accountSelectorModal()) {
+      console.log("Account selector modal instance not found.");
+      return;
+    }
+    if (accountSelectorModal()?.isHidden()) {
+      console.log("Account selector modal is hidden, showing now.");
+      accountSelectorModal()?.show();
+    } else {
+      console.log("Account selector modal is already visible.");
     }
   };
 

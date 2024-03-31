@@ -39,9 +39,9 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const createMultisigModalElement = () => document.getElementById(MULTISIG_MODAL_ID);
   const addressSelectorModalElement = () => document.getElementById(ADDRESS_SELECTOR_MODAL_ID);
 
-  createEffect(() => {
-    initModals();
-  });
+  // createEffect(() => {
+  //   initModals();
+  // });
 
   createEffect(() => {
     const modal = multisigListModalElement();
@@ -94,84 +94,95 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const showMultisigListModal = () => {
     const instance = multisigListModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.show();
     }
   };
 
   const hideMultisigListModal = () => {
     const instance = multisigListModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.hide();
+      instance.destroy();
     }
   };
 
   const showFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.init();
+      instance.show();
     }
   };
 
   const hideFeeAssetModal = () => {
     const instance = feeAssetModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.hide();
+      instance.destroy();
     }
   };
 
   const showProposeModal = () => {
     const instance = proposedModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.init();
+      instance.show();
     }
   };
 
   const hideProposeModal = () => {
     const instance = proposedModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.hide();
+      instance.destroy();
     }
   };
 
   const showAddMemberModal = () => {
     const instance = addMemberModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.init();
+      instance.show();
     }
   };
 
   const hideAddMemberModal = () => {
     const instance = addMemberModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.hide();
+      instance.destroy();
     }
   };
 
   const showCreateMultisigModal = () => {
     const instance = createMultisigModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.init();
+      instance.show();
     }
   };
 
   const hideCreateMultisigModal = () => {
     const instance = createMultisigModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.hide();
+      instance.destroy();
     }
   };
 
   const showAddressSelectorModal = () => {
     const instance = addressSelectorModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.init();
+      instance.show();
     }
   };
 
   const hideAddressSelectorModal = () => {
     const instance = addressSelectorModalInstance();
     if (instance) {
-      instance.toggle();
+      instance.hide();
+      instance.destroy();
     }
   };
 

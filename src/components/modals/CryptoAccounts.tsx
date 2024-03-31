@@ -168,7 +168,7 @@ const CryptoAccounts = () => {
   });
 
   createEffect(() => {
-    // initModals();
+    initModals();
     const instance = $modalElement();
     modal = new Modal(instance);
 
