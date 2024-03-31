@@ -28,10 +28,11 @@ export type QueuePageProps = {
 };
 
 export default function Transactions() {
-  let accordion: AccordionInterface;
+  const [accordion, setAccordion] = createSignal<AccordionInterface | undefined>(undefined);
   const [pendingProposals, setPendingProposals] = createSignal<CallDetailsWithHash[]>([]);
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [loading, setLoading] = createSignal<boolean>(true);
+  const [activeIndex, setActiveIndex] = createSignal<number>(-1);
 
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
@@ -39,7 +40,6 @@ export default function Transactions() {
   const loc = useLocation();
   const multisigHashId = loc.pathname.split('/')[1];
   const encodedAddress = createMemo(() => getEncodedAddress(selectedAccountContext.state.account?.address || '', 117));
-
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
 
   const hasVoted = (pc: CallDetailsWithHash) => {
@@ -50,12 +50,10 @@ export default function Transactions() {
     }
     const voterRecord = pc.details.tally.records[address];
     if (!voterRecord) {
-      console.warn(`No voter record found for address: ${ address }`, pc.details.tally.records);
       return false;
     }
     const hasAye = 'aye' in voterRecord && voterRecord.aye !== undefined;
     const hasNay = 'nay' in voterRecord && voterRecord.nay !== undefined;
-    console.log('voteRecord found:', voterRecord);
     return hasAye || hasNay;
   };
 
@@ -110,11 +108,28 @@ export default function Transactions() {
   };
 
   const handleAccordionClick = (index: number) => {
+    const accord = accordion();
+
     try {
-      if (document.querySelector(`#content${ index }`)) {
-        accordion.toggle(`#content${ (index) }`);
-      } else {
-        console.error('Accordion is not initialized');
+      if (!accord || !accord._items || !accord._items.length) {
+        console.error('Accordion or accordion item is not initialized or index is out of bounds');
+        return;
+      }
+
+      const item = accord._items[index];
+      if (!item || !item.triggerEl) {
+        console.error(`Accordion item or its triggerEl at index ${ index } is undefined`);
+        return;
+      }
+
+      if (item.triggerEl) {
+        if (index === activeIndex()) {
+          setActiveIndex(-1);
+          accord.close(`content${ index }`);
+        } else {
+          accord.open(`content${ index }`);
+          setActiveIndex(index);
+        }
       }
     } catch (e) {
       return null;
@@ -143,12 +158,11 @@ export default function Transactions() {
     }
 
     try {
-      const result = saturn.withdrawVote({
+      const call = saturn.withdrawVote({
         id: multisigId,
         callHash,
       });
-      console.log('Withdraw vote result:', result);
-      await result.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer });
+      await call.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer });
     } catch (error) {
       console.error('Error withdrawing vote:', error);
     }
@@ -247,9 +261,10 @@ export default function Transactions() {
 
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
-  onMount(() => {
-    initAccordions();
-  });
+  const isItemActive = (index: number) => {
+    const current = activeIndex();
+    return index === current;
+  };
 
   createEffect(() => {
     const pc = pendingProposals();
@@ -257,21 +272,22 @@ export default function Transactions() {
     if (document && pc) {
       const parentEl = () => document.getElementById(ACCORDION_ID);
       const accordionItems = () => pc.map((p, index) => {
-        const triggerEl = () => document.querySelector(`#heading${ index }`) as HTMLElement;
-        const targetEl = () => document.querySelector(`#content${ index }`) as HTMLElement;
+        const triggerEl = document.getElementById(`heading${ index }`) as HTMLElement;
+        const targetEl = document.getElementById(`content${ index }`) as HTMLElement;
 
-        if (p && triggerEl() && targetEl()) {
+        if (p && triggerEl && targetEl) {
           return {
-            id: `heading${ index }`,
-            triggerEl: triggerEl(),
-            targetEl: targetEl(),
+            id: `content${ index }`,
+            triggerEl,
+            targetEl,
             active: false,
           };
         }
       });
 
       const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
-      accordion = new FlowAccordion(parentEl(), items);
+      const accordion = new FlowAccordion(parentEl(), items);
+      setAccordion(accordion);
     }
   });
 
@@ -322,97 +338,100 @@ export default function Transactions() {
         </div>}>
           <Match when={pendingProposals().length > 0}>
             <For each={pendingProposals()}>
-              {(pc: CallDetailsWithHash, index) => <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())}>
-                <div class="flex flex-row">
-                  {/* Call data */}
-                  <div class="max-h-[300px] w-full overflow-scroll my-2 grow">
-                    <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
-                  </div>
+              {(pc: CallDetailsWithHash, index) => {
 
-                  {/* Votes history */}
-                  <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12 h-32 overflow-y-scroll saturn-scrollbar'>
-                    <For each={Object.entries(pc.details.tally.records)}>
-                      {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
-                        const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
-                        return <div class="flex flex-row">
-                          <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
-                            {vote.aye
-                              ? <img src={AyeIcon} />
-                              : <img src={NayIcon} />
-                            }
-                          </div>
-                          <div class='flex flex-col pt-2'>
-                            <div
-                              class='text-xs font-bold text-black dark:text-white'
-                            >
-                              {stringShorten(voter, 4)}
-                            </div>
-                            <div class="text-xxs text-saturn-lightgrey leading-none">
-                              {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
-                            </div>
-                          </div>
-                        </div>;
-                      }}
-                    </For>
-                  </div>
-                </div>
-                <div class="flex flex-row justify-between">
-                  {/* Vote breakdown */}
-                  <div class="flex flex-col rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
-                    <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
-                    <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
-                    <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
-                      <span>{totalVotes(pc.details.tally.records)}</span>
-                      <span class="text-saturn-lightgrey"> / {members().length}</span>
-                    </span>} color='bg-saturn-purple' label='Voter Turnout' />
-                  </div>
+                return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
+                  <div class="flex flex-row">
+                    {/* Call data */}
+                    <div class="max-h-[300px] w-full overflow-scroll my-2 grow">
+                      <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+                    </div>
 
-                  {/* Support breakdown and Kill button */}
-                  <div class="flex flex-col justify-between ml-3">
-                    <dl class="flex flex-col text-xs py-2">
-                      <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
-                        <dt class="w-full">Support needed:</dt>
-                        <dd class="text-black dark:text-white">
-                          {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                        </dd>
-                      </div>
-                      <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
-                        <dt class="w-full">Approval needed:</dt>
-                        <dd class="text-black dark:text-white">
-                          {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
-                        </dd>
-                      </div>
-                    </dl>
-                    <div>
-                      <button
-                        type="button"
-                        class="rounded-md hover:opacity-75 border-2 border-saturn-red p-2 text-xs text-saturn-red justify-center w-full focus:outline-none"
-                        onClick={() => killProposal(pc.callHash.toString())}
-                        disabled={loading()}
-                      >
-                        Kill Proposal
-                      </button>
+                    {/* Votes history */}
+                    <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12 h-32 overflow-y-scroll saturn-scrollbar'>
+                      <For each={Object.entries(pc.details.tally.records)}>
+                        {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
+                          const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
+                          return <div class="flex flex-row">
+                            <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
+                              {vote.aye
+                                ? <img src={AyeIcon} />
+                                : <img src={NayIcon} />
+                              }
+                            </div>
+                            <div class='flex flex-col pt-2'>
+                              <div
+                                class='text-xs font-bold text-black dark:text-white'
+                              >
+                                {stringShorten(voter, 4)}
+                              </div>
+                              <div class="text-xxs text-saturn-lightgrey leading-none">
+                                {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                              </div>
+                            </div>
+                          </div>;
+                        }}
+                      </For>
                     </div>
                   </div>
-                </div>
-                <Show when={!hasVoted(pc)}>
-                  <div class='flex flex-row gap-3 my-3 actions'>
-                    <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
-                    <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
+                  <div class="flex flex-row justify-between">
+                    {/* Vote breakdown */}
+                    <div class="flex flex-col rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
+                      <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
+                      <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
+                      <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
+                        <span>{totalVotes(pc.details.tally.records)}</span>
+                        <span class="text-saturn-lightgrey"> / {members().length}</span>
+                      </span>} color='bg-saturn-purple' label='Voter Turnout' />
+                    </div>
+
+                    {/* Support breakdown and Kill button */}
+                    <div class="flex flex-col justify-between ml-3">
+                      <dl class="flex flex-col text-xs py-2">
+                        <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
+                          <dt class="w-full">Support needed:</dt>
+                          <dd class="text-black dark:text-white">
+                            {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
+                          </dd>
+                        </div>
+                        <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
+                          <dt class="w-full">Approval needed:</dt>
+                          <dd class="text-black dark:text-white">
+                            {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div>
+                        <button
+                          type="button"
+                          class="rounded-md hover:opacity-75 border-2 border-saturn-red p-2 text-xs text-saturn-red justify-center w-full focus:outline-none"
+                          onClick={() => killProposal(pc.callHash.toString())}
+                          disabled={loading()}
+                        >
+                          Kill Proposal
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </Show>
-                <Show when={hasVoted(pc)}>
-                  <div class='flex flex-row gap-3 my-3 actions'>
-                    <button
-                      type="button"
-                      class="rounded-md hover:opacity-75 bg-saturn-purple p-2 text-xs text-white justify-center w-full focus:outline-none"
-                      onClick={[withdrawVote, pc]}
-                    >
-                      Withdraw Vote
-                    </button>
-                  </div>
-                </Show>
-              </SaturnAccordionItem>
+                  <Show when={!hasVoted(pc)}>
+                    <div class='flex flex-row gap-3 my-3 actions'>
+                      <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
+                      <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
+                    </div>
+                  </Show>
+                  <Show when={hasVoted(pc)}>
+                    <div class='flex flex-row gap-3 my-3 actions'>
+                      <button
+                        type="button"
+                        class="rounded-md hover:opacity-75 bg-saturn-purple p-2 text-xs text-white justify-center w-full focus:outline-none"
+                        onClick={[withdrawVote, pc]}
+                      >
+                        Withdraw Vote
+                      </button>
+                    </div>
+                  </Show>
+                </SaturnAccordionItem>;
+              }
               }
             </For>
           </Match>
