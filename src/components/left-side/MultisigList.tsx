@@ -17,6 +17,7 @@ import { getMultisigsForAccount } from '../../utils/getMultisigs';
 import { usePriceContext } from '../../providers/priceProvider';
 import { useIdentityContext } from '../../providers/identityProvider';
 import { useBalanceContext } from '../../providers/balanceProvider';
+import { MultisigDetails } from '@invarch/saturn-sdk';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -172,7 +173,7 @@ const MultisigList = (props: MultisigListProps) => {
       }
 
       const processedList: MultisigItem[] = await Promise.all(sortedByDescendingId.map(async (m) => {
-        const multisigDetails = await sat.getDetails(m);
+        const multisigDetails: MultisigDetails | null = await sat.getDetails(m);
 
         const address = multisigDetails?.parachainAccount.toHuman() as string;
 
@@ -183,7 +184,20 @@ const MultisigList = (props: MultisigListProps) => {
           };
         })?.info);
 
-        const name = iden?.display?.Raw || `Multisig ${ m }`;
+        let name = `Multisig ${ m }`;
+
+        if (iden?.display?.Raw) {
+          name = iden.display.Raw;
+        } else {
+          try {
+            const metadata = multisigDetails && multisigDetails.metadata ? JSON.parse(multisigDetails.metadata) : null;
+            if (metadata && metadata.name) {
+              name = metadata.name;
+            }
+          } catch (error) {
+            console.error("Error parsing multisigDetails.metadata.name:", error);
+          }
+        }
 
         const image = iden?.image?.Raw;
 

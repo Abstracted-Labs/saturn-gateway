@@ -27,7 +27,7 @@ import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { Call } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import BigNumber from "bignumber.js";
-import { FeeAsset, MultisigCallResult } from "@invarch/saturn-sdk";
+import { FeeAsset, MultisigCallResult, MultisigCreateResult } from "@invarch/saturn-sdk";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import debounce from "../../utils/debounce";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
@@ -163,16 +163,18 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     let ms = parseFloat(minimumSupport);
     let ra = parseFloat(requiredApproval);
+    const metadata = JSON.stringify({ name });
 
     if (!ms) return;
 
     ms = ms * 10000000;
     ra = ra * 10000000;
 
-    const createMultisigResult = await saturn.createMultisig({
+    const createMultisigResult: MultisigCreateResult = await saturn.createMultisig({
       minimumSupport: new BN(ms),
       requiredApproval: new BN(ra),
       creationFeeAsset: feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay,
+      metadata,
     }).signAndSend(account.address, wallet.signer);
 
     console.log("createMultisigResult: ", createMultisigResult);
@@ -180,9 +182,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
 
-    let innerCalls = [
-      tinkernetApi.tx.identity.setIdentity({ display: { Raw: name } })
-    ];
+    let innerCalls = [];
 
     if (multisigParty && typeof multisigParty === 'object') {
       // loop through multisigParty and add vote weight for each member
@@ -506,17 +506,33 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     setActive(initFirstStep());
   });
 
-  createEffect(on([() => saturnState().multisigDetails, multisigModalType], () => {
+  createEffect(() => {
     const details = saturnState().multisigDetails;
-    const inAddMemberModal = multisigModalType() === ADD_MEMBER_MODAL_ID;
+    const modalType = multisigModalType();
+    const inAddMemberModal = modalType === ADD_MEMBER_MODAL_ID;
+    const saturn = saturnState().saturn;
 
     const loadMultisigDetails = async () => {
-      if (!details) {
+      if (!details || !saturn || !details) {
         return;
       };
 
-      if (inAddMemberModal && details.metadata && details.requiredApproval) {
-        const multisigName = hexToString(details.metadata);
+      const address = details.parachainAccount.toHuman() as string;
+      const identity = await saturn.api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+        info: {
+          display: { Raw: string; };
+          image: { Raw: string; };
+        };
+      })?.info);
+
+      if (inAddMemberModal && details) {
+        let multisigName;
+        try {
+          const metadata = details.metadata ? JSON.parse(details.metadata) : null;
+          multisigName = metadata && metadata.name ? metadata.name : identity && identity.display && identity.display.Raw ? identity.display.Raw : hexToString(details.metadata);
+        } catch {
+          multisigName = identity && identity.display && identity.display.Raw ? identity.display.Raw : hexToString(details.metadata);
+        }
         const requiredApproval = new BigNumber(details.requiredApproval.toString());
         const multisigType = requiredApproval.isZero() ? MultisigEnum.TRADITIONAL : MultisigEnum.GOVERNANCE;
         setMultisigName(multisigName);
@@ -525,7 +541,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     };
 
     loadMultisigDetails();
-  }));
+  });
 
   createEffect(() => {
     // set self address as first member
@@ -817,7 +833,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         <div>
           <p class="text-xs/none">Minimum threshold is the number of votes required to execute a proposal.</p>
           <div class="flex flex-row items-center justify-start gap-2 sm:gap-5 my-4">
-            <div class="flex flex-row items-center gap-1">
+            <div class="flex flex-row items-center gap-3">
               <SaturnNumberInput isMultisigUi label="minimumThreshold" initialValue={minimumThreshold()} currentValue={(threshold) => handleSetMinimumThreshold(threshold)} min={1} max={members().length} />
               <label for="minimumThreshold" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>
                 {`${ minimumThreshold() } vote${ minimumThreshold() === '1' ? '' : 's' } from ${ members().length } member${ members().length === 1 ? '' : 's' }`}
@@ -930,7 +946,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
               <div class={`p-5 ${ lessThan1200() ? 'h-auto' : 'h-96' }`}>
                 <div class={`${ lessThan1200() ? 'flex flex-col' : 'grid grid-cols-4 gap-2 place-items-start lg:place-items-center' } h-full`}>
                   <div class={`${ lessThan1200() ? '' : 'lg:col-span-2 col-span-1 lg:h-44' } px-3`}>
-                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
+                    <h3 class={`text-2xl/none sm:text-3xl/12 md:text-[5vw] lg:text-[3vw]/none h-auto min-h-[30px] xs:min-h-[60px] sm:min-h-[90px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ECD92F] via-[#FF4D90] to-[#692EFF] ${ lessThan1200() ? 'mb-3' : 'mb-10' }`}>
                       <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
                         {
                           !isNextToLastStep() ?
@@ -1002,7 +1018,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                   <div class={`text-xs dark:text-white text-black text-center mx-auto px-3 ${ lessThan1200() ? 'py-3' : '' }`}>{textHint()}</div>
                   <div class={`flex flex-row ${ lessThan1200() ? 'w-full' : '' }`}>
                     <button disabled={finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none text-center border-r border-r-[1px] dark:border-r-gray-900 border-r-gray-200 ${ !lessThan1200() ? '' : 'rounded-bl-lg' } flex-grow`} onClick={goBack}><span class="px-2 flex">&lt; <span class="ml-2">{getCurrentStep() === accessibleSteps()[0] ? 'Close' : 'Back'}</span></span></button>
-                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || (inReviewStep() && notEnoughBalance()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
+                    <button disabled={disableCrumbs().includes(getNextStep() ?? "") || (multisigModalType() === MULTISIG_MODAL_ID && inReviewStep() && notEnoughBalance()) || finishing()} type="button" class={`text-sm text-white p-3 bg-saturn-purple opacity-100 hover:bg-purple-600 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none rounded-br-lg text-center flex-grow`} onClick={!inReviewStep() ? goForward : multisigModalType() === MULTISIG_MODAL_ID ? createMultisig : proposeNewMembers}>{finishing() ? <span class="px-2 flex justify-end"><LoaderAnimation text="Processing" /></span> : inReviewStep() ? <span class="px-3 flex justify-end">Finish <img src={FlagIcon} alt="Submit" width={13} height={13} class="ml-3" /></span> : <span class="px-2 flex justify-end"><span class="mr-2">Next</span> &gt;</span>}</button>
                   </div>
                 </div>
               </Show>
