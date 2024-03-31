@@ -590,7 +590,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     abortUi();
   });
 
-  onMount(() => {
+  createEffect(() => {
     const feeCurrency = selectedAccountContext.setters.getFeeAsset();
     setFeeAsset(feeCurrency);
   });
@@ -765,7 +765,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setTextHint('Vote thresholds are the minimum number of votes required to pass a proposal.');
         break;
       case accessibleSteps()[4]:
-        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } ${ feeAsset() } in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } TNKR required).`);
+        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } ${ feeAsset() } in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } ${ feeAsset() } required).`);
         break;
       case accessibleSteps()[5]:
         setFinishing(false);
