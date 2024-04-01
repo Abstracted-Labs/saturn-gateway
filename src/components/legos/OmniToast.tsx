@@ -30,7 +30,7 @@ function OmniToast() {
   return (
     <div id={TOAST_ALERT_ID} role="alert" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 my-3">
       <For each={toasts()}>{(toast, index) => (
-        <div id={`toast-${ toast.id }`} class={`flex flex-row items-center justify-between gap-5 text-xs py-2 px-3 border bg-saturn-black rounded-lg ${ displayMessageStyle(toast.type) } transition-transform transform translate-y-2`}>
+        <div id={`toast-${ toast.id }`} class={`flex flex-row items-center justify-between gap-5 text-xs py-2 px-3 border bg-saturn-black rounded-lg ${ displayMessageStyle(toast.type) } transition-transform transform translate-y-2 box-shadow`}>
           <div class="flex flex-row items-center gap-1">
             <Show when={toast.type === 'loading'}>
               <LoaderAnimation />

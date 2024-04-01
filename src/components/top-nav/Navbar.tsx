@@ -13,7 +13,7 @@ const Navbar = (props: any) => {
   const lessThanLg = createMemo(() => window.matchMedia('(max-width: 992px)').matches);
 
   return <>
-    <nav {...props} class={`${ atHome() ? 'bg-transparent backdrop-blur' : 'bg-saturn-offwhite dark:bg-saturn-black' } sticky z-50 top-0 left-0`}>
+    <nav {...props} class={`${ atHome() ? 'bg-transparent backdrop-blur-sm' : 'bg-saturn-offwhite dark:bg-saturn-black' } sticky z-50 top-0 left-0`}>
       <div class="py-3 px-5">
         <div class={`flex items-center ${ atHome() ? 'justify-center' : 'justify-between' }`}>
           <div class={`${ open() && lessThanSm() ? 'invisible' : '' }`}>

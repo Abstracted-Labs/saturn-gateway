@@ -1072,7 +1072,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   const CONTENT_AREA = () => (
     <div class={`${ lessThan1200() ? 'flex flex-col' : 'lg:col-span-2 col-span-3 mx-8' } bg-image`} style={{ 'background-image': `url(${ GradientBgImage })`, 'background-position': 'left' }}>
-      <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
+      <div class={`flex flex-col justify-center bg-gray-950 bg-opacity-[.03] backdrop-blur-sm rounded-md w-full h-full ${ lessThan1200() ? 'px-3 py-5' : 'p-5' }`}>
         <Show when={multisigModalType() === MULTISIG_MODAL_ID}>
           <Switch fallback={<span class="text-center text-black dark:text-white">Loading...</span>}>
             <Match when={!isLoggedIn()}>

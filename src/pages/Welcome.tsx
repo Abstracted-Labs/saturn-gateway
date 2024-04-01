@@ -71,14 +71,14 @@ const Welcome = () => {
       </Match>
       <Match when={isLoggedIn() && !hasMultisigs()}>
         <div class="text-xs mx-auto text-center">
-          <h2 class="text-lg font-bold">Welcome aboard.</h2>
+          <h2 class="text-lg font-bold text-saturn-offwhite">Welcome aboard.</h2>
           <p class="mt-1 mb-2">You will first need to create a new multisig to get started.</p>
           <AddMultisigButton isInModal={false} />
         </div>
       </Match>
       <Match when={!isLoggedIn()}>
         <div class="text-xs mx-auto text-center">
-          <h2 class="text-lg font-bold">Welcome to Omniway.</h2>
+          <h2 class="text-lg font-bold text-saturn-offwhite">Welcome to Omniway.</h2>
           <p class="mt-1">To get started, please connect your wallet.</p>
           <ConnectWallet inMultisig={true} />
         </div>

@@ -346,33 +346,31 @@ const MultisigList = (props: MultisigListProps) => {
             <Match when={multisigItems() && multisigItems().length > 0}>
               <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>
                 {(item: MultisigItem, index) => (
-                  <>
-                    <div
-                      onClick={() => handleClick(index())}
-                      class={`relative p-4 mr-4 rounded-lg w-full flex flex-row items-center hover:cursor-pointer ${ activeButton() === item.id ? 'border-[1.5px] border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : '' }`}
-                      data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
-                      aria-controls={mutateButton() ? 'leftSidebar' : undefined}
-                    >
-                      <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
-                        <Show when={item.image}>
-                          <img class="rounded-full" src={item.image} />
-                        </Show>
-                      </div>
-                      <div class="grid grid-rows-2 ml-3">
-                        <div class="flex flex-row items-center gap-x-2">
-                          <span class={`text-sm ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
-                            {item.capitalizedFirstName}
-                          </span>
-                          <span>
-                            {item.activeTransactions > 0 ? <div class="leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1">{item.activeTransactions}</div> : null}
-                          </span>
-                        </div>
-                        <Show when={item.address}>
-                          <CopyAddress address={item.address} length={4} isInModal={isInModal()} />
-                        </Show>
-                      </div>
+                  <div
+                    onClick={() => handleClick(index())}
+                    class={`relative p-4 rounded-lg w-full flex flex-row items-center hover:cursor-pointer border-[1.5px] ${ activeButton() === item.id ? 'border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : 'border-gray-800 bg-saturn-darkgrey bg-opacity-60' } mb-2`}
+                    data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
+                    aria-controls={mutateButton() ? 'leftSidebar' : undefined}
+                  >
+                    <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                      <Show when={item.image}>
+                        <img class="rounded-full" src={item.image} />
+                      </Show>
                     </div>
-                  </>
+                    <div class="grid grid-rows-2 ml-3">
+                      <div class="flex flex-row items-center gap-x-2">
+                        <span class={`text-sm ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
+                          {item.capitalizedFirstName}
+                        </span>
+                        <span>
+                          {item.activeTransactions > 0 ? <div class="leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1">{item.activeTransactions}</div> : null}
+                        </span>
+                      </div>
+                      <Show when={item.address}>
+                        <CopyAddress address={item.address} length={4} isInModal={isInModal()} />
+                      </Show>
+                    </div>
+                  </div>
                 )}
               </For>
             </Match>
