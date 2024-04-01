@@ -151,11 +151,6 @@ const CryptoAccounts = () => {
       saContext.setters.setEnabledWallets([...currentWallets, walletName]);
     } else {
       saContext.setters.setEnabledWallets(currentWallets.filter((extension) => extension !== walletName));
-
-      const selectedAccount = saContext.state.account;
-      if (selectedAccount && selectedAccount.type === walletName) {
-        saContext.setters.setSelectedAccount(null);
-      }
     }
   };
 

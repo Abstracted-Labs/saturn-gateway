@@ -61,10 +61,10 @@ export function ToastProvider(props: { children: JSX.Element; }) {
         const innerTimeoutId = setTimeout(() => {
           setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
           timeouts.delete(id);
-        }, 5000);
+        }, 3000);
         timeouts.set(id, innerTimeoutId);
       }
-    }, delayBy ? delayBy : 1000);
+    }, delayBy ? delayBy : 200);
     timeouts.set(`outer-${ Date.now() }`, outerTimeoutId);
   };
 

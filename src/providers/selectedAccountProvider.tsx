@@ -1,4 +1,4 @@
-import { JSX, createContext, createEffect, createMemo, useContext } from "solid-js";
+import { JSX, createContext, createEffect, createMemo, onCleanup, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { createLocalStorage } from "@solid-primitives/storage";
 import { Account, BaseWallet } from "@polkadot-onboard/core";
@@ -8,18 +8,48 @@ export interface SelectedAccountState {
   account?: Account;
   wallet?: BaseWallet;
   feeAsset?: KusamaFeeAssetEnum;
-  addressToCopy?: JSX.Element;
+  addressToCopy?: Element | undefined;
   enabledExtensions?: string[];
 }
 
 export const SelectedAccountContext = createContext<{
   state: SelectedAccountState,
-  setters: any,
-}>({ state: {}, setters: {} });
+  setters: {
+    setFeeAsset: (feeAsset: KusamaFeeAssetEnum) => void,
+    getFeeAsset: () => KusamaFeeAssetEnum,
+    setAddressToCopy: (address: Element | undefined) => void,
+    getAddressToCopy: () => Element | undefined,
+    setEnabledWallets: (wallets: string[]) => void,
+    getEnabledWallets: () => string[],
+    setSelected: (account: Account, wallet: BaseWallet) => void,
+    getSelectedStorage: () => { address: string, wallet: string; },
+    clearSelected: () => void;
+  },
+}>({
+  state: {
+    account: undefined,
+    wallet: undefined,
+    feeAsset: KusamaFeeAssetEnum.TNKR,
+    addressToCopy: undefined,
+    enabledExtensions: []
+  }, setters: {
+    setFeeAsset: (feeAsset: KusamaFeeAssetEnum) => { },
+    getFeeAsset: () => KusamaFeeAssetEnum.TNKR,
+    setAddressToCopy: (address: Element | undefined) => { },
+    getAddressToCopy: () => undefined,
+    setEnabledWallets: (wallets: string[]) => { },
+    getEnabledWallets: () => [],
+    setSelected: (account: Account, wallet: BaseWallet) => { },
+    getSelectedStorage: () => ({ address: '', wallet: '' }),
+    clearSelected: () => { }
+  }
+});
 
 export function SelectedAccountProvider(props: any) {
   const [state, setState] = createStore<SelectedAccountState>({});
   const [storageState, setStorageState, { remove }] = createLocalStorage();
+
+  const addressToCopy = createMemo(() => state.addressToCopy);
 
   createEffect(() => {
     const storedExtensions = storageState["enabledExtensions"];
@@ -38,6 +68,10 @@ export function SelectedAccountProvider(props: any) {
     } else {
       setState("feeAsset", KusamaFeeAssetEnum.TNKR);
     }
+  });
+
+  onCleanup(() => {
+    setState("addressToCopy", undefined);
   });
 
   const value = createMemo(() => ({
@@ -60,12 +94,17 @@ export function SelectedAccountProvider(props: any) {
         }
       },
 
-      setAddressToCopy(address: string) {
+      setAddressToCopy(address: Element | undefined) {
         setState("addressToCopy", address);
       },
 
       getAddressToCopy() {
-        return state.addressToCopy;
+        const toCopy = addressToCopy();
+        if (toCopy) {
+          return toCopy;
+        } else {
+          return undefined;
+        }
       },
 
       setEnabledWallets(wallets: string[]) {
