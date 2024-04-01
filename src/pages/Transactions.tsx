@@ -377,8 +377,6 @@ export default function Transactions() {
   });
 
   createEffect(() => {
-    if (!loading()) return;
-
     const pc = pendingProposals();
 
     if (document && pc) {
@@ -401,10 +399,6 @@ export default function Transactions() {
       const accordion = new FlowAccordion(parentEl(), items);
       setAccordion(accordion);
     }
-
-    onCleanup(() => {
-      setAccordion(undefined);
-    });
   });
 
   const voteThreshold = (): JSX.Element => {
