@@ -45,6 +45,7 @@ export default function Transactions() {
   const multisigHashId = loc.pathname.split('/')[1];
 
   const encodedAddress = createMemo(() => getEncodedAddress(selectedAccountContext.state.account?.address || '', 117));
+  const saturn = createMemo(() => saturnContext.state.saturn);
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
   const getMultisigDetails = createMemo(() => saturnContext.state.multisigDetails);
   const isTraditionalMultisig = createMemo(() => getMultisigDetails()?.requiredApproval.toNumber() === 0);
@@ -158,7 +159,7 @@ export default function Transactions() {
 
   const withdrawVote = async (pc: CallDetailsWithHash) => {
     const selectedAccountAddress = selectedAccountContext.state.account?.address;
-    const saturn = saturnContext.state.saturn;
+    const sat = saturn();
     const multisigId = saturnContext.state.multisigId;
     const callHash = pc.callHash.toString();
 
@@ -172,7 +173,7 @@ export default function Transactions() {
       return;
     }
 
-    if (!saturn || typeof multisigId !== 'number') {
+    if (!sat || typeof multisigId !== 'number') {
       toast.setToast('Invalid state for withdrawing vote', 'error');
       return;
     }
@@ -180,13 +181,15 @@ export default function Transactions() {
     toast.setToast('Processing vote withdrawal request...', 'loading');
 
     try {
-      const call = saturn.withdrawVote({
+      const call = sat.withdrawVote({
         id: multisigId,
         callHash,
       });
       await call.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer });
 
       toast.setToast('Your vote has been withdrawn', 'success');
+
+      setLoading(true);
     } catch (error) {
       console.error(error);
       toast.setToast('An error occurred', 'error');
@@ -195,8 +198,9 @@ export default function Transactions() {
 
   const vote = async (callHash: string, aye: boolean) => {
     const selected = selectedAccountContext.state;
+    const sat = saturn();
 
-    if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number') {
+    if (!sat || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number') {
       toast.setToast('Could not process your vote', 'error');
       return;
     }
@@ -204,13 +208,15 @@ export default function Transactions() {
     toast.setToast('Processing your vote...', 'loading');
 
     try {
-      await saturnContext.state.saturn.vote({
+      await sat.vote({
         id: saturnContext.state.multisigId,
         callHash,
         aye,
       }).signAndSend(selected.account.address, { signer: selected.wallet.signer });
 
       toast.setToast('Vote successfully submitted', 'success');
+
+      setLoading(true);
     } catch (error) {
       console.error(error);
       toast.setToast('An error occurred', 'error');
@@ -218,12 +224,12 @@ export default function Transactions() {
   };
 
   const killProposal = async (callHash: string) => {
-    const saturn = saturnContext.state.saturn;
+    const sat = saturn();
     const selectedAccountAddress = selectedAccountContext.state.account?.address;
     const signer = selectedAccountContext.state.wallet?.signer;
     const multisigId = getMultisigId();
 
-    if (!saturn || !selectedAccountAddress || !signer || typeof multisigId !== 'number') {
+    if (!sat || !selectedAccountAddress || !signer || typeof multisigId !== 'number') {
       toast.setToast('Could not process your kill bill proposal', 'error');
       return;
     }
@@ -231,16 +237,22 @@ export default function Transactions() {
     toast.setToast('Processing kill bill request...', 'loading');
 
     try {
-      const cancelCall = saturn.api.tx.inv4.cancelMultisigProposal(callHash);
+      const cancelCall = sat.api.tx.inv4.cancelMultisigProposal(callHash);
 
-      const multisigCall = saturn.buildMultisigCall({
+      const multisigCall = sat.buildMultisigCall({
         id: multisigId,
         call: cancelCall,
       });
 
-      await multisigCall.signAndSend(selectedAccountAddress, signer, feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+      const result = await multisigCall.signAndSend(selectedAccountAddress, signer, feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
 
-      toast.setToast('Kill bill successfully submitted', 'success');
+      if (result) {
+        toast.setToast('Kill bill successfully submitted', 'success');
+      } else {
+        throw new Error('Failed to submit kill bill');
+      }
+
+      setLoading(true);
     } catch (error) {
       console.error(error);
       toast.setToast('An error occurred', 'error');
@@ -351,8 +363,12 @@ export default function Transactions() {
   });
 
   createEffect(() => {
+    if (!loading()) return;
+
+    setActiveIndex(-1);
+
     let timeout: any;
-    const saturn = saturnContext.state.saturn;
+    const sat = saturn();
     const multisigId = getMultisigId();
 
     const delayUnload = () => {
@@ -362,16 +378,18 @@ export default function Transactions() {
     };
 
     const runAsync = async () => {
-      if (!saturn || typeof multisigId !== 'number') {
+      if (!sat || typeof multisigId !== 'number') {
         delayUnload();
         return;
       }
 
-      const pendingCalls = await saturn.getPendingCalls(multisigId);
-      setPendingProposals(pendingCalls);
-
-      const members = await getAllMembers(multisigId, saturn);
+      const members = await getAllMembers(multisigId, sat);
       setMembers(members);
+
+      setTimeout(async () => {
+        const pendingCalls = await sat.getPendingCalls(multisigId);
+        setPendingProposals(pendingCalls);
+      }, 2000);
 
       delayUnload();
     };

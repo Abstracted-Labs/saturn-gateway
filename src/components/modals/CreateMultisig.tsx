@@ -301,7 +301,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           }
         }
 
-        if (result.status.isFinalized || result.status.isInBlock) {
+        if (result.isFinalized || result.isInBlock) {
           toast.setToast('Members successfully added to multisig.', 'success');
 
           navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
