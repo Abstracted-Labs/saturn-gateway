@@ -1,5 +1,5 @@
 import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
-import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
+import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call } from '@polkadot/types/interfaces';
@@ -13,7 +13,7 @@ import { getAllMembers } from '../utils/getAllMembers';
 import { MembersType } from './Management';
 import SaturnAccordionItem from '../components/legos/SaturnAccordionItem';
 import { initAccordions, AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
-import { FALLBACK_TEXT_STYLE } from '../utils/consts';
+import { FALLBACK_TEXT_STYLE, KusamaFeeAssetEnum } from '../utils/consts';
 import { processCallData } from '../utils/processCallData';
 import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
@@ -35,6 +35,7 @@ export default function Transactions() {
   const [members, setMembers] = createSignal<MembersType[]>([]);
   const [loading, setLoading] = createSignal<boolean>(true);
   const [activeIndex, setActiveIndex] = createSignal<number>(-1);
+  const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
 
   const toast = useToast();
   const ringApisContext = useRingApisContext();
@@ -227,9 +228,12 @@ export default function Transactions() {
   };
 
   const killProposal = async (callHash: string) => {
-
     const saturn = saturnContext.state.saturn;
-    if (!saturn || selectedAccountContext.state.account?.address === undefined || selectedAccountContext.state.wallet === undefined) {
+    const selectedAccountAddress = selectedAccountContext.state.account?.address;
+    const signer = selectedAccountContext.state.wallet?.signer;
+    const multisigId = getMultisigId();
+
+    if (!saturn || !selectedAccountAddress || !signer || typeof multisigId !== 'number') {
       toast.addToast('Could not process your kill bill', 'error');
       return;
     }
@@ -237,8 +241,14 @@ export default function Transactions() {
     toast.addToast('Processing kill bill request...', 'loading');
 
     try {
-      const call = saturn.api.tx.inv4.cancelMultisigProposal(callHash);
-      await call.signAndSend(selectedAccountContext.state.account?.address, { signer: selectedAccountContext.state.wallet.signer });
+      const cancelCall = saturn.api.tx.inv4.cancelMultisigProposal(callHash);
+
+      const multisigCall = saturn.buildMultisigCall({
+        id: multisigId,
+        call: cancelCall,
+      });
+
+      await multisigCall.signAndSend(selectedAccountAddress, signer, feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
 
       setTimeout(() => {
         toast.hideToast();
@@ -348,6 +358,11 @@ export default function Transactions() {
       const accordion = new FlowAccordion(parentEl(), items);
       setAccordion(accordion);
     }
+  });
+
+  createEffect(() => {
+    const selectedAsset = selectedAccountContext.setters.getFeeAsset() as KusamaFeeAssetEnum;
+    setFeeAsset(selectedAsset);
   });
 
   createEffect(() => {
