@@ -157,6 +157,16 @@ const AssetsContext = () => {
       return;
     }
 
+    const fromNetwork = pair.from;
+    const toNetwork = pair.to;
+    const senderAddress = getEncodedAddress(saturnContext.state.multisigAddress, 117);
+    const recipientAddress = getEncodedAddress(targetAddress(), 117);
+
+    if (fromNetwork === toNetwork && senderAddress === recipientAddress) {
+      toast.setToast(`Cannot send ${ asset() } to yourself on the same network`, 'error', 0);
+      return;
+    }
+
     const bnAmount = new BigNumber(amount()).times(BigNumber('10').pow(
       BigNumber(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0),));
 
@@ -234,8 +244,8 @@ const AssetsContext = () => {
   const copySelfAddress = () => {
     if (!isLoggedIn()) return;
     setBridgeToSelf(true);
-    if (saContext.state.account?.address) {
-      const nativeAddress = getEncodedAddress(saContext.state.account?.address, 117);
+    if (saturnContext.state.multisigAddress) {
+      const nativeAddress = getEncodedAddress(saturnContext.state.multisigAddress, 117);
       setTargetAddress(nativeAddress);
     }
   };
@@ -334,7 +344,7 @@ const AssetsContext = () => {
   };
 
   const getPaymentInfo = async () => {
-    setLoadingFee(true);
+    // setLoadingFee(true);
 
     if (!targetAddress() || !asset() || !amount()) return;
     const bnAmount = new BigNumber(amount().toString()).multipliedBy(new BigNumber('10').pow(Rings[finalNetworkPair().from as keyof typeof Rings]?.decimals ?? 0));
@@ -376,7 +386,7 @@ const AssetsContext = () => {
       console.error('getPaymentInfo: no payment info');
     }
 
-    setLoadingFee(false);
+    // setLoadingFee(false);
   };
 
   // createEffect(() => {
@@ -642,7 +652,7 @@ const AssetsContext = () => {
     return <div class="flex flex-col w-full">
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
-          <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">from</span>
+          <span class="text-xxs text-saturn-lightgrey">from</span>
           <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={handleFromDropdown}>
             <For each={forNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
@@ -653,7 +663,7 @@ const AssetsContext = () => {
               </SaturnSelectItem>}
             </For>
           </SaturnSelect>
-          <span class="text-xs text-saturn-darkgrey dark:text-saturn-offwhite">to</span>
+          <span class="text-xxs text-saturn-lightgrey">to</span>
           <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={handleToDropdown}>
             <For each={toNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
@@ -685,7 +695,9 @@ const AssetsContext = () => {
               clear
             </span>
           </div>
-          <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress} onMouseLeave={getPaymentInfo}>use my address</span>
+          <Show when={finalNetworkPair().from !== finalNetworkPair().to}>
+            <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress} onMouseLeave={getPaymentInfo}>use my address</span>
+          </Show>
         </div>
 
         <div class="flex flex-row justify-between items-start">
