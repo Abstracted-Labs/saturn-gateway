@@ -36,6 +36,7 @@ const CryptoAccounts = () => {
   const wcContext = useWalletConnectContext();
   const theme = useThemeContext();
   const modal = useMegaModal();
+  const toast = useToast();
 
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const selectedAccount = createMemo(() => saContext.state.account);
@@ -46,6 +47,7 @@ const CryptoAccounts = () => {
   };
 
   const connectUserAccount = async (acc: Account) => {
+    toast.addToast('Connecting...', 'loading');
     try {
       saturnContext.setters.logout();
 
@@ -73,8 +75,16 @@ const CryptoAccounts = () => {
         throw new Error('Saturn context is not properly defined');
       }
     } catch (error) {
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('An error occurred: ' + (error as any).message, 'error');
+      }, 1000);
       console.error('Error in connectUserAccount:', error);
     } finally {
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast(acc.name + ' is now connected', 'success');
+      }, 1000);
       modal.hideCryptoAccountsModal();
     }
   };
@@ -158,6 +168,7 @@ const CryptoAccounts = () => {
   createEffect(() => {
     const selected = selectedAccount();
     if (selected) {
+      console.log('new selected account: ', selected);
       setActiveAccount(selected);
     }
   });
@@ -284,7 +295,7 @@ const CryptoAccounts = () => {
 
   const EnableWallets = () => {
     return (
-      <div class="flex flex-row justify-center items-center gap-3 mb-5">
+      <div class="flex flex-row justify-center items-center gap-3 mb-2">
         {Object.values(WalletNameEnum).filter(walletName => ![WalletNameEnum.CRUSTWALLET, WalletNameEnum.SPORRAN, WalletNameEnum.WALLETCONNECT].includes(walletName.toLowerCase() as WalletNameEnum)).map((walletName) => {
           const Icon = matchTypeToIcon(walletName);
           const isActive = activeWallets().some(w => w.metadata.title === walletName || (walletName === WalletNameEnum.NOVAWALLET && w.metadata.title === WalletNameEnum.PJS));
@@ -315,7 +326,8 @@ const CryptoAccounts = () => {
         </div>
         <div class={`mx-4 ${ availableAccounts().length > 0 ? 'h-[500px]' : 'h-auto' }`}>
           <EnableWallets></EnableWallets>
-          <div class={`saturn-scrollbar h-[90%] pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
+          <p class="text-xs text-saturn-darkgrey dark:text-saturn-lightgrey text-center mb-2">{!availableAccounts().length ? 'Select your wallet extension of choice.' : 'Select an account below to continue.'}</p>
+          <div class={`saturn-scrollbar h-[85%] pr-5 overflow-y-scroll pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}>
             <Show when={availableAccounts().length > 0}>
               <For each={availableAccounts()}>
                 {account => {

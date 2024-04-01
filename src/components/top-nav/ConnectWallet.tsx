@@ -96,7 +96,7 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
 
   const ConnectButton = () => {
     return <div class={isInMultisig() ? "my-3" : "mx-4 my-3"}>
-      <button type="button" onClick={openAccountSelectorModal} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>{selectedAccount.state.account ? 'Change Account' : 'Connect Wallet'}</button>
+      <button data-modal-target={WALLET_ACCOUNTS_MODAL_ID} data-modal-show={WALLET_ACCOUNTS_MODAL_ID} type="button" onClick={openAccountSelectorModal} class={`bg-saturn-purple dark:hover:bg-purple-800 hover:bg-purple-900 text-white text-sm rounded-lg py-1.5 px-11 focus:outline-none`}>{selectedAccount.state.account ? 'Change Account' : 'Connect Wallet'}</button>
     </div>;
   };
 

@@ -18,6 +18,7 @@ import { usePriceContext } from '../../providers/priceProvider';
 import { useIdentityContext } from '../../providers/identityProvider';
 import { useBalanceContext } from '../../providers/balanceProvider';
 import { MultisigDetails } from '@invarch/saturn-sdk';
+import { useToast } from '../../providers/toastProvider';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -57,6 +58,7 @@ const MultisigList = (props: MultisigListProps) => {
   const prices = usePriceContext();
   const identity = useIdentityContext();
   const balances = useBalanceContext();
+  const toast = useToast();
 
   const multisigItemsLength = createMemo(() => multisigItems().length);
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
@@ -81,6 +83,7 @@ const MultisigList = (props: MultisigListProps) => {
     saturnContext.setters.setMultisigId(id);
 
     try {
+      toast.addToast('Switching omnisigs...', 'loading');
       const maybeDetails = await sat.getDetails(id);
       if (maybeDetails) {
         console.debug("Multisig details fetched successfully:", maybeDetails);
@@ -89,6 +92,10 @@ const MultisigList = (props: MultisigListProps) => {
       }
     } catch (error) {
       console.error("Failed to fetch multisig details:", error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('An error occurred: ' + (error as any).message, 'error');
+      }, 1000);
     } finally {
       navigate(`/${ id }/assets`, { replace: true });
 
@@ -107,6 +114,12 @@ const MultisigList = (props: MultisigListProps) => {
 
       // Close the left drawer
       closeLeftDrawer();
+
+      // Notify the user
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'success');
+      }, 1000);
     }
 
     // Reset the scroll position

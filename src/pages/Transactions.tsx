@@ -1,4 +1,4 @@
-import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show } from 'solid-js';
+import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote } from '@invarch/saturn-sdk';
 import { BN, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
@@ -21,6 +21,7 @@ import SaturnProgress from '../components/legos/SaturnProgress';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { SubmittableResult } from '@polkadot/api';
 import { getEncodedAddress } from '../utils/getEncodedAddress';
+import { useToast } from '../providers/toastProvider';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -34,13 +35,17 @@ export default function Transactions() {
   const [loading, setLoading] = createSignal<boolean>(true);
   const [activeIndex, setActiveIndex] = createSignal<number>(-1);
 
+  const toast = useToast();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const loc = useLocation();
   const multisigHashId = loc.pathname.split('/')[1];
+
   const encodedAddress = createMemo(() => getEncodedAddress(selectedAccountContext.state.account?.address || '', 117));
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
+  const getMultisigDetails = createMemo(() => saturnContext.state.multisigDetails);
+  const isTraditionalMultisig = createMemo(() => getMultisigDetails()?.requiredApproval.toNumber() === 0);
 
   const hasVoted = (pc: CallDetailsWithHash) => {
     const address = encodedAddress();
@@ -75,36 +80,42 @@ export default function Transactions() {
     let total = 0;
 
     for (let record of Object.values(records)) {
-      if (record.aye) {
-        total += parseInt(record.aye.toString());
+      const ayeVotes = parseInt(record.aye?.toString() || '0', 10);
+      if (!isNaN(ayeVotes)) {
+        total += ayeVotes;
       }
     }
 
-    // Calculate the percentage of total votes
-    const percentage = total / 1000000 / totalVotes(records) * 100;
+    const totalVotesCount = totalVotes(records);
+    if (totalVotesCount === 0) {
+      return 0;
+    }
+    const percentage = (total / 1000000) / totalVotesCount * 100;
 
-    // Round the percentage to a whole number
     const roundedPercentage = Math.round(percentage);
 
-    return roundedPercentage;
+    return isNaN(roundedPercentage) ? 0 : roundedPercentage;
   };
 
   const totalNayVotes = (records: ParsedTallyRecords): number => {
     let total = 0;
 
     for (let record of Object.values(records)) {
-      if (record.nay) {
-        total += parseInt(record.nay.toString());
+      const nayVotes = parseInt(record.nay?.toString() || '0', 10);
+      if (!isNaN(nayVotes)) {
+        total += nayVotes;
       }
     }
 
-    // Calculate the percentage of total votes
-    const percentage = total / 1000000 / totalVotes(records) * 100;
+    const totalVotesCount = totalVotes(records);
+    if (totalVotesCount === 0) {
+      return 0;
+    }
+    const percentage = (total / 1000000) / totalVotesCount * 100;
 
-    // Round the percentage to a whole number
     const roundedPercentage = Math.round(percentage);
 
-    return roundedPercentage;
+    return isNaN(roundedPercentage) ? 0 : roundedPercentage;
   };
 
   const handleAccordionClick = (index: number) => {
@@ -143,19 +154,21 @@ export default function Transactions() {
     const callHash = pc.callHash.toString();
 
     if (!selectedAccountAddress) {
-      console.error('No account selected');
+      toast.addToast('No account selected', 'error');
       return;
     }
 
     if (!hasVoted(pc)) {
-      console.error('Selected account is not a voter for this proposal');
+      toast.addToast('You have not submitted a vote yet', 'error');
       return;
     }
 
     if (!saturn || typeof multisigId !== 'number') {
-      console.error('Invalid state for withdrawing vote');
+      toast.addToast('Invalid state for withdrawing vote', 'error');
       return;
     }
+
+    toast.addToast('Processing vote withdrawal request...', 'loading');
 
     try {
       const call = saturn.withdrawVote({
@@ -163,8 +176,16 @@ export default function Transactions() {
         callHash,
       });
       await call.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer });
+
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Your vote has been withdrawn', 'success');
+      }, 1000);
     } catch (error) {
-      console.error('Error withdrawing vote:', error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('An error occurred: ' + (error as any).message, 'error');
+      }, 1000);
     }
   };
 
@@ -172,25 +193,55 @@ export default function Transactions() {
     const selected = selectedAccountContext.state;
 
     if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number') {
+      toast.addToast('Could not process your vote', 'error');
       return;
     }
 
-    const result = await saturnContext.state.saturn.vote({
-      id: saturnContext.state.multisigId,
-      callHash,
-      aye,
-    }).signAndSend(selected.account.address, { signer: selected.wallet.signer });
+    toast.addToast('Processing your vote...', 'loading');
 
-    console.log('result: ', result);
+    try {
+      await saturnContext.state.saturn.vote({
+        id: saturnContext.state.multisigId,
+        callHash,
+        aye,
+      }).signAndSend(selected.account.address, { signer: selected.wallet.signer });
+
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Vote successfully submitted', 'success');
+      }, 1000);
+    } catch (error) {
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('An error occurred: ' + (error as any).message, 'error');
+      }, 1000);
+    }
   };
 
   const killProposal = async (callHash: string) => {
+
     const saturn = saturnContext.state.saturn;
     if (!saturn || selectedAccountContext.state.account?.address === undefined || selectedAccountContext.state.wallet === undefined) {
+      toast.addToast('Could not process your kill bill', 'error');
       return;
     }
-    const call = saturn.api.tx.inv4.cancelMultisigProposal(callHash);
-    await call.signAndSend(selectedAccountContext.state.account?.address, { signer: selectedAccountContext.state.wallet.signer });
+
+    toast.addToast('Processing kill bill request...', 'loading');
+
+    try {
+      const call = saturn.api.tx.inv4.cancelMultisigProposal(callHash);
+      await call.signAndSend(selectedAccountContext.state.account?.address, { signer: selectedAccountContext.state.wallet.signer });
+
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Kill bill successfully submitted', 'success');
+      }, 1000);
+    } catch (error) {
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('An error occurred: ' + (error as any).message, 'error');
+      }, 1000);
+    }
   };
 
   const processCallDescription = (call: Call): string => {
@@ -318,6 +369,7 @@ export default function Transactions() {
       setPendingProposals(pendingCalls);
 
       const members = await getAllMembers(multisigId, saturn);
+      console.log('members: ', members);
       setMembers(members);
 
       delayUnload();
@@ -329,6 +381,17 @@ export default function Transactions() {
       clearTimeout(timeout);
     });
   });
+
+  const VoteThreshold = (): JSX.Element => {
+    const minimumSupport = saturnContext.state.multisigDetails?.minimumSupport.toHuman();
+    const totalMembers = members();
+
+    return (
+      <p class="text-xs text-saturn-lightgrey">
+        <span class="font-bold text-white">{minimumSupport}</span> votes needed from <span class="font-bold text-white">{totalMembers.length}</span> members
+      </p>
+    );
+  };
 
   return (
     <div>
@@ -348,7 +411,7 @@ export default function Transactions() {
                     </div>
 
                     {/* Votes history */}
-                    <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-3/12 h-32 overflow-y-scroll saturn-scrollbar'>
+                    <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-60 h-32 overflow-y-scroll saturn-scrollbar'>
                       <For each={Object.entries(pc.details.tally.records)}>
                         {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
                           const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
@@ -376,31 +439,36 @@ export default function Transactions() {
                   </div>
                   <div class="flex flex-row justify-between">
                     {/* Vote breakdown */}
-                    <div class="flex flex-col rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
+                    <div class="flex flex-col items-center justify-around gap-3 rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
                       <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
                       <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
-                      <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
+                      {/* <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
                         <span>{totalVotes(pc.details.tally.records)}</span>
                         <span class="text-saturn-lightgrey"> / {members().length}</span>
-                      </span>} color='bg-saturn-purple' label='Voter Turnout' />
+                      </span>} color='bg-saturn-purple' label='Voter Turnout' /> */}
                     </div>
 
                     {/* Support breakdown and Kill button */}
-                    <div class="flex flex-col justify-between ml-3">
-                      <dl class="flex flex-col text-xs py-2">
-                        <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
-                          <dt class="w-full">Support needed:</dt>
-                          <dd class="text-black dark:text-white">
-                            {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                          </dd>
-                        </div>
-                        <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
-                          <dt class="w-full">Approval needed:</dt>
-                          <dd class="text-black dark:text-white">
-                            {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
-                          </dd>
-                        </div>
-                      </dl>
+                    <div class="flex flex-col justify-between ml-2 w-60">
+                      <Show when={isTraditionalMultisig()}>
+                        <VoteThreshold />
+                      </Show>
+                      <Show when={!isTraditionalMultisig()}>
+                        <dl class="flex flex-col text-xs py-2">
+                          <div class="flex flex-row justify-between gap-x-5 mb-3 text-saturn-lightgrey w-full">
+                            <dt class="w-full">Support needed:</dt>
+                            <dd class="text-black dark:text-white">
+                              {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
+                            </dd>
+                          </div>
+                          <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
+                            <dt class="w-full">Approval needed:</dt>
+                            <dd class="text-black dark:text-white">
+                              {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                            </dd>
+                          </div>
+                        </dl>
+                      </Show>
                       <div>
                         <button
                           type="button"
@@ -415,15 +483,20 @@ export default function Transactions() {
                   </div>
                   <Show when={!hasVoted(pc)}>
                     <div class='flex flex-row gap-3 my-3 actions'>
-                      <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), true)}>Aye</button>
-                      <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none`} onClick={() => vote(pc.callHash.toString(), false)}>Nay</button>
+                      <Show when={!isTraditionalMultisig()}>
+                        <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), true)}>Vote Aye</button>
+                        <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), false)}>Vote Nay</button>
+                      </Show>
+                      <Show when={isTraditionalMultisig()}>
+                        <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), true)}>Approve Proposal</button>
+                      </Show>
                     </div>
                   </Show>
                   <Show when={hasVoted(pc)}>
                     <div class='flex flex-row gap-3 my-3 actions'>
                       <button
                         type="button"
-                        class="rounded-md hover:opacity-75 bg-saturn-purple p-2 text-xs text-white justify-center w-full focus:outline-none"
+                        class="rounded-md hover:opacity-75 bg-saturn-yellow p-2 text-xs text-black justify-center w-full focus:outline-none font-bold"
                         onClick={[withdrawVote, pc]}
                       >
                         Withdraw Vote

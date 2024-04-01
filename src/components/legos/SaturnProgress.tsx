@@ -6,7 +6,7 @@ interface ISaturnProgressProps {
 }
 
 const SaturnProgress = (props: ISaturnProgressProps) => {
-  return <div class="flex flex-col w-full mb-6">
+  return <div class="flex flex-col w-full">
     <div class="flex justify-between mb-1">
       <span class="text-xs font-medium text-saturn-lightgrey dark:text-saturn-offwhite">{props.label}</span>
       {!props.overridePercentage ? <span class="text-xs text-black dark:text-white">{`${ props.percentage }%`}</span> : props.overridePercentage}

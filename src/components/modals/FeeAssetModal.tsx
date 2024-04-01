@@ -6,6 +6,7 @@ import SaturnSelect from "../legos/SaturnSelect";
 import SaturnSelectItem from "../legos/SaturnSelectItem";
 import { FEE_TOGGLE_ID, FEE_DROPDOWN_ID } from "../top-nav/ConnectWallet";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
+import { useToast } from "../../providers/toastProvider";
 
 export const FEE_ASSET_MODAL_ID = 'feeAssetModal';
 
@@ -27,6 +28,7 @@ const FeeAssetModal = () => {
 
   const megaModal = useMegaModal();
   const selectedAccount = useSelectedAccountContext();
+  const toast = useToast();
 
   const openFeeDropdown = () => {
     if (!isFeeDropDownActive()) {
@@ -45,6 +47,7 @@ const FeeAssetModal = () => {
       setIsFeeDropDownActive(false);
       feeDropdown()?.hide();
       megaModal.hideFeeAssetModal();
+      toast.addToast(`${ fee } is now the default fee asset`, 'info');
     }
   };
 

@@ -948,7 +948,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       <Show when={multisigType() === MultisigEnum.GOVERNANCE}>
         <div>
           <p class="text-xs/none">Minimum support is the smallest amount of votes needed to pass a proposal.</p>
-          <p class="text-xs/none mt-3">Required approval is the percentage of members needed to execute a proposal.</p>
+          <p class="text-xs/none mt-3">Required approval is the percentage of Ayes needed to execute a proposal.</p>
           <div class="flex flex-row items-center justify-start gap-2 sm:gap-5 my-4">
             <div class="flex flex-row items-center gap-1">
               <label for="minimumSupport" class={`${ FALLBACK_TEXT_STYLE } text-left text-[10px]/none`}>Minimum Support (%)</label>

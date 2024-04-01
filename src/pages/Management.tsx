@@ -13,6 +13,7 @@ import { BN, hexToString } from '@polkadot/util';
 import { FeeAsset, MultisigCallResult } from '@invarch/saturn-sdk';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { useRingApisContext } from '../providers/ringApisProvider';
+import { useToast } from '../providers/toastProvider';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
@@ -27,6 +28,7 @@ export default function Management() {
   const selectedAccount = useSelectedAccountContext();
   const ringsApisContext = useRingApisContext();
   const modal = useMegaModal();
+  const toast = useToast();
 
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
   const selectedState = createMemo(() => selectedAccount.state);
@@ -39,8 +41,12 @@ export default function Management() {
     const wallet = selectedState().wallet;
     const feeAsset = selectedState().feeAsset;
 
-    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
+    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
+      toast.addToast('Required components not available for operation', 'error');
+      return;
+    }
 
+    toast.addToast('Processing member removal...', 'loading');
     const id = saturnContext.state.multisigId;
 
     try {
@@ -62,14 +68,21 @@ export default function Management() {
           if (result.executionResult.isErr && result.executionResult.asErr) {
             throw new Error(JSON.stringify(result.executionResult.asErr));
           } else if (result.executionResult.isOk) {
-            console.log("Member removal proposed successfully");
+            setTimeout(() => {
+              toast.hideToast();
+              toast.addToast('Member removal proposed successfully', 'success');
+            }, 1000);
+
             const newMembers = members().filter((member) => member.address !== address);
             setMembers(newMembers);
           }
         }
       }
     } catch (error) {
-      console.error("Failed to propose member removal:", error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Failed to propose member removal: ' + (error as any).message, 'error');
+      }, 1000);
     }
   };
 
@@ -84,8 +97,12 @@ export default function Management() {
     const wallet = selectedState().wallet;
     const feeAsset = selectedState().feeAsset;
 
-    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
+    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
+      toast.addToast('Required components not available for operation', 'error');
+      return;
+    }
 
+    toast.addToast('Processing new voting power proposal...', 'loading');
     const id = saturnState().multisigId;
 
     try {
@@ -101,17 +118,22 @@ export default function Management() {
 
         if (result.executionResult) {
           if (result.executionResult.isOk) {
-            alert("New members have been proposed. Please wait for the vote to pass.");
+            setTimeout(() => {
+              toast.hideToast();
+              toast.addToast('New voting power proposal submitted successfully. Please wait for the vote to pass.', 'success');
+            }, 1000);
           } else if (result.executionResult.isErr) {
             const message = JSON.parse(result.executionResult.asErr.toString());
-            const err = message.module.error;
             const error = hexToString(message.module.error);
             throw new Error(error);
           }
         }
       }
     } catch (error) {
-      console.error("Failed to add new members to multisig:", error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Failed to propose new voting power: ' + (error as any).message, 'error');
+      }, 1000);
     }
   };
 
