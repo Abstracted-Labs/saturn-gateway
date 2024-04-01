@@ -342,7 +342,7 @@ const MultisigList = (props: MultisigListProps) => {
                 {(item: MultisigItem, index) => (
                   <div
                     onClick={() => handleClick(index())}
-                    class={`relative px-3 pb-3 rounded-lg w-full flex flex-row items-center justify-between hover:cursor-pointer border-[1.5px] ${ activeButton() === item.id ? 'border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : 'border-gray-800 bg-saturn-darkgrey bg-opacity-60' } mb-2`}
+                    class={`relative px-3 pb-3 pt-1 rounded-lg w-full flex flex-row items-center justify-between hover:cursor-pointer border-[1.5px] ${ activeButton() === item.id ? 'border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : 'border-gray-800 bg-saturn-darkgrey bg-opacity-60' } mb-2`}
                     data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
                     aria-controls={mutateButton() ? 'leftSidebar' : undefined}
                   >
