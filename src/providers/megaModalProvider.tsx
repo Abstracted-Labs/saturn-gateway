@@ -51,7 +51,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   createEffect(() => {
     const modal = multisigListModalElement();
     if (multisigListModalElement()) {
-      const instance = new Modal(modal, undefined, { override: true, id: MULTISIG_LIST_MODAL_ID });
+      const instance = new Modal(modal);
       setMultisigListModalInstance(instance);
     }
   });
@@ -99,7 +99,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   createEffect(() => {
     const modal = cryptoAccountsModalElement();
     if (cryptoAccountsModalElement()) {
-      const instance = new Modal(modal, undefined, { id: WALLET_ACCOUNTS_MODAL_ID });
+      const instance = new Modal(modal);
       setCryptoAccountsModalInstance(instance);
     }
   });
@@ -116,6 +116,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     const instance = multisigListModalInstance();
     if (instance) {
       instance.hide();
+      instance.destroy();
     }
   };
 
@@ -131,6 +132,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     const instance = feeAssetModalInstance();
     if (instance) {
       instance.hide();
+      instance.destroy();
     }
   };
 
@@ -146,6 +148,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     const instance = proposedModalInstance();
     if (instance) {
       instance.hide();
+      instance.destroy();
     }
   };
 
