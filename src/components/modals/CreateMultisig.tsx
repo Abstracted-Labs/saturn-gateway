@@ -31,6 +31,7 @@ import { FeeAsset, MultisigCallResult, MultisigCreateResult } from "@invarch/sat
 import { useMegaModal } from "../../providers/megaModalProvider";
 import debounce from "../../utils/debounce";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
+import { useToast } from "../../providers/toastProvider";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -54,6 +55,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const theme = useThemeContext();
   const modal = useMegaModal();
   const loc = useLocation();
+  const toast = useToast();
 
   const accessibleSteps = createMemo(() => {
     return props.limitSteps && props.limitSteps.length ? MULTISIG_CRUMB_TRAIL.filter((step) => props.limitSteps?.includes(step)) : MULTISIG_CRUMB_TRAIL;
@@ -183,7 +185,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     if (!name || !wallet.signer) {
       return;
-    };
+    }
 
     let ms = parseFloat(minimumSupport);
     let ra = parseFloat(requiredApproval);
@@ -212,6 +214,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       return;
     }
 
+    toast.addToast('Creating multisig...', 'loading');
+
     try {
       const createMultisigResult: MultisigCreateResult = await createMultisigCall.signAndSend(account.address, wallet.signer);
 
@@ -220,9 +224,17 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setEnableCreateMembership(true);
         setEnableCreateMultisig(false);
         createMembership(true);
+        setTimeout(() => {
+          toast.hideToast();
+          toast.addToast('Multisig creation initiated successfully.', 'success');
+        }, 1000);
       }
     } catch (error) {
       console.error(error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Failed to create multisig: ' + (error as any).message, 'error');
+      }, 1000);
     } finally {
       wallet.disconnect();
     }
@@ -242,13 +254,14 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     wallet.connect();
 
+    toast.addToast('Adding members to multisig...', 'loading');
+
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
 
     let innerCalls = [];
 
     if (multisigParty && typeof multisigParty === 'object') {
-      // loop through multisigParty and add vote weight for each member
       for (const [address, weight] of multisigParty) {
         if (address !== account.address) {
           const votes = weight * 1000000;
@@ -282,8 +295,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     try {
       await finalCallsBatch.signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
-        setActive(MULTISIG_CRUMB_TRAIL[MULTISIG_CRUMB_TRAIL.length - 1]); // 'success'
-
         if (result.isError && result.dispatchError) {
           const error = result.dispatchError.toHuman();
           if (error) {
@@ -297,8 +308,13 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         }
 
         if (result.status.isFinalized || result.status.isInBlock) {
-          abortUi();
+          setTimeout(() => {
+            toast.hideToast();
+            toast.addToast('Members successfully added to multisig.', 'success');
+          }, 1000);
+
           navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
+
           setTimeout(() => {
             window.location.reload();
           }, 100);
@@ -306,6 +322,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       });
     } catch (error) {
       console.error(error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Failed to add members to multisig: ' + (error as any).message, 'error');
+      }, 1000);
     } finally {
       wallet.disconnect();
     }
@@ -318,7 +338,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const wallet = selectedState().wallet;
     const feeAsset = selectedState().feeAsset;
 
-    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) return;
+    if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
+      toast.addToast('Required components not available for operation', 'error');
+      return;
+    }
+
+    toast.addToast('Proposing new members...', 'loading');
 
     const id = saturnState().multisigId;
 
@@ -347,22 +372,29 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
         if (result.executionResult) {
           if (result.executionResult.isOk) {
-            alert("New members have been proposed. Please wait for the vote to pass.");
+            setTimeout(() => {
+              toast.hideToast();
+              toast.addToast('New members have been proposed successfully. Please wait for each proposal to pass.', 'success');
+            }, 1000);
           } else if (result.executionResult.isErr) {
             const message = JSON.parse(result.executionResult.asErr.toString());
-            const err = message.module.error;
             const error = hexToString(message.module.error);
             throw new Error(error);
           }
         }
       }
     } catch (error) {
-      console.error("Failed to add new members to multisig:", error);
+      console.error("Failed to propose new members to multisig:", error);
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Failed to propose new members: ' + (error as any).message, 'error');
+      }, 1000);
+    } finally {
+      wallet.disconnect();
     }
   };
 
   const handleSetActive = (crumb: string) => {
-    // 
     if (accessibleSteps().includes(crumb)) {
       setActive(crumb);
     }

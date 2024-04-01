@@ -13,6 +13,7 @@ import { formatAsset } from '../../utils/formatAsset';
 import { INPUT_COMMON_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
 import { ISubmittableResult } from '@kiltprotocol/sdk-js';
+import { ToastContextType, useToast } from '../../providers/toastProvider';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -41,6 +42,7 @@ export type IProposalProps = {
   modalContext: MegaModalContextType;
   message: Accessor<string>;
   feeAsset: Accessor<FeeAsset>;
+  toast: ToastContextType;
 };
 
 const TransferProposal = (props: TransferProposalProps) => {
@@ -67,10 +69,14 @@ const CallProposal = (props: CallProposalProps) => {
 };
 
 export const proposeCall = async (props: IProposalProps) => {
-  const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, modalContext, message, feeAsset } = props;
+  const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, modalContext, message, feeAsset, toast } = props;
   const selected = selectedAccountContext?.state;
 
   if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || proposeContext.state.proposal === undefined) {
+    setTimeout(() => {
+      toast.hideToast();
+      toast.addToast('Invalid proposal state or missing account details', 'error');
+    }, 1000);
     return;
   }
 
@@ -83,6 +89,8 @@ export const proposeCall = async (props: IProposalProps) => {
 
   const proposalData = proposeContext.state.proposal.data;
   const proposalType = proposeContext.state.proposal.proposalType;
+
+  toast.addToast('Processing proposal...', 'loading');
 
   try {
     // LocalCall
@@ -97,6 +105,12 @@ export const proposeCall = async (props: IProposalProps) => {
           feeAsset: FeeAsset[feeAsset()] as unknown as FeeAsset,
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('Local call proposal submitted successfully', 'success');
+      }, 1000);
+
       return;
     }
 
@@ -133,6 +147,12 @@ export const proposeCall = async (props: IProposalProps) => {
           proposalMetadata,
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+
+      setTimeout(() => {
+        toast.hideToast();
+        toast.addToast('XCM call proposal submitted successfully', 'success');
+      }, 1000);
+
       return;
     }
 
@@ -175,7 +195,14 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+
+        setTimeout(() => {
+          toast.hideToast();
+          toast.addToast('XCM Transfer proposal submitted successfully', 'success');
+        }, 1000);
+
         modalContext.hideProposeModal();
+
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
@@ -222,15 +249,20 @@ export const proposeCall = async (props: IProposalProps) => {
           const dispatchResult: DispatchResult = result.executionResult;
 
           if (dispatchResult.isOk) {
-            console.log("Proposal submitted to chain: ", chain);
+            setTimeout(() => {
+              toast.hideToast();
+              toast.addToast('Local transfer proposal submitted successfully', 'success');
+            }, 1000);
           }
 
           if (dispatchResult.isErr) {
             console.error("Error submitting proposal: ", result);
+            throw new Error(JSON.stringify(result));
           }
         }
 
         modalContext.hideProposeModal();
+
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
@@ -278,7 +310,14 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!preview) {
         await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+
+        setTimeout(() => {
+          toast.hideToast();
+          toast.addToast('XCM Bridge proposal submitted successfully', 'success');
+        }, 1000);
+
         modalContext.hideProposeModal();
+
         return;
       } else {
         const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals);
@@ -290,8 +329,12 @@ export const proposeCall = async (props: IProposalProps) => {
     throw new Error(JSON.stringify({
       chain: proposalData.chain, destinationChain: (proposalData as any).destinationChain, asset: (proposalData as any).asset, to: (proposalData as any).to, amount: (proposalData as any).amount
     }));
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    console.error(error);
+    setTimeout(() => {
+      toast.hideToast();
+      toast.addToast('Error submitting proposal: ' + (error as any).message, 'error');
+    }, 1000);
   }
 };
 
@@ -304,6 +347,7 @@ export default function ProposeModal() {
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
   const modalContext = useMegaModal();
+  const toast = useToast();
 
   const closeModal = () => {
     modalContext.hideProposeModal();
@@ -389,7 +433,7 @@ export default function ProposeModal() {
         }}
       />
     </Show>
-    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm mt-2" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() as unknown as FeeAsset, ringApisContext, modalContext })}>Submit Proposal</button>
+    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm mt-2" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() as unknown as FeeAsset, ringApisContext, modalContext, toast })}>Submit Proposal</button>
   </div>;
 
   return <>

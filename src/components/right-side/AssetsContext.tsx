@@ -25,6 +25,7 @@ import { usePriceContext } from "../../providers/priceProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
 import { formatBalance } from "@polkadot/util";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
+import { useToast } from "../../providers/toastProvider";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -104,6 +105,7 @@ const AssetsContext = () => {
   const loc = useLocation();
   const priceContext = usePriceContext();
   const balanceContext = useBalanceContext();
+  const toast = useToast();
 
   const getUsdPrices = createMemo(() => priceContext.prices);
   const forNetworks = createMemo(() => {
@@ -362,6 +364,7 @@ const AssetsContext = () => {
       modalContext,
       message: () => '',
       feeAsset: () => feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay,
+      toast
     };
 
     const paymentInfo = await proposeCall(proposalProps);
