@@ -144,16 +144,16 @@ const AssetsContext = () => {
   const proposeTransfer = () => {
     const pair = finalNetworkPair();
 
-    if (!isLoggedIn() || loadingFee()) return;
+    if (!isLoggedIn()) return;
 
     if (
       !saturnContext.state.saturn ||
       typeof saturnContext.state.multisigId !== 'number' ||
       !saturnContext.state.multisigAddress ||
       !ringApisContext.state[pair.from] ||
-      !asset || new BigNumber(amount()).lte(0)
+      !asset()
     ) {
-      console.error('proposeTransfer: missing data');
+      toast.setToast('Error in submitting transfer', 'error', 0);
       return;
     }
 
@@ -161,6 +161,16 @@ const AssetsContext = () => {
       BigNumber(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0),));
 
     const amountPlank = new BigNumber(bnAmount.toString().split('.')[0]);
+
+    if (bnAmount.lte(0)) {
+      toast.setToast('Amount must be greater than zero', 'error', 0);
+      return;
+    }
+
+    if (bnAmount.gt(maxAssetAmount() ?? 0)) {
+      toast.setToast('Amount exceeds available balance', 'error', 0);
+      return;
+    }
 
     // XcmTransfer: Handle bridging TNKR or KSM from Tinkernet to other chains.
     if (pair.from === NetworkEnum.TINKERNET && pair.to !== NetworkEnum.TINKERNET) {
@@ -232,18 +242,10 @@ const AssetsContext = () => {
 
   const validateAmount = (e: any) => {
     const inputValue = e.currentTarget.value;
+    const isValidInput = /^(\d+\.?\d*|\.\d+)$/.test(inputValue) || inputValue === "";
     const maxAmount = maxAssetAmount();
-    if (maxAmount === null) return;
-    if (!!inputValue) {
-      if (Number(inputValue) <= maxAmount) {
-        setAmount(inputValue);
-      } else {
-        setAmount(maxAmount);
-      }
-    } else {
-      // Clear the input value or show an error message
-      e.currentTarget.value = '';
-    }
+    if (maxAmount === null || !isValidInput) return;
+    setAmount(inputValue);
   };
 
   const setMaxAmount = () => {
@@ -729,7 +731,7 @@ const AssetsContext = () => {
           </div>
         </div>
 
-        <div class="flex flex-row justify-between mt-1">
+        {/* <div class="flex flex-row justify-between mt-1">
           <span class="text-xxs text-saturn-lightgrey dark:text-saturn-lightgrey">
             Network Fee
           </span>
@@ -740,7 +742,7 @@ const AssetsContext = () => {
               </Show>
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount() || networkFee() === 0} onClick={proposeTransfer}>Propose Transaction</button>
