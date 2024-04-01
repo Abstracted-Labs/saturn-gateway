@@ -113,7 +113,7 @@ const MultisigList = (props: MultisigListProps) => {
       closeLeftDrawer();
 
       // Notify the user
-      toast.setToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'success');
+      toast.setToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'info');
     }
 
     // Reset the scroll position
@@ -353,7 +353,7 @@ const MultisigList = (props: MultisigListProps) => {
                     </div>
                     <div class="grid grid-rows-2 ml-3">
                       <div class="flex flex-row items-center gap-x-2">
-                        <span class={`text-sm ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
+                        <span class={`text-xs ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
                           {item.capitalizedFirstName}
                         </span>
                         <span>
