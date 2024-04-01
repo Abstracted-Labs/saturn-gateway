@@ -168,7 +168,6 @@ const CryptoAccounts = () => {
   createEffect(() => {
     const selected = selectedAccount();
     if (selected) {
-      console.log('new selected account: ', selected);
       setActiveAccount(selected);
     }
   });

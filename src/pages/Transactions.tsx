@@ -22,6 +22,7 @@ import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { SubmittableResult } from '@polkadot/api';
 import { getEncodedAddress } from '../utils/getEncodedAddress';
 import { useToast } from '../providers/toastProvider';
+import BigNumber from 'bignumber.js';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -46,6 +47,7 @@ export default function Transactions() {
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
   const getMultisigDetails = createMemo(() => saturnContext.state.multisigDetails);
   const isTraditionalMultisig = createMemo(() => getMultisigDetails()?.requiredApproval.toNumber() === 0);
+  const getMembers = createMemo(() => members());
 
   const hasVoted = (pc: CallDetailsWithHash) => {
     const address = encodedAddress();
@@ -62,21 +64,27 @@ export default function Transactions() {
     return hasAye || hasNay;
   };
 
-  const totalVotes = (records: ParsedTallyRecords): number => {
+  const totalVotes = (records: ParsedTallyRecords, voteType?: 'aye' | 'nay'): number => {
     let total = 0;
     for (let record of Object.values(records)) {
-      if (record.aye) {
+      if (voteType === 'aye' && record.aye) {
         total += parseInt(record.aye.toString());
-      }
-      if (record.nay) {
+      } else if (voteType === 'nay' && record.nay) {
         total += parseInt(record.nay.toString());
+      } else if (!voteType) {
+        if (record.aye) {
+          total += parseInt(record.aye.toString());
+        }
+        if (record.nay) {
+          total += parseInt(record.nay.toString());
+        }
       }
     }
 
     return total / 1000000;
   };
 
-  const totalAyeVotes = (records: ParsedTallyRecords): number => {
+  const totalAyeVotesPercent = (records: ParsedTallyRecords): number => {
     let total = 0;
 
     for (let record of Object.values(records)) {
@@ -97,7 +105,7 @@ export default function Transactions() {
     return isNaN(roundedPercentage) ? 0 : roundedPercentage;
   };
 
-  const totalNayVotes = (records: ParsedTallyRecords): number => {
+  const totalNayVotesPercent = (records: ParsedTallyRecords): number => {
     let total = 0;
 
     for (let record of Object.values(records)) {
@@ -343,12 +351,6 @@ export default function Transactions() {
   });
 
   createEffect(() => {
-    setLoading(true);
-    setPendingProposals([]);
-    setMembers([]);
-  });
-
-  createEffect(() => {
     let timeout: any;
     const saturn = saturnContext.state.saturn;
     const multisigId = getMultisigId();
@@ -369,7 +371,6 @@ export default function Transactions() {
       setPendingProposals(pendingCalls);
 
       const members = await getAllMembers(multisigId, saturn);
-      console.log('members: ', members);
       setMembers(members);
 
       delayUnload();
@@ -382,13 +383,18 @@ export default function Transactions() {
     });
   });
 
-  const VoteThreshold = (): JSX.Element => {
-    const minimumSupport = saturnContext.state.multisigDetails?.minimumSupport.toHuman();
-    const totalMembers = members();
+  const voteThreshold = (): JSX.Element => {
+    const minimumSupportStr = saturnContext.state.multisigDetails?.minimumSupport.toHuman();
+    const totalMembers = getMembers();
+
+    if (!minimumSupportStr || totalMembers.length === 0) return;
+
+    const minimumSupport = parseFloat(minimumSupportStr) / 100;
+    const votesNeeded = Math.ceil(totalMembers.length * minimumSupport);
 
     return (
-      <p class="text-xs text-saturn-lightgrey">
-        <span class="font-bold text-white">{minimumSupport}</span> votes needed from <span class="font-bold text-white">{totalMembers.length}</span> members
+      <p class="text-xs text-saturn-lightgrey mb-10">
+        <span class="mr-1">Voting Threshold:</span><br /><br /><span class="font-bold text-white">{votesNeeded} {votesNeeded > 1 ? "votes" : "vote"}</span> {votesNeeded > 1 ? "are" : "is"} needed from a pool of <span class="font-bold text-white">{totalMembers.length} {totalMembers.length > 1 ? "members" : "member"}</span>
       </p>
     );
   };
@@ -440,8 +446,10 @@ export default function Transactions() {
                   <div class="flex flex-row justify-between">
                     {/* Vote breakdown */}
                     <div class="flex flex-col items-center justify-around gap-3 rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
-                      <SaturnProgress percentage={totalAyeVotes(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
-                      <SaturnProgress percentage={totalNayVotes(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
+                      <SaturnProgress total={totalVotes(pc.details.tally.records, 'aye')} percentage={totalAyeVotesPercent(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
+                      <Show when={!isTraditionalMultisig()}>
+                        <SaturnProgress total={totalVotes(pc.details.tally.records, 'nay')} percentage={totalNayVotesPercent(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
+                      </Show>
                       {/* <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
                         <span>{totalVotes(pc.details.tally.records)}</span>
                         <span class="text-saturn-lightgrey"> / {members().length}</span>
@@ -451,7 +459,7 @@ export default function Transactions() {
                     {/* Support breakdown and Kill button */}
                     <div class="flex flex-col justify-between ml-2 w-60">
                       <Show when={isTraditionalMultisig()}>
-                        <VoteThreshold />
+                        {voteThreshold()}
                       </Show>
                       <Show when={!isTraditionalMultisig()}>
                         <dl class="flex flex-col text-xs py-2">
