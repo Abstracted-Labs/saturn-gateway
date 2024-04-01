@@ -72,14 +72,15 @@ export const proposeCall = async (props: IProposalProps) => {
   const { preview, proposeContext, saturnContext, selectedAccountContext, ringApisContext, modalContext, message, feeAsset, toast } = props;
   const selected = selectedAccountContext?.state;
 
-  if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || proposeContext.state.proposal === undefined) {
+  if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || proposeContext.state.proposal === undefined || !modalContext) {
     toast.setToast('Invalid proposal state or missing account details', 'error');
     return;
   }
 
+  const modal = modalContext;
   const msg = message();
-
   let proposalMetadata;
+
   if (msg) {
     proposalMetadata = JSON.stringify({ message: msg });
   }
@@ -146,6 +147,8 @@ export const proposeCall = async (props: IProposalProps) => {
 
       toast.setToast('XCM call proposal submitted successfully', 'success');
 
+      modal.hideProposeModal();
+
       return;
     }
 
@@ -191,7 +194,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
         toast.setToast('XCM Transfer proposal submitted successfully', 'success');
 
-        modalContext.hideProposeModal();
+        modal.hideProposeModal();
 
         return;
       } else {
@@ -248,7 +251,7 @@ export const proposeCall = async (props: IProposalProps) => {
           }
         }
 
-        modalContext.hideProposeModal();
+        modal.hideProposeModal();
 
         return;
       } else {
@@ -300,7 +303,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
         toast.setToast('XCM Bridge proposal submitted successfully', 'success');
 
-        modalContext.hideProposeModal();
+        modal.hideProposeModal();
 
         return;
       } else {
