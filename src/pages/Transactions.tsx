@@ -406,115 +406,115 @@ export default function Transactions() {
           {loading() ? <LoaderAnimation text="Loading transactions..." /> : <span class={FALLBACK_TEXT_STYLE}>Nothig to display.</span>}
         </div>}>
           <Match when={pendingProposals().length > 0}>
-            <For each={pendingProposals()}>
-              {(pc: CallDetailsWithHash, index) => {
+            <div class="overflow-y-auto saturn-scrollbar pr-5 h-[500px]">
+              <For each={pendingProposals()}>
+                {(pc: CallDetailsWithHash, index) => {
+                  return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
+                    <div class="flex flex-row">
+                      {/* Call data */}
+                      <div class="max-h-[300px] w-full my-2 grow">
+                        <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+                      </div>
 
-                return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
-                  <div class="flex flex-row">
-                    {/* Call data */}
-                    <div class="max-h-[300px] w-full overflow-scroll my-2 grow">
-                      <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
-                    </div>
-
-                    {/* Votes history */}
-                    <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-60 h-32 overflow-y-scroll saturn-scrollbar'>
-                      <For each={Object.entries(pc.details.tally.records)}>
-                        {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
-                          const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
-                          return <div class="flex flex-row">
-                            <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
-                              {vote.aye
-                                ? <img src={AyeIcon} />
-                                : <img src={NayIcon} />
-                              }
-                            </div>
-                            <div class='flex flex-col pt-2'>
-                              <div
-                                class='text-xs font-bold text-black dark:text-white'
-                              >
-                                {stringShorten(voter, 4)}
+                      {/* Votes history */}
+                      <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-60 h-32 overflow-y-scroll saturn-scrollbar'>
+                        <For each={Object.entries(pc.details.tally.records)}>
+                          {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
+                            const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
+                            return <div class="flex flex-row">
+                              <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
+                                {vote.aye
+                                  ? <img src={AyeIcon} />
+                                  : <img src={NayIcon} />
+                                }
                               </div>
-                              <div class="text-xxs text-saturn-lightgrey leading-none">
-                                {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                              <div class='flex flex-col pt-2'>
+                                <div
+                                  class='text-xs font-bold text-black dark:text-white'
+                                >
+                                  {stringShorten(voter, 4)}
+                                </div>
+                                <div class="text-xxs text-saturn-lightgrey leading-none">
+                                  {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                                </div>
                               </div>
-                            </div>
-                          </div>;
-                        }}
-                      </For>
+                            </div>;
+                          }}
+                        </For>
+                      </div>
                     </div>
-                  </div>
-                  <div class="flex flex-row justify-between">
-                    {/* Vote breakdown */}
-                    <div class="flex flex-col items-center justify-around gap-3 rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
-                      <SaturnProgress total={totalVotes(pc.details.tally.records, 'aye')} percentage={totalAyeVotesPercent(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
-                      <Show when={!isTraditionalMultisig()}>
-                        <SaturnProgress total={totalVotes(pc.details.tally.records, 'nay')} percentage={totalNayVotesPercent(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
-                      </Show>
-                      {/* <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
+                    <div class="flex flex-row justify-between">
+                      {/* Vote breakdown */}
+                      <div class="flex flex-col items-center justify-around gap-3 rounded-md w-full border border-[1.5px] border-gray-100 dark:border-gray-800 p-4">
+                        <SaturnProgress total={totalVotes(pc.details.tally.records, 'aye')} percentage={totalAyeVotesPercent(pc.details.tally.records)} color='bg-saturn-green' label='Voted "Aye"' />
+                        <Show when={!isTraditionalMultisig()}>
+                          <SaturnProgress total={totalVotes(pc.details.tally.records, 'nay')} percentage={totalNayVotesPercent(pc.details.tally.records)} color='bg-saturn-red' label='Voted "Nay"' />
+                        </Show>
+                        {/* <SaturnProgress percentage={totalVotes(pc.details.tally.records) / members().length * 100} overridePercentage={<span class="text-xs text-black dark:text-white">
                         <span>{totalVotes(pc.details.tally.records)}</span>
                         <span class="text-saturn-lightgrey"> / {members().length}</span>
                       </span>} color='bg-saturn-purple' label='Voter Turnout' /> */}
-                    </div>
+                      </div>
 
-                    {/* Support breakdown and Kill button */}
-                    <div class="flex flex-col justify-between ml-2 w-60">
-                      <Show when={isTraditionalMultisig()}>
-                        {voteThreshold()}
-                      </Show>
-                      <Show when={!isTraditionalMultisig()}>
-                        <dl class="flex flex-col text-xs py-2">
-                          <div class="flex flex-row justify-between gap-x-5 mb-3 text-saturn-lightgrey w-full">
-                            <dt class="w-full">Support needed:</dt>
-                            <dd class="text-black dark:text-white">
-                              {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
-                            </dd>
-                          </div>
-                          <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
-                            <dt class="w-full">Approval needed:</dt>
-                            <dd class="text-black dark:text-white">
-                              {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
-                            </dd>
-                          </div>
-                        </dl>
-                      </Show>
-                      <div>
-                        <button
-                          type="button"
-                          class="rounded-md hover:opacity-75 border-2 border-saturn-red p-2 text-xs text-saturn-red justify-center w-full focus:outline-none"
-                          onClick={() => killProposal(pc.callHash.toString())}
-                          disabled={loading()}
-                        >
-                          Kill Proposal
-                        </button>
+                      {/* Support breakdown and Kill button */}
+                      <div class="flex flex-col justify-between ml-2 w-60">
+                        <Show when={isTraditionalMultisig()}>
+                          {voteThreshold()}
+                        </Show>
+                        <Show when={!isTraditionalMultisig()}>
+                          <dl class="flex flex-col text-xs py-2">
+                            <div class="flex flex-row justify-between gap-x-5 mb-3 text-saturn-lightgrey w-full">
+                              <dt class="w-full">Support needed:</dt>
+                              <dd class="text-black dark:text-white">
+                                {saturnContext.state.multisigDetails?.minimumSupport.toHuman() || 'Error'}
+                              </dd>
+                            </div>
+                            <div class="flex flex-row justify-between gap-5 mb-3 text-saturn-lightgrey w-full">
+                              <dt class="w-full">Approval needed:</dt>
+                              <dd class="text-black dark:text-white">
+                                {saturnContext.state.multisigDetails?.requiredApproval.toHuman() || 'Error'}
+                              </dd>
+                            </div>
+                          </dl>
+                        </Show>
+                        <div>
+                          <button
+                            type="button"
+                            class="rounded-md hover:opacity-75 border-2 border-saturn-red p-2 text-xs text-saturn-red justify-center w-full focus:outline-none"
+                            onClick={() => killProposal(pc.callHash.toString())}
+                            disabled={loading()}
+                          >
+                            Kill Proposal
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <Show when={!hasVoted(pc)}>
-                    <div class='flex flex-row gap-3 my-3 actions'>
-                      <Show when={!isTraditionalMultisig()}>
-                        <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), true)}>Vote Aye</button>
-                        <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), false)}>Vote Nay</button>
-                      </Show>
-                      <Show when={isTraditionalMultisig()}>
-                        <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), true)}>Approve Proposal</button>
-                      </Show>
-                    </div>
-                  </Show>
-                  <Show when={hasVoted(pc)}>
-                    <div class='flex flex-row gap-3 my-3 actions'>
-                      <button
-                        type="button"
-                        class="rounded-md hover:opacity-75 bg-saturn-yellow p-2 text-xs text-black justify-center w-full focus:outline-none font-bold"
-                        onClick={[withdrawVote, pc]}
-                      >
-                        Withdraw Vote
-                      </button>
-                    </div>
-                  </Show>
-                </SaturnAccordionItem>;
-              }
-              }
-            </For>
+                    <Show when={!hasVoted(pc)}>
+                      <div class='flex flex-row gap-3 my-3 actions'>
+                        <Show when={!isTraditionalMultisig()}>
+                          <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), true)}>Vote Aye</button>
+                          <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-red p-2 text-xs text-white justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), false)}>Vote Nay</button>
+                        </Show>
+                        <Show when={isTraditionalMultisig()}>
+                          <button type="button" class={`rounded-md hover:opacity-75 bg-saturn-green p-2 text-xs text-black justify-center w-full focus:outline-none font-bold`} onClick={() => vote(pc.callHash.toString(), true)}>Approve Proposal</button>
+                        </Show>
+                      </div>
+                    </Show>
+                    <Show when={hasVoted(pc)}>
+                      <div class='flex flex-row gap-3 my-3 actions'>
+                        <button
+                          type="button"
+                          class="rounded-md hover:opacity-75 bg-saturn-yellow p-2 text-xs text-black justify-center w-full focus:outline-none font-bold"
+                          onClick={[withdrawVote, pc]}
+                        >
+                          Withdraw Vote
+                        </button>
+                      </div>
+                    </Show>
+                  </SaturnAccordionItem>;
+                }}
+              </For>
+            </div>
           </Match>
         </Switch>
       </div>
