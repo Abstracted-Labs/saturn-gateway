@@ -42,11 +42,12 @@ export default function Management() {
     const feeAsset = selectedState().feeAsset;
 
     if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
-      toast.addToast('Required components not available for operation', 'error');
+      toast.setToast('Required components not available for operation', 'error');
       return;
     }
 
-    toast.addToast('Processing member removal...', 'loading');
+    toast.setToast('Processing member removal...', 'loading');
+
     const id = saturnContext.state.multisigId;
 
     try {
@@ -68,10 +69,7 @@ export default function Management() {
           if (result.executionResult.isErr && result.executionResult.asErr) {
             throw new Error(JSON.stringify(result.executionResult.asErr));
           } else if (result.executionResult.isOk) {
-            setTimeout(() => {
-              toast.hideToast();
-              toast.addToast('Member removal proposed successfully', 'success');
-            }, 1000);
+            toast.setToast('Member removal proposed successfully', 'success');
 
             const newMembers = members().filter((member) => member.address !== address);
             setMembers(newMembers);
@@ -79,10 +77,8 @@ export default function Management() {
         }
       }
     } catch (error) {
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('Failed to propose member removal: ' + (error as any).message, 'error');
-      }, 1000);
+      console.error(error);
+      toast.setToast('Failed to propose member removal', 'error');
     }
   };
 
@@ -98,11 +94,12 @@ export default function Management() {
     const feeAsset = selectedState().feeAsset;
 
     if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
-      toast.addToast('Required components not available for operation', 'error');
+      toast.setToast('Required components not available for operation', 'error');
       return;
     }
 
-    toast.addToast('Processing new voting power proposal...', 'loading');
+    toast.setToast('Processing new voting power proposal...', 'loading');
+
     const id = saturnState().multisigId;
 
     try {
@@ -118,10 +115,7 @@ export default function Management() {
 
         if (result.executionResult) {
           if (result.executionResult.isOk) {
-            setTimeout(() => {
-              toast.hideToast();
-              toast.addToast('New voting power proposal submitted successfully. Please wait for the vote to pass.', 'success');
-            }, 1000);
+            toast.setToast('New voting power proposal submitted successfully. Please wait for the vote to pass.', 'success');
           } else if (result.executionResult.isErr) {
             const message = JSON.parse(result.executionResult.asErr.toString());
             const error = hexToString(message.module.error);
@@ -130,10 +124,8 @@ export default function Management() {
         }
       }
     } catch (error) {
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('Failed to propose new voting power: ' + (error as any).message, 'error');
-      }, 1000);
+      console.error(error);
+      toast.setToast('Failed to propose new voting power', 'error');
     }
   };
 

@@ -15,7 +15,7 @@ export interface ToastProps {
 export type ToastContextType = {
   toast: ToastProps[];
   getToast: () => ToastProps[];
-  addToast: (message: string, type: ToastMessageType) => void;
+  setToast: (message: string, type: ToastMessageType, delayBy?: number) => void;
   hideToast: () => void;
 };
 
@@ -28,19 +28,6 @@ export function ToastProvider(props: { children: JSX.Element; }) {
   const [toasts, setToasts] = createSignal<ToastProps[]>([]);
 
   const getToast = () => toasts();
-
-  const addToast = (message: string, type: ToastMessageType) => {
-    const id = `toast-${ toasts().length }`;
-    const newToast = { message, type, id };
-    setToasts(currentToasts => {
-      return [...currentToasts, newToast];
-    });
-    const timeoutId = setTimeout(() => {
-      setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
-      timeouts.delete(id);
-    }, 5000);
-    timeouts.set(id, timeoutId);
-  };
 
   const hideToast = () => {
     const currentToasts = toasts();
@@ -62,6 +49,25 @@ export function ToastProvider(props: { children: JSX.Element; }) {
     }
   };
 
+  const setToast = (message: string, type: ToastMessageType, delayBy?: number) => {
+    const outerTimeoutId = setTimeout(() => {
+      hideToast();
+
+      const id = `toast-${ toasts().length }`;
+      const newToast = { message, type, id };
+      setToasts(currentToasts => [...currentToasts, newToast]);
+
+      if (type !== 'loading') {
+        const innerTimeoutId = setTimeout(() => {
+          setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
+          timeouts.delete(id);
+        }, 5000);
+        timeouts.set(id, innerTimeoutId);
+      }
+    }, delayBy ? delayBy : 1000);
+    timeouts.set(`outer-${ Date.now() }`, outerTimeoutId);
+  };
+
   onMount(() => {
     initDismisses();
   });
@@ -72,7 +78,7 @@ export function ToastProvider(props: { children: JSX.Element; }) {
       const toastElement = document.getElementById(`toast-${ toast.id }`);
       const toastHideElement = document.getElementById(`toast-hide-${ toast.id }`);
       if (toastElement && toastHideElement && !toastInstance().has(toast.id)) {
-        const instance = new Dismiss(toastElement, toastHideElement, { transition: 'transition-transform', duration: 1000, timing: 'ease-in-out' });
+        const instance = new Dismiss(toastElement, toastHideElement, { transition: 'transition-opacity', duration: 2000, timing: 'ease-in-out' });
         toastInstance().set(toast.id, instance);
         setToastInstance(new Map(toastInstance()));
       }
@@ -86,7 +92,7 @@ export function ToastProvider(props: { children: JSX.Element; }) {
   const value = createMemo(() => ({
     toast: toasts(),
     getToast,
-    addToast,
+    setToast,
     hideToast,
   }));
 

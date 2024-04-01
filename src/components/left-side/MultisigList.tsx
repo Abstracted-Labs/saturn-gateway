@@ -83,7 +83,7 @@ const MultisigList = (props: MultisigListProps) => {
     saturnContext.setters.setMultisigId(id);
 
     try {
-      toast.addToast('Switching omnisigs...', 'loading');
+      toast.setToast('Switching omnisigs...', 'loading');
       const maybeDetails = await sat.getDetails(id);
       if (maybeDetails) {
         console.debug("Multisig details fetched successfully:", maybeDetails);
@@ -91,11 +91,8 @@ const MultisigList = (props: MultisigListProps) => {
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       }
     } catch (error) {
-      console.error("Failed to fetch multisig details:", error);
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('An error occurred: ' + (error as any).message, 'error');
-      }, 1000);
+      console.error(error);
+      toast.setToast('An error occurred', 'error');
     } finally {
       navigate(`/${ id }/assets`, { replace: true });
 
@@ -116,10 +113,7 @@ const MultisigList = (props: MultisigListProps) => {
       closeLeftDrawer();
 
       // Notify the user
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'success');
-      }, 1000);
+      toast.setToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'success');
     }
 
     // Reset the scroll position

@@ -47,7 +47,7 @@ const FeeAssetModal = () => {
       setIsFeeDropDownActive(false);
       feeDropdown()?.hide();
       megaModal.hideFeeAssetModal();
-      toast.addToast(`${ fee } is now the default fee asset`, 'info');
+      toast.setToast(`${ fee } is now the default fee asset`, 'info');
     }
   };
 

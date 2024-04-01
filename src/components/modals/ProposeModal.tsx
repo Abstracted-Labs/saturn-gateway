@@ -73,10 +73,7 @@ export const proposeCall = async (props: IProposalProps) => {
   const selected = selectedAccountContext?.state;
 
   if (!saturnContext.state.saturn || !selected.account || !selected.wallet?.signer || typeof saturnContext.state.multisigId !== 'number' || proposeContext.state.proposal === undefined) {
-    setTimeout(() => {
-      toast.hideToast();
-      toast.addToast('Invalid proposal state or missing account details', 'error');
-    }, 1000);
+    toast.setToast('Invalid proposal state or missing account details', 'error');
     return;
   }
 
@@ -90,7 +87,9 @@ export const proposeCall = async (props: IProposalProps) => {
   const proposalData = proposeContext.state.proposal.data;
   const proposalType = proposeContext.state.proposal.proposalType;
 
-  toast.addToast('Processing proposal...', 'loading');
+  if (!preview) {
+    toast.setToast('Processing proposal...', 'loading');
+  }
 
   try {
     // LocalCall
@@ -106,10 +105,7 @@ export const proposeCall = async (props: IProposalProps) => {
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
 
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('Local call proposal submitted successfully', 'success');
-      }, 1000);
+      toast.setToast('Local call proposal submitted successfully', 'success');
 
       return;
     }
@@ -148,10 +144,7 @@ export const proposeCall = async (props: IProposalProps) => {
         })
         .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
 
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('XCM call proposal submitted successfully', 'success');
-      }, 1000);
+      toast.setToast('XCM call proposal submitted successfully', 'success');
 
       return;
     }
@@ -196,10 +189,7 @@ export const proposeCall = async (props: IProposalProps) => {
       if (!preview) {
         await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
 
-        setTimeout(() => {
-          toast.hideToast();
-          toast.addToast('XCM Transfer proposal submitted successfully', 'success');
-        }, 1000);
+        toast.setToast('XCM Transfer proposal submitted successfully', 'success');
 
         modalContext.hideProposeModal();
 
@@ -249,10 +239,7 @@ export const proposeCall = async (props: IProposalProps) => {
           const dispatchResult: DispatchResult = result.executionResult;
 
           if (dispatchResult.isOk) {
-            setTimeout(() => {
-              toast.hideToast();
-              toast.addToast('Local transfer proposal submitted successfully', 'success');
-            }, 1000);
+            toast.setToast('Local transfer proposal submitted successfully', 'success');
           }
 
           if (dispatchResult.isErr) {
@@ -311,10 +298,7 @@ export const proposeCall = async (props: IProposalProps) => {
       if (!preview) {
         await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
 
-        setTimeout(() => {
-          toast.hideToast();
-          toast.addToast('XCM Bridge proposal submitted successfully', 'success');
-        }, 1000);
+        toast.setToast('XCM Bridge proposal submitted successfully', 'success');
 
         modalContext.hideProposeModal();
 
@@ -331,10 +315,9 @@ export const proposeCall = async (props: IProposalProps) => {
     }));
   } catch (error) {
     console.error(error);
-    setTimeout(() => {
-      toast.hideToast();
-      toast.addToast('Error submitting proposal: ' + (error as any).message, 'error');
-    }, 1000);
+    if (!preview) {
+      toast.setToast('Error submitting proposal', 'error');
+    }
   }
 };
 

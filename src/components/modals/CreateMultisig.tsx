@@ -214,7 +214,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       return;
     }
 
-    toast.addToast('Creating multisig...', 'loading');
+    toast.setToast('Creating multisig...', 'loading');
 
     try {
       const createMultisigResult: MultisigCreateResult = await createMultisigCall.signAndSend(account.address, wallet.signer);
@@ -224,17 +224,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setEnableCreateMembership(true);
         setEnableCreateMultisig(false);
         createMembership(true);
-        setTimeout(() => {
-          toast.hideToast();
-          toast.addToast('Multisig creation initiated successfully.', 'success');
-        }, 1000);
+        toast.setToast('Multisig creation initiated successfully.', 'success');
       }
     } catch (error) {
       console.error(error);
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('Failed to create multisig: ' + (error as any).message, 'error');
-      }, 1000);
+      toast.setToast('Failed to create multisig', 'error');
     } finally {
       wallet.disconnect();
     }
@@ -254,7 +248,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     wallet.connect();
 
-    toast.addToast('Adding members to multisig...', 'loading');
+    toast.setToast('Adding members to multisig...', 'loading');
 
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
@@ -308,10 +302,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         }
 
         if (result.status.isFinalized || result.status.isInBlock) {
-          setTimeout(() => {
-            toast.hideToast();
-            toast.addToast('Members successfully added to multisig.', 'success');
-          }, 1000);
+          toast.setToast('Members successfully added to multisig.', 'success');
 
           navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
 
@@ -322,10 +313,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       });
     } catch (error) {
       console.error(error);
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('Failed to add members to multisig: ' + (error as any).message, 'error');
-      }, 1000);
+      toast.setToast('Failed to add members to multisig', 'error');
     } finally {
       wallet.disconnect();
     }
@@ -339,11 +327,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const feeAsset = selectedState().feeAsset;
 
     if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
-      toast.addToast('Required components not available for operation', 'error');
+      toast.setToast('Required components not available for operation', 'error');
       return;
     }
 
-    toast.addToast('Proposing new members...', 'loading');
+    toast.setToast('Proposing new members...', 'loading');
 
     const id = saturnState().multisigId;
 
@@ -372,10 +360,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
         if (result.executionResult) {
           if (result.executionResult.isOk) {
-            setTimeout(() => {
-              toast.hideToast();
-              toast.addToast('New members have been proposed successfully. Please wait for each proposal to pass.', 'success');
-            }, 1000);
+            toast.setToast('New members have been proposed successfully. Please wait for each proposal to pass.', 'success');
           } else if (result.executionResult.isErr) {
             const message = JSON.parse(result.executionResult.asErr.toString());
             const error = hexToString(message.module.error);
@@ -384,11 +369,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         }
       }
     } catch (error) {
-      console.error("Failed to propose new members to multisig:", error);
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('Failed to propose new members: ' + (error as any).message, 'error');
-      }, 1000);
+      console.error(error);
+      toast.setToast('Failed to propose new members', 'error');
     } finally {
       wallet.disconnect();
     }

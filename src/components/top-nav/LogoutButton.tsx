@@ -27,7 +27,7 @@ const LogoutButton = (props: ILogoutButtonProps) => {
   const modal = useMegaModal();
 
   const onLogout = (e: Event) => {
-    toast.addToast("Logging out...", "loading");
+    toast.setToast("Logging out...", "loading");
     e.preventDefault();
 
     const accState = selectedAccount.state;
@@ -56,16 +56,9 @@ const LogoutButton = (props: ILogoutButtonProps) => {
       modal.hideMultisigListModal();
       // modal.hideCryptoAccountsModal(); // TODO: Fix bug causing disconnect issue here
 
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast("Successfully logged out", "success");
-      }, 1000);
+      toast.setToast("Successfully logged out", "success");
     } catch {
-      console.error("Error disconnecting wallet");
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast("Error logging out", "error");
-      }, 1000);
+      toast.setToast("Error logging out", "error");
     } finally {
       identity.actions.clearIdentities();
       prices.clearPrices();

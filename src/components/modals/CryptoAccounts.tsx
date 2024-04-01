@@ -47,7 +47,7 @@ const CryptoAccounts = () => {
   };
 
   const connectUserAccount = async (acc: Account) => {
-    toast.addToast('Connecting...', 'loading');
+    toast.setToast('Connecting...', 'loading');
     try {
       saturnContext.setters.logout();
 
@@ -75,16 +75,10 @@ const CryptoAccounts = () => {
         throw new Error('Saturn context is not properly defined');
       }
     } catch (error) {
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast('An error occurred: ' + (error as any).message, 'error');
-      }, 1000);
-      console.error('Error in connectUserAccount:', error);
+      console.error(error);
+      toast.setToast('An error occurred', 'error');
     } finally {
-      setTimeout(() => {
-        toast.hideToast();
-        toast.addToast(acc.name + ' is now connected', 'success');
-      }, 1000);
+      toast.setToast(acc.name + ' is now connected', 'success');
       modal.hideCryptoAccountsModal();
     }
   };
