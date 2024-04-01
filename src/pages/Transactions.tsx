@@ -333,31 +333,6 @@ export default function Transactions() {
   };
 
   createEffect(() => {
-    const pc = pendingProposals();
-
-    if (document && pc) {
-      const parentEl = () => document.getElementById(ACCORDION_ID);
-      const accordionItems = () => pc.map((p, index) => {
-        const triggerEl = document.getElementById(`heading${ index }`) as HTMLElement;
-        const targetEl = document.getElementById(`content${ index }`) as HTMLElement;
-
-        if (p && triggerEl && targetEl) {
-          return {
-            id: `content${ index }`,
-            triggerEl,
-            targetEl,
-            active: false,
-          };
-        }
-      });
-
-      const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
-      const accordion = new FlowAccordion(parentEl(), items);
-      setAccordion(accordion);
-    }
-  });
-
-  createEffect(() => {
     const selectedAsset = selectedAccountContext.setters.getFeeAsset() as KusamaFeeAssetEnum;
     setFeeAsset(selectedAsset);
   });
@@ -398,6 +373,37 @@ export default function Transactions() {
 
     onCleanup(() => {
       clearTimeout(timeout);
+    });
+  });
+
+  createEffect(() => {
+    if (!loading()) return;
+
+    const pc = pendingProposals();
+
+    if (document && pc) {
+      const parentEl = () => document.getElementById(ACCORDION_ID);
+      const accordionItems = () => pc.map((p, index) => {
+        const triggerEl = document.getElementById(`heading${ index }`) as HTMLElement;
+        const targetEl = document.getElementById(`content${ index }`) as HTMLElement;
+
+        if (p && triggerEl && targetEl) {
+          return {
+            id: `content${ index }`,
+            triggerEl,
+            targetEl,
+            active: false,
+          };
+        }
+      });
+
+      const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
+      const accordion = new FlowAccordion(parentEl(), items);
+      setAccordion(accordion);
+    }
+
+    onCleanup(() => {
+      setAccordion(undefined);
     });
   });
 

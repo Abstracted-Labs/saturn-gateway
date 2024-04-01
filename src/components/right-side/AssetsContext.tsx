@@ -696,7 +696,7 @@ const AssetsContext = () => {
             </span>
           </div>
           <Show when={finalNetworkPair().from !== finalNetworkPair().to}>
-            <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress} onMouseLeave={getPaymentInfo}>use my address</span>
+            <span class={MINI_TEXT_LINK_STYLE} onClick={copySelfAddress} onMouseLeave={getPaymentInfo}>use omnisig address</span>
           </Show>
         </div>
 
