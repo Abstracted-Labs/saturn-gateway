@@ -91,7 +91,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
       <div>
         <span class="text-xxs">Native Parachain (Tinkernet)</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs hover:cursor-copy border border-gray-800" onClick={(e) => copyNativeToClipboard(e, selected.native)}>
-          <span class="mx-2">{hasName() ? props.name : (selected.native && stringShorten(selected.native ?? '--', selected.native?.length))}</span>
+          <span class="mx-2">{selected.native && stringShorten(selected.native ?? '--', selected.native?.length)}</span>
           {/* <span class={`ml-2 text-saturn-purple hover:opacity-50`}>
             <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
           </span> */}
@@ -100,7 +100,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
       <div>
         <span class="text-xxs">Relay Chain (Kusama)</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey p-2 flex flex-row items-center justify-center text-xs hover:cursor-copy border border-gray-800" onClick={(e) => copyRelayToClipboard(e, selected.relay)}>
-          <span class="mx-2">{hasName() ? props.name : (selected.relay && stringShorten(selected.relay ?? '--', selected.relay?.length))}</span>
+          <span class="mx-2">{selected.relay && stringShorten(selected.relay ?? '--', selected.relay?.length)}</span>
           {/* <span class={`ml-2 text-saturn-purple hover:opacity-50`}>
             <img src={CopyIcon} alt="copy-address" width={8} height={9.62} />
           </span> */}

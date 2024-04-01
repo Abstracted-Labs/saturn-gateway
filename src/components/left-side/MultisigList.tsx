@@ -342,11 +342,11 @@ const MultisigList = (props: MultisigListProps) => {
                 {(item: MultisigItem, index) => (
                   <div
                     onClick={() => handleClick(index())}
-                    class={`relative p-4 rounded-lg w-full flex flex-row items-center hover:cursor-pointer border-[1.5px] ${ activeButton() === item.id ? 'border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : 'border-gray-800 bg-saturn-darkgrey bg-opacity-60' } mb-2`}
+                    class={`relative px-3 pb-3 rounded-lg w-full flex flex-row items-center justify-between hover:cursor-pointer border-[1.5px] ${ activeButton() === item.id ? 'border-saturn-purple bg-gray-100 dark:bg-saturn-darkgrey' : 'border-gray-800 bg-saturn-darkgrey bg-opacity-60' } mb-2`}
                     data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
                     aria-controls={mutateButton() ? 'leftSidebar' : undefined}
                   >
-                    <div class={`rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                    <div class={`relative top-1 rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
                       <Show when={item.image}>
                         <img class="rounded-full" src={item.image} />
                       </Show>
