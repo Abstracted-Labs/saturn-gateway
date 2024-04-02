@@ -64,6 +64,8 @@ const MultisigList = (props: MultisigListProps) => {
   const getAccountAddress = createMemo(() => selectedAccountContext.state.account?.address);
   const getMultisigId = createMemo(() => saturnContext.state.multisigId);
   const isInModal = createMemo(() => props.isInModal);
+  const saturn = createMemo(() => saturnContext.state.saturn);
+  const tinkernetApi = createMemo(() => ringApisContext.state.tinkernet);
 
   const handleClick = async (index: number) => {
     const sat = saturnContext.state.saturn;
@@ -146,9 +148,9 @@ const MultisigList = (props: MultisigListProps) => {
   createEffect(() => {
     // Load the multisig list
     let timeout: any;
-    const sat = saturnContext.state.saturn;
+    const sat = saturn();
     const address = getAccountAddress();
-    const api = ringApisContext.state.tinkernet;
+    const api = tinkernetApi();
 
     const delayUnload = () => {
       timeout = setTimeout(() => {
@@ -156,13 +158,12 @@ const MultisigList = (props: MultisigListProps) => {
       }, 200);
     };
 
+    if (!sat || !address || !api) {
+      delayUnload();
+      return;
+    };
 
     const load = async () => {
-      if (!sat || !address || !api) {
-        delayUnload();
-        return;
-      };
-
       let iden;
       const path = loc.pathname;
       const urlId = path.split('/')[1];
@@ -176,6 +177,7 @@ const MultisigList = (props: MultisigListProps) => {
         setMultisigItems([]);
         saturnContext.setters.setMultisigItems([]);
         setLoading(false);
+        toast.setToast('No multisigs found for this account', 'info');
         return;
       }
 
@@ -191,7 +193,7 @@ const MultisigList = (props: MultisigListProps) => {
           };
         })?.info);
 
-        let name = `Multisig ${ m }`;
+        let name = `Omnisig ${ m }`;
         if (!!iden && iden?.display?.Raw) {
           name = iden.display.Raw;
         } else {

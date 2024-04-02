@@ -223,8 +223,22 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setCreateMultiSigResult(createMultisigResult);
         setEnableCreateMembership(true);
         setEnableCreateMultisig(false);
-        createMembership(true);
-        toast.setToast('Multisig creation initiated successfully.', 'success');
+
+        toast.setToast('Multisig successfully created', 'success');
+
+        if (members().length > 1) {
+          // If there is more than one member, enable create membership
+          createMembership(true);
+        } else {
+          // If there is only one member, take to assets page
+          setTimeout(() => {
+            if (createMultisigResult.id) {
+              navigate(`/${ createMultisigResult.id }/assets`);
+            }
+          }, 1000);
+
+          modal.hideCreateMultisigModal();
+        }
       }
     } catch (error) {
       console.error(error);
@@ -250,6 +264,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     toast.setToast('Adding members to multisig...', 'loading');
 
+    const encodedAddress = getEncodedAddress(account.address, 117);
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
 
@@ -257,7 +272,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     if (multisigParty && typeof multisigParty === 'object') {
       for (const [address, weight] of multisigParty) {
-        if (address !== account.address) {
+        if (address !== encodedAddress) {
           const votes = weight * 1000000;
           innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, address));
         }
@@ -304,11 +319,13 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         if (result.isFinalized || result.isInBlock) {
           toast.setToast('Members successfully added to multisig.', 'success');
 
-          navigate(`/${ multisigId }/assets`, { resolve: false, replace: true });
-
           setTimeout(() => {
-            window.location.reload();
-          }, 100);
+            if (multisigId) {
+              navigate(`/${ multisigId }/assets`);
+            }
+          }, 1000);
+
+          modal.hideCreateMultisigModal();
         }
       });
     } catch (error) {
@@ -361,6 +378,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         if (result.executionResult) {
           if (result.executionResult.isOk) {
             toast.setToast('New members have been proposed successfully. Please wait for each proposal to pass.', 'success');
+
+            setTimeout(() => {
+              navigate(`/${ id }/transactions`);
+            }, 1000);
+
+            modal.hideCreateMultisigModal();
           } else if (result.executionResult.isErr) {
             const message = JSON.parse(result.executionResult.asErr.toString());
             const error = hexToString(message.module.error);
@@ -1180,10 +1203,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         <span class="rounded-full border border-white px-2 py-[3px] mr-2">1</span>
                         <span>Create Multisig</span>
                       </button>
-                      <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
-                        <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
-                        <span>Add Members</span>
-                      </button>
+                      <Show when={members().length > 1}>
+                        <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
+                          <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
+                          <span>Add Members</span>
+                        </button>
+                      </Show>
                     </div>
                   </div>
                 </Show>
