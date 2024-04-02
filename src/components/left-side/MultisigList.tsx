@@ -1,7 +1,7 @@
 import { randomAsHex } from '@polkadot/util-crypto';
 import CopyIcon from '../../assets/icons/copy-icon-8x9-62.svg';
 import { hexToString, stringShorten } from '@polkadot/util';
-import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy, on, Switch, Match } from 'solid-js';
+import { createSignal, createEffect, For, onCleanup, Show, JSXElement, createMemo, lazy, on, Switch, Match, onMount } from 'solid-js';
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import { A, useLocation, useNavigate, useParams } from '@solidjs/router';
 import { useThemeContext } from '../../providers/themeProvider';
@@ -233,8 +233,13 @@ const MultisigList = (props: MultisigListProps) => {
         // Set the activeButton to the selectedId
         setActiveButton(selectedId);
 
-        // Set local multisigItems state
-        setMultisigItems(processedList);
+        // Move the selected item to the top of the list
+        if (selectedItem) {
+          const updatedItems: MultisigItem[] = [selectedItem, ...processedList.filter(item => item.id !== selectedId)];
+          setMultisigItems(updatedItems);
+        } else {
+          setMultisigItems(processedList);
+        }
 
         // Set the multisigItems state in Saturn context
         saturnContext.setters.setMultisigItems(processedList);
@@ -270,32 +275,6 @@ const MultisigList = (props: MultisigListProps) => {
     }
   });
 
-  // createEffect(() => {
-  //   const id = activeButton();
-  //   if (id !== null && originalOrder().find(item => item.id === id) === undefined) {
-  //     const selectedItem = originalOrder().find(item => item.id === id);
-  //     if (selectedItem) {
-  //       const updatedItems: MultisigItem[] = [selectedItem, ...originalOrder().filter(item => item.id !== id)];
-  //       setMultisigItems(updatedItems);
-  //     }
-  //   }
-  // });
-
-  // createEffect(on(activeButton, (id) => {
-  //   if (id !== null) {
-  //     const currentOrder = multisigItems();
-  //     const selectedItemIndex = currentOrder.findIndex(item => item.id === id);
-  //     if (selectedItemIndex > 0) { // Ensures the selected item is not already the first item
-  //       const selectedItem = currentOrder[selectedItemIndex];
-  //       const updatedItems = [selectedItem, ...currentOrder.filter((_, index) => index !== selectedItemIndex)];
-  //       setMultisigItems(updatedItems);
-  //     } else if (selectedItemIndex === -1) { // If the item is not found in the current list, it might need fetching or a different handling
-  //       console.log(`Selected item with ID ${ id } not found in the current list.`);
-  //       // Handle the case where the selected item is not in the list, if necessary
-  //     }
-  //   }
-  // }));
-
   onCleanup(() => {
     // Clean up the scrollContainerRef when the component is unmounted
     setScrollContainerRef(null);
@@ -309,31 +288,6 @@ const MultisigList = (props: MultisigListProps) => {
           ref={scrollContainerRef!}
           class={`${ multisigItemsLength() < 2 ? 'h-32' : 'h-64' } pr-5 overflow-y-scroll overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
-          {/* <div class="w-62 absolute bottom-0 inset-0 pointer-events-none">
-            <div class="h-full bg-gradient-to-b from-transparent to-saturn-offwhite dark:to-saturn-black"></div>
-          </div> */}
-
-          {/* Active selected item */}
-          {/* {selectedItem() !== null && (
-            <div
-              class="p-4 rounded-lg flex items-center grid grid-cols-5 dark:bg-saturn-darkpurple bg-purple-50 mb-2"
-            >
-              <div class={`col-span-1 rounded-full w-10 h-10 bg-saturn-purple`} />
-              <div class="col-start-2 col-end-5 grid grid-rows-2 ml-3">
-                <span class="text-sm text-saturn-yellow">{selectedItem()?.capitalizedFirstName}</span>
-                <span class="text-xs flex items-center gap-x-2">
-                  <span class="text-saturn-lightgrey">{stringShorten(selectedItem()?.address || 'n/a', 4)}</span>
-                  <span class="text-saturn-lightgrey hover:opacity-50 hover:cursor-copy">{selectedItem()?.copyIcon}</span>
-                  <span>
-                    <A href="#" target="_blank" rel="noopener" class="text-saturn-lightgrey hover:text-saturn-yellow">
-                      <span>𝕏</span>
-                    </A>
-                  </span>
-                </span>
-              </div>
-            </div>
-          )} */}
-
           {/* Multisig list */}
           <Switch fallback={<div>
             {loading() ? <LoaderAnimation text="Loading omnisig accounts..." /> : multisigItems().length === 0 && <div class={FALLBACK_TEXT_STYLE}>No omnisigs yet.</div>}

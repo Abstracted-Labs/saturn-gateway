@@ -27,12 +27,12 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     const id = saturnContext.state.multisigId;
     const address = saturnContext.state.multisigAddress;
 
-    if (typeof id !== 'number' || !address) {
-      console.log('Invalid multisig id or address', id, address);
-      return;
-    }
+    if (typeof id !== 'number' || !address) return;
+
+    clearBalances();
 
     setLoading(true);
+
     try {
       const nb = await getBalancesFromAllNetworks(address);
       const remapped = Object.entries(nb).map(([network, assets]) => {
@@ -51,10 +51,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
 
   createEffect(() => {
     fetchBalances();
-  });
-
-  onCleanup(() => {
-    clearBalances();
   });
 
   const value = createMemo(() => ({ balances, loading: loading(), clearBalances, fetchBalances }));

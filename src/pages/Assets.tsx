@@ -91,8 +91,8 @@ export default function Assets() {
   });
 
   createEffect(() => {
-    setLoading(true);
-    setBalances([]);
+    if (!loading()) return;
+
     const allBalances = balanceContext?.balances;
     const isLoading = balanceContext?.loading;
 
@@ -143,6 +143,7 @@ export default function Assets() {
 
   onCleanup(() => {
     setLoading(true);
+    setBalances([]);
   });
 
   return (
