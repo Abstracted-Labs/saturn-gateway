@@ -20,14 +20,17 @@ const AddMultisigButton = (props: AddMultisigButtonProps) => {
   const isLoggedIn = createMemo(() => !!saContext.state.account?.address);
   const isInModal = createMemo(() => props.isInModal);
 
-  function openModal() {
+  const openModal = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (isInModal()) {
       modal.hideMultisigListModal();
       return;
     }
 
     modal.showCreateMultisigModal();
-  }
+  };
 
   createEffect(() => {
     const isDrawerPresent = () => !!document.getElementById('inDrawer');
@@ -47,7 +50,7 @@ const AddMultisigButton = (props: AddMultisigButtonProps) => {
   };
 
   return <AddButton>
-    <button id="addMultisigButton" type="button" onClick={openModal} data-modal-target={MULTISIG_MODAL_ID} data-modal-show={MULTISIG_MODAL_ID} data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined} aria-controls={mutateButton() ? 'leftSidebar' : undefined} class={BUTTON_LARGE_STYLE} disabled={!isLoggedIn()}>
+    <button id="addMultisigButton" type="button" onClick={(e) => openModal(e)} data-modal-target={MULTISIG_MODAL_ID} data-modal-show={MULTISIG_MODAL_ID} data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined} aria-controls={mutateButton() ? 'leftSidebar' : undefined} class={BUTTON_LARGE_STYLE} disabled={!isLoggedIn()}>
       <img src={AddMultisigIcon} alt="add-multisig-icon" width={12} height={12} class="mr-2" />
       <span>Create New Account</span>
     </button>

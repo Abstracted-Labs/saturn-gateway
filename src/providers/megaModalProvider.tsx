@@ -44,10 +44,6 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
   const addressSelectorModalElement = () => document.getElementById(ADDRESS_SELECTOR_MODAL_ID);
   const cryptoAccountsModalElement = () => document.getElementById(WALLET_ACCOUNTS_MODAL_ID);
 
-  onMount(() => {
-    initModals();
-  });
-
   createEffect(() => {
     const modal = multisigListModalElement();
     if (multisigListModalElement()) {
@@ -216,7 +212,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   };
 
-  const store = createMemo(() => ({
+  const store = {
     showMultisigListModal,
     hideMultisigListModal,
     showFeeAssetModal,
@@ -231,10 +227,10 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     hideAddressSelectorModal,
     showCryptoAccountsModal,
     hideCryptoAccountsModal,
-  }));
+  };
 
   return (
-    <MegaModalContext.Provider value={store()}>
+    <MegaModalContext.Provider value={store}>
       {props.children}
     </MegaModalContext.Provider>
   );
