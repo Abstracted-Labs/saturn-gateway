@@ -173,11 +173,10 @@ const MultisigList = (props: MultisigListProps) => {
       const sortedByDescendingId = multisigs.sort((a, b) => b - a);
 
       if (sortedByDescendingId.length === 0) {
-        console.log("No multisigs found for this account");
-        setMultisigItems([]);
         saturnContext.setters.setMultisigItems([]);
+        setMultisigItems([]);
         setLoading(false);
-        toast.setToast('No multisigs found for this account', 'info');
+        toast.setToast('No omnisigs found for this account', 'info');
         return;
       }
 
@@ -304,8 +303,8 @@ const MultisigList = (props: MultisigListProps) => {
 
   return (
     <>
-      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Omniway Accounts' : 'Select an Omniway Account below:'}</h5>
-      <div class={`relative mb-6`}>
+      <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Omnisig Accounts' : 'Select an Omnisig Account below:'}</h5>
+      <div class={`relative mb-2`}>
         <div
           ref={scrollContainerRef!}
           class={`${ multisigItemsLength() < 2 ? 'h-32' : 'h-64' } pr-5 overflow-y-scroll overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
@@ -337,10 +336,10 @@ const MultisigList = (props: MultisigListProps) => {
 
           {/* Multisig list */}
           <Switch fallback={<div>
-            {loading() ? <LoaderAnimation text="Loading Omniway accounts..." /> : multisigItems().length === 0 && <div class={FALLBACK_TEXT_STYLE}>No multisigs yet.</div>}
+            {loading() ? <LoaderAnimation text="Loading omnisig accounts..." /> : multisigItems().length === 0 && <div class={FALLBACK_TEXT_STYLE}>No omnisigs yet.</div>}
           </div>}>
             <Match when={multisigItems() && multisigItems().length > 0}>
-              <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any multisigs yet.</div>}>
+              <For each={multisigItems()} fallback={<div class={FALLBACK_TEXT_STYLE}>You don't have any omnisigs yet.</div>}>
                 {(item: MultisigItem, index) => (
                   <div
                     onClick={() => handleClick(index())}
@@ -350,11 +349,11 @@ const MultisigList = (props: MultisigListProps) => {
                   >
                     <div class={`relative top-1 rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
                       <Show when={item.image}>
-                        <img class="rounded-full" src={item.image} />
+                        <img class="rounded-full w-10 h-10" src={item.image} />
                       </Show>
                     </div>
                     <div class="grid grid-rows-2 ml-3 grow">
-                      <div class="flex flex-row items-center gap-x-2">
+                      <div class="flex flex-row shrink items-center ellipsis truncate gap-x-2">
                         <span class={`text-xs ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
                           {item.capitalizedFirstName}
                         </span>

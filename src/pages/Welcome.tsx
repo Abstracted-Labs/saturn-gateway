@@ -38,7 +38,7 @@ const Welcome = () => {
         const multisigs = await getMultisigsForAccount(address, sat.api);
         setHasMultisigs(multisigs.length > 0);
       } catch (error) {
-        console.log("No multisigs available for this account");
+        console.warn("No omnisigs available for this account");
         setHasMultisigs(false);
       } finally {
         setIsLoading(false);
