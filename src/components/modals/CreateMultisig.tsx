@@ -238,6 +238,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           }, 1000);
 
           modal.hideCreateMultisigModal();
+
+          abortUi();
         }
       }
     } catch (error) {
@@ -326,6 +328,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           }, 1000);
 
           modal.hideCreateMultisigModal();
+
+          abortUi();
         }
       });
     } catch (error) {
