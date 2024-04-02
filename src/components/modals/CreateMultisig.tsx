@@ -187,6 +187,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     let ms = parseFloat(minimumSupport);
     let ra = parseFloat(requiredApproval);
     const metadata = JSON.stringify({ name });
+    const onAssetsPage = location.pathname.includes('assets');
 
     if (!ms) return;
 
@@ -226,11 +227,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         if (members().length > 1) {
           // If there is more than one member, enable create membership
           createMembership(true);
+          createMultisig(false);
         } else {
           // If there is only one member, take to assets page
           setTimeout(() => {
             if (createMultisigResult.id) {
-              const onAssetsPage = loc.pathname.includes('assets');
               if (!onAssetsPage) {
                 navigate(`/${ createMultisigResult.id }/assets`);
               }
@@ -244,7 +245,9 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       }
     } catch (error) {
       console.error(error);
-      toast.setToast('Failed to create multisig', 'error');
+      if (!onAssetsPage) {
+        toast.setToast('Failed to create multisig', 'error');
+      }
     } finally {
       wallet.disconnect();
     }
@@ -561,10 +564,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
   const removeModal = () => {
     const instance = modal;
-    if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
-      instance.hideAddMemberModal();
-    } else {
-      instance.hideCreateMultisigModal();
+    if (instance) {
+      if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
+        instance.hideAddMemberModal();
+      } else {
+        instance.hideCreateMultisigModal();
+      }
     }
   };
 
