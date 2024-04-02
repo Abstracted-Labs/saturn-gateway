@@ -57,17 +57,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
   const loc = useLocation();
   const toast = useToast();
 
-  const accessibleSteps = createMemo(() => {
-    return props.limitSteps && props.limitSteps.length ? MULTISIG_CRUMB_TRAIL.filter((step) => props.limitSteps?.includes(step)) : MULTISIG_CRUMB_TRAIL;
-  });
-  const multisigModalType = createMemo(() => {
-    return accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? ADD_MEMBER_MODAL_ID : MULTISIG_MODAL_ID;
-  });
-  const initFirstStep = createMemo(() => {
-    const step = accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[0];
-    return step;
-  });
-
   const [active, setActive] = createSignal<string>(MULTISIG_CRUMB_TRAIL[0], { equals: false });
   const [multisigName, setMultisigName] = createSignal('');
   const [members, setMembers] = createSignal<[string, number][]>([], { equals: false });
@@ -95,6 +84,16 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     return active();
   };
 
+  const accessibleSteps = createMemo(() => {
+    return props.limitSteps && props.limitSteps.length ? MULTISIG_CRUMB_TRAIL.filter((step) => props.limitSteps?.includes(step)) : MULTISIG_CRUMB_TRAIL;
+  });
+  const multisigModalType = createMemo(() => {
+    return accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? ADD_MEMBER_MODAL_ID : MULTISIG_MODAL_ID;
+  });
+  const initFirstStep = createMemo(() => {
+    const step = accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length ? accessibleSteps()[0] : MULTISIG_CRUMB_TRAIL[0];
+    return step;
+  });
   const isLoggedIn = createMemo(() => !!selectedAccountContext.state.account?.address);
   const selectedState = createMemo(() => selectedAccountContext.state);
   const saturnState = createMemo(() => saturnContext.state);
@@ -127,7 +126,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
 
     if (finishing()) {
-      console.log('finishing');
       // disable everything
       return accessibleSteps();
     }
@@ -145,7 +143,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
     return false;
   });
-  const coreCreationFeeFormatted = createMemo(() => formatBalance(new BigNumber(coreCreationFee()).toString(), { withSi: false, withUnit: feeAsset() as string }));
+  const coreCreationFeeFormatted = createMemo(() => formatBalance(new BigNumber(coreCreationFee()).toString(), { withSi: false }));
   const estTxFeesFormatted = createMemo(() => {
     const txFees = new BigNumber(estTxFees().toString());
     const coreFee = new BigNumber(coreCreationFee()).multipliedBy(new BigNumber(10).pow(12));
@@ -159,7 +157,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const initialFunding = new BigNumber(coreInitialFundingFormatted());
     return coreFee.plus(txFees).plus(initialFunding).toString();
   });
-
 
   const finishCreation = () => {
     setFinishing(true);
@@ -233,11 +230,14 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           // If there is only one member, take to assets page
           setTimeout(() => {
             if (createMultisigResult.id) {
-              navigate(`/${ createMultisigResult.id }/assets`);
+              const onAssetsPage = loc.pathname.includes('assets');
+              if (!onAssetsPage) {
+                navigate(`/${ createMultisigResult.id }/assets`);
+              }
             }
           }, 1000);
 
-          modal.hideCreateMultisigModal();
+          removeModal();
 
           abortUi();
         }
@@ -323,11 +323,14 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
           setTimeout(() => {
             if (multisigId) {
-              navigate(`/${ multisigId }/assets`);
+              const onAssetsPage = loc.pathname.includes('assets');
+              if (!onAssetsPage) {
+                navigate(`/${ multisigId }/assets`);
+              }
             }
           }, 1000);
 
-          modal.hideCreateMultisigModal();
+          removeModal();
 
           abortUi();
         }
@@ -1150,7 +1153,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         {
                           !isNextToLastStep() ?
                             <span>
-                              Create a new{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                              Create a new{lessThan1200() ? ' ' : <br />}Omnisig Account
                             </span> :
                             <span class="flex flex-col items-center">
                               <img src={CheckIcon} width={80} height={80} />
@@ -1160,12 +1163,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                       </Show>
                       <Show when={multisigModalType() === ADD_MEMBER_MODAL_ID}>
                         <span>
-                          Edit your{lessThan1200() ? ' ' : <br />}Saturn Multisig
+                          Edit your{lessThan1200() ? ' ' : <br />}Omnisig Account
                         </span>
                       </Show>
                     </h3>
                     <Show when={multisigModalType() === MULTISIG_MODAL_ID && !isNextToLastStep() || multisigModalType() === ADD_MEMBER_MODAL_ID}>
-                      <h6 class="text-xs md:text-sm text-black dark:text-white italic">A Multisig is an account that is managed by one or more owners <br /> using multiple accounts.</h6>
+                      <h6 class="text-xs md:text-sm text-black dark:text-white italic">An omnisig is an account that is managed by one or more owners <br /> comprised of multiple accounts.</h6>
                     </Show>
                   </div>
                 </Show>
