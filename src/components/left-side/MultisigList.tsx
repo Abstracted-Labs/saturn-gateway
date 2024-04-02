@@ -351,7 +351,7 @@ const MultisigList = (props: MultisigListProps) => {
                         <img class="rounded-full" src={item.image} />
                       </Show>
                     </div>
-                    <div class="grid grid-rows-2 ml-3">
+                    <div class="grid grid-rows-2 ml-3 grow">
                       <div class="flex flex-row items-center gap-x-2">
                         <span class={`text-xs ellipsis truncate ${ activeButton() === item.id ? 'text-saturn-yellow' : 'text-saturn-darkgrey dark:text-saturn-white' }`}>
                           {item.capitalizedFirstName}
