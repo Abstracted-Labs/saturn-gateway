@@ -223,9 +223,9 @@ export const proposeCall = async (props: IProposalProps) => {
         return;
       };
 
-      const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      const { partialFee } = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
 
-      const localTransferCall = ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString()));
+      const localTransferCall = ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString()));
 
       const multisigCall = saturnContext.state.saturn
         .buildMultisigCall({
