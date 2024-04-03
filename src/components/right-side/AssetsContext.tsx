@@ -434,18 +434,17 @@ const AssetsContext = () => {
       return;
     }
 
-    balanceContext?.clearBalances();
-
     const allBalances = balanceContext?.balances;
     console.log('AssetContext All balances: ', allBalances);
     setBalances(allBalances as unknown as NetworkAssetBalance[]);
   }));
 
-  createEffect(() => {
+  createEffect(on(finalNetworkPair, () => {
     // Update available assets when the current From network changes
     const currentAsset = asset();
     const balance = allBalances();
     const currentNetwork = finalNetworkPair().from;
+    console.log({ currentAsset, balance, currentNetwork });
     if (currentAsset && currentNetwork && NetworksByAsset[currentAsset]) {
       // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
       const filterNetworksFromBalances = balance.find(([network, _]) => network == currentNetwork);
@@ -455,12 +454,10 @@ const AssetsContext = () => {
           const asset = filterAssetsFromNetwork[0];
           const balances = asset as unknown as [string, BalanceType];
           setAsset(balances[0] as AssetEnum);
-        } else {
-          setAsset(undefined);
         }
       }
     }
-  });
+  }));
 
   createEffect(() => {
     // Setting max asset amount if available
