@@ -1,15 +1,17 @@
-import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on } from 'solid-js';
+import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on, onMount } from 'solid-js';
 import { AssetEnum, NetworksByAsset, Rings } from '../data/rings';
 import type { BalanceType } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
 import { getAssetIcon } from '../utils/getAssetIcon';
-import { getNetworkIcon } from '../utils/getNetworkIcon';
+import { getNetworkIconByAsset } from '../utils/getNetworkIconByAsset';
 import { FALLBACK_TEXT_STYLE, NetworkEnum } from '../utils/consts';
 import BigNumber from 'bignumber.js';
 import { createStore } from 'solid-js/store';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { usePriceContext } from '../providers/priceProvider';
 import { useBalanceContext } from '../providers/balanceProvider';
+import { useSaturnContext } from '../providers/saturnProvider';
+import { getNetworkIconByNetwork } from '../utils/getNetworkIconByNetwork';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
@@ -20,7 +22,7 @@ export type NetworkAssetBalance = [string, BalanceType[]];
 export type NetworkBalancesArray = [string, NetworkAssetBalance[]];
 
 export default function Assets() {
-  const [loading, setLoading] = createSignal<boolean>(true);
+  const [loading, setLoading] = createSignal<NetworkEnum[]>([]);
   const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
   const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
@@ -28,7 +30,9 @@ export default function Assets() {
 
   const balanceContext = useBalanceContext();
   const priceContext = usePriceContext();
+  const saturn = useSaturnContext();
 
+  const multisigId = createMemo(() => saturn.state.multisigId);
   const getUsdPrices = createMemo(() => priceContext.prices);
 
   const convertAssetTotalToUsd = async (asset: AssetEnum, network: NetworkEnum, total: string) => {
@@ -90,19 +94,11 @@ export default function Assets() {
     loadPrices();
   });
 
-  createEffect(() => {
-    if (!loading()) return;
-
+  createEffect(on([multisigId], () => {
+    setBalances([]);
     const allBalances = balanceContext?.balances;
-    const isLoading = balanceContext?.loading;
-
-    const runAsync = async () => {
-      setBalances(allBalances as unknown as NetworkAssetBalance[]);
-      if (!isLoading) setLoading(false);
-    };
-
-    runAsync();
-  });
+    setBalances(allBalances as unknown as NetworkAssetBalance[]);
+  }));
 
   createEffect(() => {
     // Convert transferable balances to USD
@@ -141,10 +137,25 @@ export default function Assets() {
     loadTotalBalances();
   });
 
-  onCleanup(() => {
-    setLoading(true);
-    setBalances([]);
-  });
+  const renderLoadingAnimations = () => {
+    const loadingNetworks = balanceContext?.loading;
+    if (!loadingNetworks || loadingNetworks.length === 0) return;
+    return (
+      <For each={Array.from(loadingNetworks)}>
+        {(network) => {
+          const icon = () => getNetworkIconByNetwork(network) ? <img src={getNetworkIconByNetwork(network as NetworkEnum)} alt="network icon" class="inline-block mr-1" /> : network;
+          const name = network.charAt(0).toUpperCase() + network.slice(1);
+          return <div class="flex flex-col justify-start py-1 ml-3 mt-2">
+            <LoaderAnimation text={
+              <span class="flex flex-row items-center justify-start">
+                Loading assets from <span class="pl-2 pr-1">{icon()}</span> {name}
+              </span>
+            } />
+          </div>;
+        }}
+      </For>
+    );
+  };
 
   return (
     <>
@@ -158,9 +169,7 @@ export default function Assets() {
               <th scope="col" class='w-[20%]'>Chains</th>
             </tr>
           </thead>
-          <Switch fallback={<div class="mt-4">
-            {loading() ? <LoaderAnimation text="Loading assets..." /> : <span class={`${ FALLBACK_TEXT_STYLE } mt-5`}>No assets found.</span>}
-          </div>}>
+          <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Please wait..." /></div>}>
             <Match when={balances() && balances().length > 0}>
               <For each={balances()}>{([network, assets]) => {
                 return <Show when={assets.length}>
@@ -209,7 +218,7 @@ export default function Assets() {
                         {/* Chains */}
                         <td>
                           <span class="flex flex-row items-center gap-1">
-                            <For each={getNetworkIcon(asset).filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
+                            <For each={getNetworkIconByAsset(asset).filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
                               {icon =>
                                 <span class='h-5 w-5 flex rounded-full bg-black'>
                                   <img src={icon} class="p-1" alt="asset-icon" />
@@ -229,6 +238,7 @@ export default function Assets() {
             </Match>
           </Switch>
         </table>
+        {renderLoadingAnimations()}
       </div>
     </>
   );

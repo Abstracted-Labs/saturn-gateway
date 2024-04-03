@@ -332,25 +332,25 @@ const HomePlanet: Component = () => {
 const App = () => (
   <SaturnProvider>
     <RingApisProvider>
-      <MegaModalProvider>
-        <ProposeProvider>
-          <WalletConnectProvider>
-            <SelectedAccountProvider>
-              <IdentityProvider>
-                <ThemeProvider>
-                  <PriceProvider>
-                    <BalanceProvider>
-                      <ToastProvider>
+      <ToastProvider>
+        <MegaModalProvider>
+          <ProposeProvider>
+            <WalletConnectProvider>
+              <SelectedAccountProvider>
+                <IdentityProvider>
+                  <ThemeProvider>
+                    <PriceProvider>
+                      <BalanceProvider>
                         <HomePlanet />
-                      </ToastProvider>
-                    </BalanceProvider>
-                  </PriceProvider>
-                </ThemeProvider>
-              </IdentityProvider>
-            </SelectedAccountProvider>
-          </WalletConnectProvider>
-        </ProposeProvider>
-      </MegaModalProvider>
+                      </BalanceProvider>
+                    </PriceProvider>
+                  </ThemeProvider>
+                </IdentityProvider>
+              </SelectedAccountProvider>
+            </WalletConnectProvider>
+          </ProposeProvider>
+        </MegaModalProvider>
+      </ToastProvider>
     </RingApisProvider>
   </SaturnProvider>
 );

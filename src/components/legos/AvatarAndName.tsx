@@ -34,7 +34,7 @@ const AvatarAndName = (props: IAvatarAndNameProps) => {
   }));
 
   return (
-    <span class="mr-10 flex items-center gap-1">
+    <span class="mr-10 flex flex-row justify-start items-center gap-1">
       <Switch>
         <Match when={loading() && isLoggedIn()}>
           <LoaderAnimation text="Loading..." />

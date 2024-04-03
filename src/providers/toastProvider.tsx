@@ -44,8 +44,6 @@ export function ToastProvider(props: { children: JSX.Element; }) {
     if (instance) {
       instance.hide();
       instance.destroy();
-    } else {
-      console.error('No toast instance found for id:', id);
     }
   };
 

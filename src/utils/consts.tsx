@@ -61,6 +61,15 @@ export const AssetIconByCurrency: Record<string, string> = {
   ASSETHUB: KusamaAssetHubIcon,
 };
 
+export const NetworkIconByNetwork: Record<NetworkEnum, string> = {
+  [NetworkEnum.TINKERNET]: TinkernetIcon,
+  [NetworkEnum.BASILISK]: BasiliskIcon,
+  [NetworkEnum.PICASSO]: PicassoIcon,
+  [NetworkEnum.KUSAMA]: KusamaIcon,
+  [NetworkEnum.POLKADOT]: PolkadotIcon,
+  [NetworkEnum.ASSETHUB]: KusamaAssetHubIcon,
+};
+
 export const NetworkIconByCurrency: Record<string, string[]> = {
   TNKR: [TinkernetIcon, BasiliskIcon],
   BSX: [BasiliskIcon],

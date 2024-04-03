@@ -272,6 +272,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const encodedAddress = getEncodedAddress(account.address, 117);
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
+    const onAssetsPage = location.pathname.includes('assets');
 
     let innerCalls = [];
 
@@ -340,7 +341,9 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       });
     } catch (error) {
       console.error(error);
-      toast.setToast('Failed to add members to multisig', 'error');
+      if (!onAssetsPage) {
+        toast.setToast('Failed to create multisig', 'error');
+      }
     } finally {
       wallet.disconnect();
     }

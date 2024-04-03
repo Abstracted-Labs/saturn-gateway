@@ -67,7 +67,7 @@ const CryptoAccounts = () => {
         throw new Error('No matching wallet found for account');
       }
 
-      await saContext.setters.setSelected(acc, selectedWallet);
+      saContext.setters.setSelected(acc, selectedWallet);
 
       setActiveAccount(acc);
 

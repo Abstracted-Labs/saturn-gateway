@@ -19,6 +19,8 @@ import { useIdentityContext } from '../../providers/identityProvider';
 import { useBalanceContext } from '../../providers/balanceProvider';
 import { MultisigDetails } from '@invarch/saturn-sdk';
 import { useToast } from '../../providers/toastProvider';
+import EyeOpenIcon from '../../assets/icons/eye-open.svg';
+import EyeClosedIcon from '../../assets/icons/eye-closed.svg';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
 
@@ -67,20 +69,26 @@ const MultisigList = (props: MultisigListProps) => {
   const saturn = createMemo(() => saturnContext.state.saturn);
   const tinkernetApi = createMemo(() => ringApisContext.state.tinkernet);
 
-  const handleClick = async (index: number) => {
+  const handleClick = async (orderIndex: number) => {
     const sat = saturnContext.state.saturn;
     if (!sat) return;
 
-    const multisig = multisigItems()[index];
+    const multisig = multisigItems()[orderIndex];
     const id = multisig.id;
 
     if (isInModal()) {
       modal.hideMultisigListModal();
     }
 
+    if (id === activeButton()) {
+      return;
+    };
+
     if (id === undefined) return;
 
     setActiveButton(id);
+
+    balances?.clearBalances();
 
     saturnContext.setters.setMultisigId(id);
 
@@ -88,9 +96,10 @@ const MultisigList = (props: MultisigListProps) => {
       toast.setToast('Switching omnisigs...', 'loading');
       const maybeDetails = await sat.getDetails(id);
       if (maybeDetails) {
-        console.debug("Multisig details fetched successfully:", maybeDetails);
         saturnContext.setters.setMultisigDetails(maybeDetails);
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
+      } else {
+        console.error('No multisig details found');
       }
     } catch (error) {
       console.error(error);
@@ -99,14 +108,11 @@ const MultisigList = (props: MultisigListProps) => {
       navigate(`/${ id }/assets`, { replace: true });
 
       // Remove the selected item from the list and update the selected item
-      const selectedItem = originalOrder()[index];
+      const selectedItem = originalOrder()[orderIndex];
       setMultisigItems(originalOrder());
 
       // Clear price cache
       prices.clearPrices();
-
-      // Clear balance cache
-      balances?.clearBalances();
 
       // Clear identity cache
       identity.actions.clearIdentities();
@@ -115,7 +121,7 @@ const MultisigList = (props: MultisigListProps) => {
       closeLeftDrawer();
 
       // Notify the user
-      toast.setToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'info');
+      toast.setToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'info', 1000);
     }
 
     // Reset the scroll position
@@ -301,9 +307,12 @@ const MultisigList = (props: MultisigListProps) => {
                     data-drawer-hide={mutateButton() ? 'leftSidebar' : undefined}
                     aria-controls={mutateButton() ? 'leftSidebar' : undefined}
                   >
-                    <div class={`relative top-1 rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
+                    <div class={`flex items-center justify-center relative top-1 rounded-full w-10 h-10 bg-saturn-lightgrey ${ activeButton() === item.id ? 'bg-saturn-purple' : '' }`}>
                       <Show when={item.image}>
-                        <img class="rounded-full w-10 h-10" src={item.image} />
+                        <img class="rounded-full w-5 h-auto" src={item.image} />
+                      </Show>
+                      <Show when={!item.image}>
+                        <img class="rounded-full w-5 h-auto" src={item.id === activeButton() ? EyeOpenIcon : EyeClosedIcon} />
                       </Show>
                     </div>
                     <div class="grid grid-rows-2 ml-3 grow">

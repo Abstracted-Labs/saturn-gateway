@@ -35,7 +35,9 @@ const MainContainer = () => {
   const tinkernetApi = createMemo(() => ringsApiState().tinkernet);
   const saturnApi = createMemo(() => saturnState().saturn);
   const multisigId = createMemo(() => saturnState().multisigId);
+  const multisigAddress = createMemo(() => saturnState().multisigAddress);
   const details = createMemo(() => saturnState().multisigDetails);
+  const fetchedOnce = createMemo(() => balanceContext?.fetchedOnce);
 
   createEffect(() => {
     const acc = details()?.parachainAccount;
@@ -83,7 +85,6 @@ const MainContainer = () => {
 
     const runAsync = async () => {
       let id;
-
       if (isAddress(multisigHashId)) {
         const result = await tinkernetApi().query.inv4.coreByAccount(multisigHashId);
         if (result instanceof Option && result.isSome) {
@@ -117,9 +118,6 @@ const MainContainer = () => {
       } else {
         console.error(`No details found for ID: ${ numericId }`);
       }
-
-      // Refresh balances
-      balanceContext?.fetchBalances(true);
     };
 
     runAsync();
