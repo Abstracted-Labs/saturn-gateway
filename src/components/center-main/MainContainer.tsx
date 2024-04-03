@@ -38,6 +38,7 @@ const MainContainer = () => {
   const multisigAddress = createMemo(() => saturnState().multisigAddress);
   const details = createMemo(() => saturnState().multisigDetails);
   const fetchedOnce = createMemo(() => balanceContext?.fetchedOnce);
+  const multisigHashId = createMemo(() => loc.pathname.split('/')[1]);
 
   createEffect(() => {
     const acc = details()?.parachainAccount;
@@ -72,21 +73,17 @@ const MainContainer = () => {
   });
 
   createEffect(() => {
-    const multisigHashId = loc.pathname.split('/')[1];
+    const hashId = multisigHashId();
 
-    if (!multisigHashId) {
-      console.error('No multisigHashId provided, exiting early.');
+    if (!hashId) {
+      console.error('No hashId provided, exiting early.');
       return;
     };
 
-    if (!selectedAddress()) {
-      return;
-    }
-
     const runAsync = async () => {
       let id;
-      if (isAddress(multisigHashId)) {
-        const result = await tinkernetApi().query.inv4.coreByAccount(multisigHashId);
+      if (isAddress(hashId)) {
+        const result = await tinkernetApi().query.inv4.coreByAccount(hashId);
         if (result instanceof Option && result.isSome) {
           id = result.unwrapOr(null)?.toNumber();
           // Ensure id is within the safe range
@@ -97,7 +94,8 @@ const MainContainer = () => {
           return;
         }
       } else {
-        id = parseInt(multisigHashId);
+        id = parseInt(hashId);
+        console.log('hashId:', id);
         if (isNaN(id)) {
           console.error('Invalid id provided:', multisigHashId);
           return;
@@ -109,11 +107,12 @@ const MainContainer = () => {
 
       // Ensure id is a number before passing it to getDetails
       const numericId = Number(id);
-      const maybeDetails = await saturnApi()?.getDetails(numericId);
+      const maybeDetails = await saturnContext.state.saturn?.getDetails(numericId);
 
       // Set multisig details and address in omniway context
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
+        console.log('multisig address: ', maybeDetails.parachainAccount.toHuman());
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       } else {
         console.error(`No details found for ID: ${ numericId }`);

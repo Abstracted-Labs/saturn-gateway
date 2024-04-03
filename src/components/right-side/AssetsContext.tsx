@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { createSignal, createEffect, For, Show, createMemo, onMount, JSXElement, onCleanup, on } from "solid-js";
+import { createSignal, createEffect, For, Show, createMemo, JSXElement, onCleanup, on } from "solid-js";
 import { AssetEnum, NetworksByAsset, Rings } from "../../data/rings";
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
@@ -8,22 +8,21 @@ import SaturnCard from "../legos/SaturnCard";
 import { FALLBACK_TEXT_STYLE, INPUT_COMMON_STYLE, KusamaFeeAssetEnum, MINI_TEXT_LINK_STYLE, NetworkEnum } from "../../utils/consts";
 import SaturnSelectItem from "../legos/SaturnSelectItem";
 import SaturnSelect from "../legos/SaturnSelect";
-import { initDropdowns, Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
+import { Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
 import { getNetworkBlock } from "../../utils/getNetworkBlock";
 import { getAssetBlock } from "../../utils/getAssetBlock";
 import { getAssetsFromNetwork } from "../../utils/getAssetsFromNetwork";
-import { BalanceType, getBalancesFromAllNetworks } from "../../utils/getBalances";
+import { BalanceType } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
-import { NetworkAssetBalance, NetworkBalancesArray } from "../../pages/Assets";
+import { NetworkAssetBalance } from "../../pages/Assets";
 import { proposeCall } from "../modals/ProposeModal";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import getProposalType from "../../utils/getProposalType";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import { usePriceContext } from "../../providers/priceProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
-import { formatBalance } from "@polkadot/util";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
 import { useToast } from "../../providers/toastProvider";
 
@@ -80,7 +79,7 @@ const AssetsContext = () => {
   const [dropdownTo, setDropdownTo] = createSignal<DropdownInterface | null>(null);
   const [dropdownAsset, setDropdownAsset] = createSignal<DropdownInterface | null>(null);
   const [amount, setAmount] = createSignal<number>(0);
-  const [asset, setAsset] = createSignal<AssetEnum>(AssetEnum.TNKR);
+  const [asset, setAsset] = createSignal<AssetEnum | undefined>(AssetEnum.TNKR);
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
   const [targetAddress, setTargetAddress] = createSignal<string>('');
@@ -107,25 +106,32 @@ const AssetsContext = () => {
   const balanceContext = useBalanceContext();
   const toast = useToast();
 
+  const allBalances = createMemo(() => balances());
   const getUsdPrices = createMemo(() => priceContext.prices);
-  const forNetworks = createMemo(() => {
-    const selectedNetwork = finalNetworkPair().from;
-    const availableNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedNetwork);
+  const fromNetworks = createMemo(() => {
+    // const userBalances = allBalances();
+    const networkPair = finalNetworkPair();
+    const selectedFromNetwork = networkPair.from;
+    // const availableNetworks = userBalances.map(([network, assets]) => network).filter(network => network !== selectedFromNetwork);
     const allNetworks = Object.entries(allTheNetworks());
-    const filteredNetworks = allNetworks.filter(([name, element]) => availableNetworks.includes(name as NetworkEnum));
+    const filteredNetworks = allNetworks.filter(([name, element]) => !(name as NetworkEnum).includes(selectedFromNetwork));
     return filteredNetworks;
   });
   const toNetworks = createMemo(() => {
-    const selectedToNetwork = finalNetworkPair().to;
-    const balanceNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedToNetwork);
-    const networks = Object.entries(allTheNetworks()).filter(([name, element]) => balanceNetworks.includes(name as NetworkEnum));
-    return networks;
+    // const userBalances = allBalances();
+    const networkPair = finalNetworkPair();
+    const selectedToNetwork = networkPair.to;
+    // const availableNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedToNetwork);
+    const allNetworks = Object.entries(allTheNetworks());
+    const filteredNetworks = allNetworks.filter(([name, element]) => !(name as NetworkEnum).includes(selectedToNetwork));
+    return filteredNetworks;
   });
   const hasMultisigs = createMemo(() => saturnContext.state.multisigItems ? saturnContext.state.multisigItems.length > 0 : false);
   const isMultisigId = createMemo(() => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
+  const multisigId = createMemo(() => saturnContext.state.multisigId);
   const filteredAssetCount = createMemo(() => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
@@ -161,6 +167,7 @@ const AssetsContext = () => {
     const toNetwork = pair.to;
     const senderAddress = getEncodedAddress(saturnContext.state.multisigAddress, 117);
     const recipientAddress = getEncodedAddress(targetAddress(), 117);
+    const selectedAsset = asset();
 
     if (fromNetwork === toNetwork && senderAddress === recipientAddress) {
       toast.setToast(`Cannot send ${ asset() } to yourself on the same network`, 'error', 0);
@@ -183,9 +190,9 @@ const AssetsContext = () => {
     }
 
     // XcmTransfer: Handle bridging TNKR or KSM from Tinkernet to other chains.
-    if (pair.from === NetworkEnum.TINKERNET && pair.to !== NetworkEnum.TINKERNET) {
+    if (pair.from === NetworkEnum.TINKERNET && pair.to !== NetworkEnum.TINKERNET && selectedAsset) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
+        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: selectedAsset, amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing XCM Transfer from Tinkernet', proposeContext.state.proposal);
       modalContext.showProposeModal();
@@ -193,9 +200,9 @@ const AssetsContext = () => {
     }
 
     // XcmTransfer: Handle balance transfer of assets within another chain.
-    if (pair.from !== NetworkEnum.TINKERNET && pair.from === pair.to) {
+    if (pair.from !== NetworkEnum.TINKERNET && pair.from === pair.to && selectedAsset) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
+        new Proposal(ProposalType.XcmTransfer, { chain: pair.from, destinationChain: pair.to, asset: selectedAsset, amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing XCM Transfer within another chain', proposeContext.state.proposal);
       modalContext.showProposeModal();
@@ -203,9 +210,9 @@ const AssetsContext = () => {
     }
 
     // LocalTransfer: Handle local transfer of assets within Tinkernet.
-    if (pair.from === NetworkEnum.TINKERNET && pair.to === NetworkEnum.TINKERNET) {
+    if (pair.from === NetworkEnum.TINKERNET && pair.to === NetworkEnum.TINKERNET && selectedAsset) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
+        new Proposal(ProposalType.LocalTransfer, { chain: pair.from, destinationChain: pair.to, asset: selectedAsset, amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing Local Transfer within Tinkernet', proposeContext.state.proposal);
       modalContext.showProposeModal();
@@ -213,9 +220,9 @@ const AssetsContext = () => {
     }
 
     // XcmBridge: Handle bridging assets between other chains.
-    if (pair.from !== NetworkEnum.TINKERNET && pair.from !== pair.to) {
+    if (pair.from !== NetworkEnum.TINKERNET && pair.from !== pair.to && selectedAsset) {
       proposeContext.setters.setProposal(
-        new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: asset(), amount: amountPlank, to: targetAddress() })
+        new Proposal(ProposalType.XcmBridge, { chain: pair.from, destinationChain: pair.to, asset: selectedAsset, amount: amountPlank, to: targetAddress() })
       );
       console.log('Proposing XCM Bridge from another chain', proposeContext.state.proposal);
       modalContext.showProposeModal();
@@ -322,8 +329,8 @@ const AssetsContext = () => {
     return getNetworkBlock(network);
   };
 
-  const renderAssetOption = (asset: AssetEnum) => {
-    return getAssetBlock(asset);
+  const renderAssetOption = (asset: AssetEnum | undefined) => {
+    return asset && getAssetBlock(asset);
   };
 
   const clearAddress = () => {
@@ -344,11 +351,15 @@ const AssetsContext = () => {
   };
 
   const getPaymentInfo = async () => {
+    const selectedAsset = asset();
     // setLoadingFee(true);
 
-    if (!targetAddress() || !asset() || !amount()) return;
+    if (!targetAddress() || !selectedAsset || !amount()) return;
+
     const bnAmount = new BigNumber(amount().toString()).multipliedBy(new BigNumber('10').pow(Rings[finalNetworkPair().from as keyof typeof Rings]?.decimals ?? 0));
+
     const finalAmount = new BigNumber(bnAmount.toString().split('.')[0]);
+
     const proposalProps = {
       preview: true,
       selectedAccountContext: saContext,
@@ -363,7 +374,7 @@ const AssetsContext = () => {
             data: {
               chain: finalNetworkPair().from,
               destinationChain: finalNetworkPair().to,
-              asset: asset(),
+              asset: selectedAsset,
               amount: finalAmount,
               to: targetAddress(),
             }
@@ -415,27 +426,25 @@ const AssetsContext = () => {
     setAmount(0);
   });
 
-  createEffect(on([() => saturnContext.state.multisigAddress, feeAsset], () => {
-    // Setting all balances whenever multisigAddress changes
+  createEffect(on([() => saturnContext.state.multisigId, () => balanceContext?.balances], () => {
     const id = saturnContext.state.multisigId;
-    const address = saturnContext.state.multisigAddress;
 
-    if (typeof id !== 'number' || !address) {
+    if (typeof id !== 'number') {
+      console.error('Multisig ID is not a number');
       return;
     }
 
-    const runAsync = async () => {
-      const allBalances = balanceContext?.balances;
-      setBalances(allBalances as unknown as NetworkAssetBalance[]);
-    };
+    balanceContext?.clearBalances();
 
-    runAsync();
+    const allBalances = balanceContext?.balances;
+    console.log('AssetContext All balances: ', allBalances);
+    setBalances(allBalances as unknown as NetworkAssetBalance[]);
   }));
 
-  createEffect(on([() => finalNetworkPair().from, balances], () => {
-    // Updating the From/To dropdowns when the current network changes
+  createEffect(() => {
+    // Update available assets when the current From network changes
     const currentAsset = asset();
-    const balance = balances();
+    const balance = allBalances();
     const currentNetwork = finalNetworkPair().from;
     if (currentAsset && currentNetwork && NetworksByAsset[currentAsset]) {
       // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
@@ -446,17 +455,19 @@ const AssetsContext = () => {
           const asset = filterAssetsFromNetwork[0];
           const balances = asset as unknown as [string, BalanceType];
           setAsset(balances[0] as AssetEnum);
+        } else {
+          setAsset(undefined);
         }
       }
     }
-  }));
+  });
 
   createEffect(() => {
-    // Setting the max asset amount based on the selected asset
+    // Setting max asset amount if available
     const currentNetwork = finalNetworkPair().from;
     const currentAsset = asset();
-    const allBalances = balances();
-    const networkBalances: NetworkAssetBalance | undefined = allBalances.find(([network, assets]) => network == currentNetwork);
+    const userBalances = allBalances();
+    const networkBalances: NetworkAssetBalance | undefined = userBalances.find(([network, assets]) => network == currentNetwork);
     if (networkBalances && Array.isArray(networkBalances[1])) {
       const balanceArray = networkBalances[1];
       const assetBalances = (balanceArray as unknown as [string, BalanceType][]).find(([token, balances]) => token === currentAsset);
@@ -464,10 +475,8 @@ const AssetsContext = () => {
         const freeBalance = assetBalances?.[1].freeBalance;
         if (freeBalance) {
           const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings]?.decimals ?? 0);
-          // remove commas from transferable string
           const transferableNumber = Number(transferable.replace(/,/g, ''));
           setMaxAssetAmount(transferableNumber);
-          // Reset the amount when the asset changes
           setAmount(0);
         } else {
           setMaxAssetAmount(null);
@@ -475,6 +484,8 @@ const AssetsContext = () => {
       } else {
         setMaxAssetAmount(null);
       }
+    } else {
+      setMaxAssetAmount(null);
     }
   });
 
@@ -654,7 +665,7 @@ const AssetsContext = () => {
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xxs text-saturn-lightgrey">from</span>
           <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={handleFromDropdown}>
-            <For each={forNetworks()}>
+            <For each={fromNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleFromOptionClick(name as NetworkEnum);
                 getPaymentInfo();
@@ -717,14 +728,16 @@ const AssetsContext = () => {
             </SaturnSelect>
           </div>
           <div class="flex flex-col justify-end">
-            <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
-              <Show when={maxAssetAmount() !== null} fallback={
-                <div class={FALLBACK_TEXT_STYLE}>--</div>
-              }>
-                <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount} onMouseLeave={getPaymentInfo}>max</span>
-                <span class="ml-2">{maxAssetAmount()} {asset()}</span>
-              </Show>
-            </span>
+            <Show when={!!asset()} fallback={<div class={FALLBACK_TEXT_STYLE}>--</div>}>
+              <span class="align-top text-right text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">
+                <Show when={maxAssetAmount() !== null} fallback={
+                  <div class={FALLBACK_TEXT_STYLE}>--</div>
+                }>
+                  <span class={MINI_TEXT_LINK_STYLE} onClick={setMaxAmount} onMouseLeave={getPaymentInfo}>max</span>
+                  <span class="ml-2">{maxAssetAmount()} {asset()}</span>
+                </Show>
+              </span>
+            </Show>
             <label for="send-amount" class="sr-only text-xxs text-saturn-darkgrey dark:text-saturn-offwhite">Amount</label>
             <input
               type="number"

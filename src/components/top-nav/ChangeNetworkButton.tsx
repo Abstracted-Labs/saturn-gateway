@@ -1,13 +1,12 @@
-import { For, JSXElement, createEffect, createMemo, createSignal, on, onCleanup, onMount } from 'solid-js';
+import { For, JSXElement, createEffect, createMemo, createSignal, on, onCleanup } from 'solid-js';
 import { NetworkEnum } from '../../utils/consts';
 import { useProposeContext } from '../../providers/proposeProvider';
 import SaturnSelectItem from '../legos/SaturnSelectItem';
 import { getNetworkBlock } from '../../utils/getNetworkBlock';
 import SaturnSelect from '../legos/SaturnSelect';
-import { Dropdown, type DropdownInterface, type DropdownOptions, initDropdowns } from 'flowbite';
-import { BalanceType, getBalancesFromAllNetworks } from '../../utils/getBalances';
+import { Dropdown, type DropdownInterface, type DropdownOptions } from 'flowbite';
 import { useSaturnContext } from '../../providers/saturnProvider';
-import { NetworkAssetBalance, NetworkBalancesArray } from '../../pages/Assets';
+import { NetworkAssetBalance } from '../../pages/Assets';
 import { useBalanceContext } from '../../providers/balanceProvider';
 
 const ChangeNetworkButton = () => {
@@ -40,7 +39,8 @@ const ChangeNetworkButton = () => {
   };
 
   const filteredNetworks = createMemo(() => {
-    const availableNetworks = balances().map(([network, assets]) => network);
+    const allBalances = () => balances();
+    const availableNetworks = allBalances().map(([network, assets]) => network);
     const allNetworks = Object.entries(allTheNetworks());
     const filteredNetworks = allNetworks.filter(([name, element]) => availableNetworks.includes(name as NetworkEnum));
     return filteredNetworks;
@@ -76,19 +76,9 @@ const ChangeNetworkButton = () => {
   });
 
   createEffect(on(() => saturnContext.state.multisigAddress, () => {
-    // Setting all balances
-    const id = saturnContext.state.multisigId;
-    const address = saturnContext.state.multisigAddress;
-    if (typeof id !== 'number' || !address) {
-      return;
-    }
-
-    const runAsync = async () => {
-      const allBalances = balanceContext?.balances;
-      setBalances(allBalances as unknown as NetworkAssetBalance[]);
-    };
-
-    runAsync();
+    setBalances([]);
+    const allBalances = balanceContext?.balances;
+    setBalances(allBalances as unknown as NetworkAssetBalance[]);
   }));
 
   createEffect(() => {

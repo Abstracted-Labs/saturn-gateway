@@ -21,7 +21,7 @@ export const SelectedAccountContext = createContext<{
     getAddressToCopy: () => Element | undefined,
     setEnabledWallets: (wallets: string[]) => void,
     getEnabledWallets: () => string[],
-    setSelected: (account: Account, wallet: BaseWallet) => void,
+    setSelectedAccount: (account: Account, wallet: BaseWallet) => void,
     getSelectedStorage: () => { address: string, wallet: string; },
     clearSelected: () => void;
   },
@@ -39,7 +39,7 @@ export const SelectedAccountContext = createContext<{
     getAddressToCopy: () => undefined,
     setEnabledWallets: (wallets: string[]) => { },
     getEnabledWallets: () => [],
-    setSelected: (account: Account, wallet: BaseWallet) => { },
+    setSelectedAccount: (account: Account, wallet: BaseWallet) => { },
     getSelectedStorage: () => ({ address: '', wallet: '' }),
     clearSelected: () => { }
   }
@@ -124,7 +124,7 @@ export function SelectedAccountProvider(props: any) {
         return [];
       },
 
-      setSelected(account: Account, wallet: BaseWallet) {
+      setSelectedAccount(account: Account, wallet: BaseWallet) {
         try {
           if (account && wallet) {
             setState("account", account);

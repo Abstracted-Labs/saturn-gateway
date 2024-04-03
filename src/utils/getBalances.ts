@@ -285,6 +285,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
 }
 
 export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
+  console.log('grabbing balances for: ', address);
   const apis = await createApis();
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
     const api = apis[network as NetworkEnum];

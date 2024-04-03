@@ -56,7 +56,7 @@ const Home = () => {
 
     if (newAccounts.length > 0) {
       const defaultAccount = newAccounts[0];
-      selectedAccount.setters.setSelected(defaultAccount, allWallets.find(w => w.metadata.title === defaultAccount.title));
+      selectedAccount.setters.setSelectedAccount(defaultAccount, allWallets.find(w => w.metadata.title === defaultAccount.title));
     }
   };
 

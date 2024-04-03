@@ -19,6 +19,7 @@ import { MULTISIG_LIST_MODAL_ID } from "../left-side/MultisigList";
 import { matchTypeToIcon } from "../../utils/matchTypeToIcon";
 import { useToast } from "../../providers/toastProvider";
 import { useMegaModal } from "../../providers/megaModalProvider";
+import { getMultisigsForAccount } from "../../utils/getMultisigs";
 
 type AvailableAccountType = Account & { title?: string; };
 const CryptoAccounts = () => {
@@ -38,6 +39,7 @@ const CryptoAccounts = () => {
   const modal = useMegaModal();
   const toast = useToast();
 
+  const saturn = createMemo(() => saturnContext.state.saturn);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
   const selectedAccount = createMemo(() => saContext.state.account);
 
@@ -47,7 +49,12 @@ const CryptoAccounts = () => {
   };
 
   const connectUserAccount = async (acc: Account) => {
+    const sat = saturn();
+
+    if (!sat) return;
+
     toast.setToast('Connecting...', 'loading');
+
     try {
       saturnContext.setters.logout();
 
@@ -67,11 +74,11 @@ const CryptoAccounts = () => {
         throw new Error('No matching wallet found for account');
       }
 
-      saContext.setters.setSelected(acc, selectedWallet);
+      saContext.setters.setSelectedAccount(acc, selectedWallet);
 
       setActiveAccount(acc);
 
-      if (!saturnContext || !saturnContext.setters || typeof saturnContext.setters.logout !== 'function') {
+      if (!saturnContext || !saturnContext.setters) {
         throw new Error('Saturn context is not properly defined');
       }
     } catch (error) {
@@ -108,7 +115,7 @@ const CryptoAccounts = () => {
         (selectedAccount as any).name = wcWallet?.metadata.title;
 
         // Store WalletConnect session in saturn context
-        await saContext.setters.setSelected(selectedAccount, wcWallet);
+        await saContext.setters.setSelectedAccount(selectedAccount, wcWallet);
 
         // Also add WalletConnect account to availableAccounts
         setAvailableAccounts([...availableAccounts(), selectedAccount]);

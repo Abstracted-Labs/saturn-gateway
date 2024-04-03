@@ -292,7 +292,7 @@ const HomePlanet: Component = () => {
 
           const matchedAddress = (await matchedWallet.getAccounts()).find((a) => a.address == address);
           if (matchedAddress) {
-            selectedAccountContext.setters.setSelected(matchedAddress, matchedWallet);
+            selectedAccountContext.setters.setSelectedAccount(matchedAddress, matchedWallet);
           }
         }
       }

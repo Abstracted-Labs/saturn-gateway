@@ -1,4 +1,4 @@
-import { createContext, useContext, JSX, createMemo, createSignal, onMount, createEffect, on } from 'solid-js';
+import { createContext, useContext, JSX, createMemo, createSignal, createEffect, on } from 'solid-js';
 import { NetworkBalances, getBalancesFromAllNetworks } from '../utils/getBalances';
 import { useSaturnContext } from "./saturnProvider";
 import { NetworkAssetBalance } from '../pages/Assets';
@@ -30,33 +30,21 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
   const allNetworks = Object.values(NetworkEnum);
 
   const onAssetsPage = createMemo(() => loc.pathname.includes('/assets'));
-  const multisigId = createMemo(() => saturnContext.state.multisigId);
-  const multisigAddress = createMemo(() => saturnContext.state.multisigAddress);
-  // const allBalances = createMemo(() => balances);
-  // const allLoading = createMemo(() => loading);
 
   const clearBalances = () => {
     setBalances([]);
   };
 
   const fetchBalances = async () => {
-    const id = multisigId();
-    const address = multisigAddress();
     const nb = networkBalances();
 
-    if (typeof id !== 'number' || !address) {
-      console.log({ id, address });
-      console.error('No multisig id or address found');
-      return;
-    };
-
     try {
-      if (networkBalances()) {
+      if (nb) {
         const networkPromises = Object.entries(nb).map(async ([network, assets], index) => {
           if (Object.keys(assets).length > 0) {
             setTimeout(() => {
               setLoading((l: NetworkEnum[]) => l.filter((n) => n !== network));
-            }, index * 100);
+            }, (index * 100));
 
             const remappedAssets = Object.entries(assets).map(([asset, assetBalances]) => {
               return [asset, assetBalances];
@@ -64,6 +52,8 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
             setBalances((b: NetworkAssetBalance[]) => [...b, [network, remappedAssets] as unknown as NetworkAssetBalance]);
           }
         });
+
+        if (networkPromises.length === 0) return;
 
         await Promise.all(networkPromises);
 
@@ -77,17 +67,18 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     } finally {
       setTimeout(() => {
         setLoading([]);
-      }, 500 + (allNetworks.length * 100));
+      }, 300 + (allNetworks.length * 100));
     }
 
   };
 
-  createEffect(on(multisigAddress, () => {
-    const multisigId = multisigAddress();
+  createEffect(on(() => saturnContext.state.multisigAddress, () => {
+    const address = saturnContext.state.multisigAddress;
 
     const loadBalances = async () => {
-      if (multisigId) {
-        const nBalances = await getBalancesFromAllNetworks(multisigId);
+      console.log('multisigAddress', address);
+      if (address) {
+        const nBalances = await getBalancesFromAllNetworks(address);
         setNetworkBalances(nBalances);
       }
     };
@@ -107,7 +98,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
 
       setTimeout(() => {
         fetchBalances();
-      }, 2000);
+      }, 1000);
     } else {
       setLoading([]);
     }

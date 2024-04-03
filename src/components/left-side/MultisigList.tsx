@@ -71,24 +71,28 @@ const MultisigList = (props: MultisigListProps) => {
 
   const handleClick = async (orderIndex: number) => {
     const sat = saturnContext.state.saturn;
-    if (!sat) return;
+
+    if (!sat) {
+      console.error('Saturn context not found');
+      return;
+    };
 
     const multisig = multisigItems()[orderIndex];
     const id = multisig.id;
+
+    console.log('multisig details', multisig);
 
     if (isInModal()) {
       modal.hideMultisigListModal();
     }
 
-    if (id === activeButton()) {
+    if (id === undefined || (!isInModal() && id === activeButton())) {
       return;
     };
 
-    if (id === undefined) return;
+    balances?.clearBalances();
 
     setActiveButton(id);
-
-    balances?.clearBalances();
 
     saturnContext.setters.setMultisigId(id);
 
@@ -96,6 +100,7 @@ const MultisigList = (props: MultisigListProps) => {
       toast.setToast('Switching omnisigs...', 'loading');
       const maybeDetails = await sat.getDetails(id);
       if (maybeDetails) {
+        console.log('Multisig details:', maybeDetails.parachainAccount.toHuman());
         saturnContext.setters.setMultisigDetails(maybeDetails);
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       } else {
@@ -250,9 +255,15 @@ const MultisigList = (props: MultisigListProps) => {
         // Set the multisigItems state in Saturn context
         saturnContext.setters.setMultisigItems(processedList);
 
-        // Only set the multisigId state in Saturn context if urlId matches selectedId
+        // Only set the multisig details in Saturn context if urlId matches selectedId
         if (selectedItem) {
           saturnContext.setters.setMultisigId(selectedId);
+
+          const maybeDetails = await sat.getDetails(selectedId);
+          if (maybeDetails) {
+            saturnContext.setters.setMultisigDetails(maybeDetails);
+            saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
+          }
         }
       } else {
         // If there are no current multisigs, reset previous state 
@@ -287,7 +298,7 @@ const MultisigList = (props: MultisigListProps) => {
   });
 
   return (
-    <>
+    <div>
       <h5 class="text-sm mb-2 text-black dark:text-saturn-offwhite">{!isInModal() ? 'Omnisig Accounts' : 'Select an Omnisig Account below:'}</h5>
       <div class={`relative mb-2`}>
         <div
@@ -335,7 +346,7 @@ const MultisigList = (props: MultisigListProps) => {
           </Switch>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
