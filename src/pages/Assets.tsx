@@ -148,7 +148,7 @@ export default function Assets() {
           return <div class="flex flex-col justify-start py-1 ml-3 mt-2">
             <LoaderAnimation text={
               <span class="flex flex-row items-center justify-start">
-                Loading assets from <span class="pl-2 pr-1">{icon()}</span> {name}
+                Loading assets from <span class="pl-2">{icon()}</span> {name}
               </span>
             } />
           </div>;
