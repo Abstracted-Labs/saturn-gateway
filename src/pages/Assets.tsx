@@ -34,10 +34,11 @@ export default function Assets() {
 
   const multisigId = createMemo(() => saturn.state.multisigId);
   const getUsdPrices = createMemo(() => priceContext.prices);
+  const getUsdConversions = createMemo(() => usdPrices);
 
-  const convertAssetTotalToUsd = async (asset: AssetEnum, network: NetworkEnum, total: string) => {
+  const convertAssetTotalToUsd = (asset: AssetEnum, network: NetworkEnum, total: string) => {
     let totalInUsd = '($0.00)';
-    const allPrices = usdPrices;
+    const allPrices = usdPrices;;
 
     if (!allPrices) return totalInUsd;
 
@@ -56,6 +57,7 @@ export default function Assets() {
         currentMarketPrice = new BigNumber(specificNetworkPrice);
       } else {
         const networksHoldingAsset = NetworksByAsset[asset];
+
         for (const net of networksHoldingAsset) {
           const price = allPrices[net];
           if (price && new BigNumber(price).isGreaterThan(0)) {
@@ -76,24 +78,6 @@ export default function Assets() {
     return totalInUsd;
   };
 
-  createEffect(() => {
-    const allPrices = getUsdPrices();
-
-    const loadPrices = async () => {
-      if (allPrices) {
-        const pricesInUsd = Object.entries(allPrices).reduce((acc, [network, priceInfo]) => {
-          acc[network] = priceInfo.usd;
-          return acc;
-        }, {} as Record<string, string>);
-        setUsdPrices(pricesInUsd);
-      } else {
-        console.log('No prices found', allPrices);
-      }
-    };
-
-    loadPrices();
-  });
-
   createEffect(on([multisigId], () => {
     setBalances([]);
     const allBalances = balanceContext?.balances;
@@ -101,12 +85,30 @@ export default function Assets() {
   }));
 
   createEffect(() => {
+    const allPrices = getUsdPrices();
+
+    if (!allPrices) return;
+
+    const loadPrices = () => {
+      const pricesInUsd = Object.entries(allPrices).reduce((acc, [network, priceInfo]) => {
+        acc[network] = priceInfo.usd;
+        return acc;
+      }, {} as Record<string, string>);
+      setUsdPrices(pricesInUsd);
+    };
+
+    loadPrices();
+  });
+
+  createEffect(() => {
     // Convert transferable balances to USD
-    const loadTransferableBalances = async () => {
-      for (const [network, assets] of balances()) {
+    const userBalances = balances();
+    const loadTransferableBalances = () => {
+      for (const [network, assets] of userBalances) {
+        console.log({ assets, network });
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
           const balances = b as unknown as BalanceType;
-          const value = await convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);
+          const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);
           setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
         }
       }
@@ -117,19 +119,18 @@ export default function Assets() {
 
   createEffect(() => {
     // Convert total balances to USD
-    const loadTotalBalances = async () => {
-      for (const [network, assets] of balances()) {
+    const userBalances = balances();
+    const loadTotalBalances = () => {
+      for (const [network, assets] of userBalances) {
         const assetsCopy = assets;
         for (const [asset, balanceDetails] of assetsCopy as unknown as NetworkBalancesArray) {
           const balance = balanceDetails[1] as BalanceType[];
           if (balance && Array.isArray(balance)) {
             for (const b of balance) {
-              const value = await convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, b.freeBalance);
+              const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, b.freeBalance);
               setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
             }
           }
-
-          return;
         }
       }
     };

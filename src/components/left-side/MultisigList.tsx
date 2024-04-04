@@ -116,9 +116,6 @@ const MultisigList = (props: MultisigListProps) => {
       const selectedItem = originalOrder()[orderIndex];
       setMultisigItems(originalOrder());
 
-      // Clear price cache
-      prices.clearPrices();
-
       // Clear identity cache
       identity.actions.clearIdentities();
 
