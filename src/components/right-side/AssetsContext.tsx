@@ -51,7 +51,7 @@ const assetOptions: DropdownOptions = {
 
 const allTheNetworks = (): Record<string, JSXElement> => ({
   [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
-  [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+  // [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
   [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
   [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
   [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
@@ -61,7 +61,7 @@ const allTheNetworks = (): Record<string, JSXElement> => ({
 const allTheAssets = (): Record<string, JSXElement> => ({
   [AssetEnum.TNKR]: getAssetBlock(AssetEnum.TNKR),
   [AssetEnum.KSM]: getAssetBlock(AssetEnum.KSM),
-  [AssetEnum.DOT]: getAssetBlock(AssetEnum.DOT),
+  // [AssetEnum.DOT]: getAssetBlock(AssetEnum.DOT),
   [AssetEnum.BSX]: getAssetBlock(AssetEnum.BSX),
   [AssetEnum.PICA]: getAssetBlock(AssetEnum.PICA),
   [AssetEnum.ASSETHUB]: getAssetBlock(AssetEnum.ASSETHUB),
@@ -259,16 +259,19 @@ const AssetsContext = () => {
 
   const validateAmount = (e: any) => {
     const inputValue = e.currentTarget.value;
-    const isValidInput = /^(\d+\.?\d*|\.\d+)$/.test(inputValue) || inputValue === "";
-    const maxAmount = maxAssetAmount();
-    if (maxAmount === null || !isValidInput) return;
-    setAmount(inputValue);
+    if (inputValue === "" || /^(\d+\.?\d*|\.\d*)$/.test(inputValue)) {
+      const numericValue = parseFloat(inputValue);
+      const maxAmount = maxAssetAmount();
+      if (isNaN(numericValue) || maxAmount === null || numericValue > maxAmount) return;
+      setAmount(numericValue);
+    }
   };
 
   const setMaxAmount = () => {
     const maxAmount = maxAssetAmount();
-    if (maxAmount === null || maxAmount <= 1) return;
-    setAmount(maxAmount - 1);
+    if (maxAmount !== null) {
+      setAmount(maxAmount < 1 ? maxAmount : maxAmount - 1);
+    }
   };
 
   const handleAssetsDropdown = () => {
