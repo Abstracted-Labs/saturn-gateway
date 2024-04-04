@@ -165,11 +165,11 @@ const HomePlanet: Component = () => {
       const apis = await createApis();
 
       // Disconnect non-Tinkernet RPCs
-      Object.entries(Rings).forEach(([network, ring]) => {
-        if (network !== NetworkEnum.TINKERNET) {
-          apis[network].disconnect();
-        }
-      });
+      // Object.entries(Rings).forEach(([network, ring]) => {
+      //   if (network !== NetworkEnum.TINKERNET) {
+      //     apis[network].disconnect();
+      //   }
+      // });
 
       // Save Tinkernet API to Saturn context
       if (apis.tinkernet) {
