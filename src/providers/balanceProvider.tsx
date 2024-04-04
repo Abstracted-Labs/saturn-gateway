@@ -104,16 +104,16 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     }
   }));
 
-  const value = createMemo(() => ({
+  const value = {
     balances,
     loading,
     fetchedOnce: fetchedOnce(),
     clearBalances,
     fetchBalances,
-  }));
+  };
 
   return (
-    <BalanceContext.Provider value={value()}>
+    <BalanceContext.Provider value={value}>
       {props.children}
     </BalanceContext.Provider>
   );

@@ -212,7 +212,7 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     }
   };
 
-  const store = createMemo(() => ({
+  const value = {
     showMultisigListModal,
     hideMultisigListModal,
     showFeeAssetModal,
@@ -227,10 +227,10 @@ export function MegaModalProvider(props: { children: JSX.Element; }) {
     hideAddressSelectorModal,
     showCryptoAccountsModal,
     hideCryptoAccountsModal,
-  }));
+  };
 
   return (
-    <MegaModalContext.Provider value={store()}>
+    <MegaModalContext.Provider value={value}>
       {props.children}
     </MegaModalContext.Provider>
   );

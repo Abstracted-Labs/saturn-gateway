@@ -85,20 +85,20 @@ export function IdentityProvider(props: { children: JSX.Element; }) {
     setIdentities([]);
   };
 
-  const value = createMemo(() => ({
+  const value = {
     state: { identities },
     actions: {
       getIdentities,
       clearIdentities,
     },
-  }));
+  };
 
   createEffect(() => {
     getIdentities();
   });
 
   return (
-    <IdentityContext.Provider value={value()}>
+    <IdentityContext.Provider value={value}>
       {props.children}
     </IdentityContext.Provider>
   );

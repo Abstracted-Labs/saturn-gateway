@@ -87,15 +87,15 @@ export function ToastProvider(props: { children: JSX.Element; }) {
     timeouts.forEach(timeoutId => clearTimeout(timeoutId));
   });
 
-  const value = createMemo(() => ({
+  const value = {
     toast: toasts(),
     getToast,
     setToast,
     hideToast,
-  }));
+  };
 
   return (
-    <ToastContext.Provider value={value()}>
+    <ToastContext.Provider value={value}>
       {props.children}
     </ToastContext.Provider>
   );

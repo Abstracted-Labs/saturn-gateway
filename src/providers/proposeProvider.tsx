@@ -66,7 +66,7 @@ export const ProposeContext = createContext<ProposeContextType>(defaultState());
 export function ProposeProvider(props: any) {
   const [state, setState] = createStore<ProposeContextType>(defaultState());
 
-  const value = createMemo(() => ({
+  const value = {
     ...state,
     setters: {
       setProposal(proposal: Proposal) {
@@ -76,10 +76,10 @@ export function ProposeProvider(props: any) {
         setState('state', 'currentNetwork', currentNetwork);
       }
     }
-  }));
+  };
 
   return (
-    <ProposeContext.Provider value={value()}>
+    <ProposeContext.Provider value={value}>
       {props.children}
     </ProposeContext.Provider>
   );

@@ -74,7 +74,7 @@ export function SelectedAccountProvider(props: any) {
     setState("addressToCopy", undefined);
   });
 
-  const value = createMemo(() => ({
+  const value = {
     state,
     setters: {
       setFeeAsset(feeAsset: KusamaFeeAssetEnum) {
@@ -159,10 +159,10 @@ export function SelectedAccountProvider(props: any) {
         setStorageState("selectedAccount", JSON.stringify({ address: '', wallet: '' }));
       }
     }
-  }));
+  };
 
   return (
-    <SelectedAccountContext.Provider value={value()}>
+    <SelectedAccountContext.Provider value={value}>
       {props.children}
     </SelectedAccountContext.Provider>
   );

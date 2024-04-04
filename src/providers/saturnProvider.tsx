@@ -47,7 +47,7 @@ export const SaturnContext = createContext<SaturnContextType>({
 export function SaturnProvider(props: any) {
   const [state, setState] = createStore<SaturnContextState>(defaultState);
 
-  const value = createMemo(() => ({
+  const value = {
     state,
     setters: {
       setSaturn(saturn: Saturn) {
@@ -77,10 +77,10 @@ export function SaturnProvider(props: any) {
         setState("multisigItems", []);
       }
     }
-  }));
+  };
 
   return (
-    <SaturnContext.Provider value={value()}>
+    <SaturnContext.Provider value={value}>
       {props.children}
     </SaturnContext.Provider>
   );

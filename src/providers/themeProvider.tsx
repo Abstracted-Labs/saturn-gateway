@@ -53,14 +53,14 @@ export function ThemeProvider(props: any) {
     }
   }
 
-  const contextValue = createMemo(() => ({
+  const contextValue = {
     ...state,
     setMode,
     getColorMode,
-  }));
+  };
 
   return (
-    <ThemeContext.Provider value={contextValue()}>
+    <ThemeContext.Provider value={contextValue}>
       {props.children}
     </ThemeContext.Provider>
   );

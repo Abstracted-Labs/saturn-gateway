@@ -23,6 +23,8 @@ export function PriceProvider(props: { children: JSX.Element; }) {
   const [prices, setPrices] = createStore<Record<NetworkEnum, { usd: string; }>>({ ...initialPrices });
   const [storageState, setStorageState, { remove }] = createLocalStorage<Record<NetworkEnum, { usd: string; }>>();
 
+  // const usdPrices = createMemo(() => prices);
+
   const fetchPrices = async () => {
     let data = await getAllUsdPrices();
     if (!data && storageState['prices']) {
@@ -42,10 +44,14 @@ export function PriceProvider(props: { children: JSX.Element; }) {
     fetchPrices();
   });
 
-  const value = createMemo(() => ({ prices, fetchPrices, clearPrices }));
+  const value = {
+    prices,
+    fetchPrices,
+    clearPrices
+  };
 
   return (
-    <PriceContext.Provider value={value()}>
+    <PriceContext.Provider value={value}>
       {props.children}
     </PriceContext.Provider>
   );
