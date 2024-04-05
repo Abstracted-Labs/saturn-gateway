@@ -10,7 +10,6 @@ import { useLocation } from '@solidjs/router';
 export interface BalanceContextType {
   balances: NetworkAssetBalance[];
   loading: NetworkEnum[];
-  fetchedOnce: boolean;
   clearBalances: () => void;
   fetchBalances: (refetch?: boolean) => void;
 }
@@ -20,7 +19,6 @@ const BalanceContext = createContext<BalanceContextType>();
 export function BalanceProvider(props: { children: JSX.Element; }) {
   const [balances, setBalances] = createStore<NetworkAssetBalance[]>([]);
   const [loading, setLoading] = createStore<NetworkEnum[]>([]);
-  const [fetchedOnce, setFetchedOnce] = createSignal(false);
   const [networkBalances, setNetworkBalances] = createSignal<NetworkBalances>({});
 
   const saturnContext = useSaturnContext();
@@ -57,8 +55,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
 
         await Promise.all(networkPromises);
 
-        setFetchedOnce(true);
-
         toast.setToast('Balances fetched successfully', 'success');
       }
     } catch (error) {
@@ -76,7 +72,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     const address = saturnContext.state.multisigAddress;
 
     const loadBalances = async () => {
-      console.log('multisigAddress', address);
       if (address) {
         const nBalances = await getBalancesFromAllNetworks(address);
         setNetworkBalances(nBalances);
@@ -95,7 +90,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
         if (Object.keys(assets).length > 0) {
           setTimeout(() => {
             setLoading((l) => [...l, network as NetworkEnum]);
-          }, 500 + (index * 20));
+          }, 5 + (index * 20));
         }
       });
 
@@ -112,7 +107,6 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
   const value = {
     balances,
     loading,
-    fetchedOnce: fetchedOnce(),
     clearBalances,
     fetchBalances,
   };

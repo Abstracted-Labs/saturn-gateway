@@ -169,7 +169,7 @@ export default function Assets() {
               <th scope="col" class='w-[20%]'>Chains</th>
             </tr>
           </thead>
-          <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Please wait..." /></div>}>
+          <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Gathering info..." /></div>}>
             <Match when={balances() && balances().length > 0}>
               <For each={balances()}>{([network, assets]) => {
                 return <Show when={assets.length}>

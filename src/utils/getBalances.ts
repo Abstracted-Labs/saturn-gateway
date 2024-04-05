@@ -66,18 +66,29 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
 
     case NetworkEnum.ASSETHUB: {
       if (api.query.assets && api.query.assets.metadata) {
-        const registryMap = await api.query.assets.metadata.entries();
-        registryMap.reduce((acc: Record<string, string | FeeAsset | number>, [key, value]: [any, any]) => {
-          const metadata = value.toJSON();
-          const assetId = Number(key.toHuman());
-          const symbol = hexToString(metadata.symbol);
-          if (!Number.isNaN(assetId) && (symbol === 'BILL' || symbol === 'BAILEGO')) {
-            acc[symbol] = assetId;
+        try {
+          const registryMap = await api.query.assets.metadata.entries();
+          for (const [key, value] of registryMap) {
+            const metadata = value.toJSON();
+            const storageKey = key.args.map((arg) => arg.toHuman())[0]?.toString().replace(/,/g, '');
+            if (!storageKey) continue;
+            const assetId = parseInt(storageKey, 10);
+            const symbol = metadata && typeof metadata === 'object' && 'symbol' in metadata && metadata['symbol'] ? hexToString(metadata['symbol'].toString()) : null;
+            if (!Number.isNaN(assetId) && symbol) {
+              const BILL = 223; // billcoin
+              const BAILEGO = 88888; // shibatales
+              if (assetId === BILL || assetId === BAILEGO) {
+                assetRegistry[symbol] = assetId;
+              }
+            } else {
+              console.warn('Invalid assetId or symbol:', { assetId, symbol });
+            }
           }
-          return acc;
-        }, assetRegistry);
+        } catch (error) {
+          console.error('Error retrieving entries from ASSETHUB network:', error);
+        }
       } else {
-        console.warn('assets or metadata not available on KUSAMA network');
+        console.warn('assets or metadata not available on ASSETHUB network');
       }
       break;
     }
@@ -285,7 +296,6 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
 }
 
 export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
-  console.log('grabbing balances for: ', address);
   const apis = await createApis();
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
     const api = apis[network as NetworkEnum];
