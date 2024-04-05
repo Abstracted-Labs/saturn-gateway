@@ -109,7 +109,7 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
 
 export async function getBalancesFromNetwork(api: ApiPromise, address: string, network: NetworkEnum): Promise<ResultBalancesWithNetwork> {
   const balancesByNetwork: ResultBalances = {};
-  address = 'i4wycLZ3VkAPksYeiNrnjg2WhcnGTNyK13fhiMYQMUFVker32';
+
   switch (network) {
     case NetworkEnum.BASILISK: {
       if (api) {
