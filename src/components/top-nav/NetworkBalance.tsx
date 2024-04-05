@@ -33,7 +33,7 @@ const NetworkBalance = (props: { address: string | undefined; }) => {
         const frozen = new BigNumber(balance.data.frozen.toString());
         const reserved = new BigNumber(balance.data.reserved.toString());
         const transferable = total.minus(frozen).minus(reserved);
-        const formattedBalance = formatAsset(transferable.toString(), 12, 2);
+        const formattedBalance = formatAsset(transferable.toString(), 12);
 
         setTnkrBalance(formattedBalance);
       });

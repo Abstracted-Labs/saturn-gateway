@@ -95,6 +95,9 @@ const AssetsContext = () => {
   const [networkFee, setNetworkFee] = createSignal<number>(0);
   const [loadingFee, setLoadingFee] = createSignal<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = createSignal<boolean>(false);
+  const [fromNetworks, setFromNetworks] = createSignal<[string, JSXElement][]>([]);
+  const [toNetworks, setToNetworks] = createSignal<[string, JSXElement][]>([]);
+
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
@@ -108,30 +111,11 @@ const AssetsContext = () => {
 
   const allBalances = createMemo(() => balances());
   const getUsdPrices = createMemo(() => priceContext.prices);
-  const fromNetworks = createMemo(() => {
-    // const userBalances = allBalances();
-    const networkPair = finalNetworkPair();
-    const selectedFromNetwork = networkPair.from;
-    // const availableNetworks = userBalances.map(([network, assets]) => network).filter(network => network !== selectedFromNetwork);
-    const allNetworks = Object.entries(allTheNetworks());
-    const filteredNetworks = allNetworks.filter(([name, element]) => !(name as NetworkEnum).includes(selectedFromNetwork));
-    return filteredNetworks;
-  });
-  const toNetworks = createMemo(() => {
-    // const userBalances = allBalances();
-    const networkPair = finalNetworkPair();
-    const selectedToNetwork = networkPair.to;
-    // const availableNetworks = balances().map(([network, assets]) => network).filter(network => network !== selectedToNetwork);
-    const allNetworks = Object.entries(allTheNetworks());
-    const filteredNetworks = allNetworks.filter(([name, element]) => !(name as NetworkEnum).includes(selectedToNetwork));
-    return filteredNetworks;
-  });
   const hasMultisigs = createMemo(() => saturnContext.state.multisigItems ? saturnContext.state.multisigItems.length > 0 : false);
   const isMultisigId = createMemo(() => {
     const idOrAddress = loc.pathname.split('/')[1];
     return idOrAddress !== 'undefined';
   });
-  const multisigId = createMemo(() => saturnContext.state.multisigId);
   const filteredAssetCount = createMemo(() => {
     const pair = finalNetworkPair();
     const allAssets = Object.entries(allTheAssets());
@@ -395,7 +379,8 @@ const AssetsContext = () => {
 
     const paymentInfo = await proposeCall(proposalProps);
     if (paymentInfo) {
-      setNetworkFee(Number(paymentInfo));
+      const fee = parseFloat(paymentInfo);
+      setNetworkFee(fee);
     } else {
       console.error('getPaymentInfo: no payment info');
     }
@@ -438,7 +423,6 @@ const AssetsContext = () => {
     }
 
     const allBalances = balanceContext?.balances;
-    console.log('AssetContext All balances: ', allBalances);
     setBalances(allBalances as unknown as NetworkAssetBalance[]);
   }));
 
@@ -447,9 +431,7 @@ const AssetsContext = () => {
     const currentAsset = asset();
     const balance = allBalances();
     const currentNetwork = finalNetworkPair().from;
-    console.log({ currentAsset, balance, currentNetwork });
     if (currentAsset && currentNetwork && NetworksByAsset[currentAsset]) {
-      // setFinalNetworkPair({ from: currentNetwork, to: currentNetwork });
       const filterNetworksFromBalances = balance.find(([network, _]) => network == currentNetwork);
       if (filterNetworksFromBalances && Array.isArray(filterNetworksFromBalances[1])) {
         const filterAssetsFromNetwork: BalanceType[] = filterNetworksFromBalances[1];
@@ -463,6 +445,57 @@ const AssetsContext = () => {
   }));
 
   createEffect(() => {
+    // Handle AssetHub/Tinkernet pairing options
+    const networkPair = finalNetworkPair();
+    let selectedFromNetwork = networkPair.from;
+    let selectedToNetwork = networkPair.to;
+    const allFromNetworks = Object.entries(allTheNetworks());
+    const allToNetworks = Object.entries(allTheNetworks());
+
+    const filteredFromNetworks = allFromNetworks.filter(([name, _]) => {
+      // if (selectedToNetwork === NetworkEnum.ASSETHUB && selectedFromNetwork !== NetworkEnum.ASSETHUB) {
+      //   return name !== NetworkEnum.TINKERNET;
+      // }
+      // if (selectedToNetwork === NetworkEnum.TINKERNET && selectedFromNetwork !== NetworkEnum.TINKERNET) {
+      //   return name !== NetworkEnum.ASSETHUB;
+      // }
+      return name !== selectedFromNetwork;
+    });
+
+    const filteredToNetworks = allToNetworks.filter(([name, _]) => {
+      // if (selectedFromNetwork === NetworkEnum.TINKERNET && selectedToNetwork !== NetworkEnum.TINKERNET) {
+      //   return name !== NetworkEnum.ASSETHUB;
+      // }
+      // if (selectedFromNetwork === NetworkEnum.ASSETHUB && selectedToNetwork !== NetworkEnum.ASSETHUB) {
+      //   return name !== NetworkEnum.TINKERNET;
+      // }
+      return name !== selectedToNetwork;
+    });
+
+
+    if (filteredFromNetworks.length > 0 && selectedFromNetwork === NetworkEnum.TINKERNET && selectedToNetwork === NetworkEnum.ASSETHUB) {
+      const firstAvailableNetwork = filteredFromNetworks.find(([name, _]) => name !== NetworkEnum.ASSETHUB);
+      if (firstAvailableNetwork) {
+        selectedFromNetwork = firstAvailableNetwork[0] as NetworkEnum;
+        setFinalNetworkPair({ from: selectedFromNetwork, to: selectedToNetwork });
+        toast.setToast('Cannot send assets from Tinkernet to AssetHub', 'error', 0);
+      }
+    }
+
+    if (filteredToNetworks.length > 0 && selectedToNetwork === NetworkEnum.TINKERNET && selectedFromNetwork === NetworkEnum.ASSETHUB) {
+      const firstAvailableNetwork = filteredToNetworks.find(([name, _]) => name !== NetworkEnum.ASSETHUB);
+      if (firstAvailableNetwork) {
+        selectedToNetwork = firstAvailableNetwork[0] as NetworkEnum;
+        setFinalNetworkPair({ from: selectedFromNetwork, to: selectedToNetwork });
+        toast.setToast('Cannot send assets from AssetHub to Tinkernet', 'error', 0);
+      }
+    }
+
+    setFromNetworks(filteredFromNetworks);
+    setToNetworks(filteredToNetworks);
+  });
+
+  createEffect(() => {
     // Setting max asset amount if available
     const currentNetwork = finalNetworkPair().from;
     const currentAsset = asset();
@@ -474,7 +507,7 @@ const AssetsContext = () => {
       if (assetBalances) {
         const freeBalance = assetBalances?.[1].freeBalance;
         if (freeBalance) {
-          const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings]?.decimals ?? 0);
+          const transferable = formatAsset(freeBalance, Rings[currentNetwork as keyof typeof Rings]?.decimals ?? 12, 4);
           const transferableNumber = Number(transferable.replace(/,/g, ''));
           setMaxAssetAmount(transferableNumber);
           setAmount(0);

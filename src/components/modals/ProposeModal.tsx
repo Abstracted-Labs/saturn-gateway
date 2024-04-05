@@ -286,7 +286,14 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!xcmAsset || !saturnContext.state.multisigAddress) return;
 
-      const { partialFee } = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      let partialFee = new BN("0");
+      try {
+        const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
+        partialFee = feeInfo.partialFee.mul(new BN("2"));
+      } catch (error) {
+        console.error('Error fetching fee, using default fee: ', error);
+        partialFee = new BN("10000000000");
+      }
 
       const bridgeCall = saturnContext.state.saturn
         .bridgeXcmAsset({
@@ -294,7 +301,7 @@ export const proposeCall = async (props: IProposalProps) => {
           asset: xcmAsset,
           amount: new BN(amount.toString()),
           to,
-          xcmFee: new BN(partialFee).mul(new BN("2")),
+          xcmFee: partialFee,
           destination: (proposalData as { destinationChain: string; }).destinationChain,
           proposalMetadata,
         });
@@ -308,7 +315,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
         return;
       } else {
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals);
+        const partialFeePreview = formatAsset(partialFee.toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 4);
         return partialFeePreview;
       }
     }
