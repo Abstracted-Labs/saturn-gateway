@@ -44,7 +44,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
           if (Object.keys(assets).length > 0) {
             setTimeout(() => {
               setLoading((l: NetworkEnum[]) => l.filter((n) => n !== network));
-            }, (index * 100));
+            }, 30 + (index * 20));
 
             const remappedAssets = Object.entries(assets).map(([asset, assetBalances]) => {
               return [asset, assetBalances];
@@ -67,7 +67,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     } finally {
       setTimeout(() => {
         setLoading([]);
-      }, 300 + (allNetworks.length * 100));
+      }, 10 + (allNetworks.length * 20));
     }
 
   };
@@ -91,8 +91,13 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     const onAssets = onAssetsPage();
 
     if (onAssets) {
-      const networksToLoad = Object.entries(nb).filter(([_, assets]) => Object.keys(assets).length > 0).map(([network, _]) => network as NetworkEnum);
-      setLoading(networksToLoad);
+      Object.entries(nb).forEach(([network, assets], index) => {
+        if (Object.keys(assets).length > 0) {
+          setTimeout(() => {
+            setLoading((l) => [...l, network as NetworkEnum]);
+          }, 500 + (index * 20));
+        }
+      });
 
       clearBalances();
 

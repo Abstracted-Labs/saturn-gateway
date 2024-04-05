@@ -12,7 +12,7 @@ const AddressSelectorModal = () => {
   return (
     <div id={ADDRESS_SELECTOR_MODAL_ID} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden w-auto md:w-[500px] mx-auto md:p-4 overflow-x-hidden md:my-10 overflow-y-scroll z-[60]">
       <div id="addressSelectorModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1" />
-      <div class={`relative h-52 px-4 bg-saturn-offwhite dark:bg-black border border-gray-900  rounded-md w-full m-5 md:m-auto`}>
+      <div class={`relative h-auto px-4 pb-8 bg-saturn-offwhite dark:bg-black border border-gray-900  rounded-md w-full m-5 md:m-auto`}>
         <div class="flex flex-row items-center justify-between gap-10 p-4">
           <h4 class="text-md font-semibold text-gray-900 dark:text-white">
             Click Address to Copy

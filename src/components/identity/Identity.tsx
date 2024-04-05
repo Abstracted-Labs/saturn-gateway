@@ -29,7 +29,7 @@ export default function Identity(props: { address: string; }) {
       <Suspense fallback={
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
           <TalismanIdenticon value={address()} size={34} />
-          <CopyAddress name={name()} address={address()} length={10} />
+          <CopyAddress name={name()} nativeAddress={address()} length={10} />
         </div>
       }>
         <div class="flex flex-row gap-2.5 items-center text-black dark:text-white">
@@ -43,7 +43,7 @@ export default function Identity(props: { address: string; }) {
               src={image()}
             />
           </Show>
-          <CopyAddress name={name()} address={address()} length={10} />
+          <CopyAddress name={name()} nativeAddress={address()} length={10} />
         </div>
       </Suspense>
     </div>

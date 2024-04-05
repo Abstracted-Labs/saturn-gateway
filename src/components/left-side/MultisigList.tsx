@@ -21,10 +21,9 @@ import { MultisigDetails } from '@invarch/saturn-sdk';
 import { useToast } from '../../providers/toastProvider';
 import EyeOpenIcon from '../../assets/icons/eye-open.svg';
 import EyeClosedIcon from '../../assets/icons/eye-closed.svg';
+import CopyAddressField from '../legos/CopyAddressField';
 
 export const MULTISIG_LIST_MODAL_ID = 'multisigListModal';
-
-const CopyAddress = lazy(() => import('../legos/CopyAddressField'));
 
 function capitalizeFirstName(name: string): string {
   const words = name.trim().split(" ");
@@ -90,21 +89,23 @@ const MultisigList = (props: MultisigListProps) => {
       return;
     };
 
-    balances?.clearBalances();
+    if (id !== activeButton()) {
+      balances?.clearBalances();
+    }
 
     setActiveButton(id);
 
     saturnContext.setters.setMultisigId(id);
 
     try {
-      toast.setToast('Switching omnisigs...', 'loading');
+      toast.setToast('Loading omnisig details...', 'loading');
       const maybeDetails = await sat.getDetails(id);
       if (maybeDetails) {
-        console.log('Multisig details:', maybeDetails.parachainAccount.toHuman());
         saturnContext.setters.setMultisigDetails(maybeDetails);
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
+
       } else {
-        console.error('No multisig details found');
+        console.error('No omnisig details found');
       }
     } catch (error) {
       console.error(error);
@@ -123,7 +124,7 @@ const MultisigList = (props: MultisigListProps) => {
       closeLeftDrawer();
 
       // Notify the user
-      toast.setToast(`Now using ${ selectedItem.capitalizedFirstName } omnisig`, 'info', 1000);
+      toast.setToast(`Connected to ${ selectedItem.capitalizedFirstName } omnisig`, 'info', 1000);
     }
 
     // Reset the scroll position
@@ -332,9 +333,7 @@ const MultisigList = (props: MultisigListProps) => {
                           {item.activeTransactions > 0 ? <div class="leading-none text-[8px] text-white bg-saturn-purple rounded-full px-1.5 py-1">{item.activeTransactions}</div> : null}
                         </span>
                       </div>
-                      <Show when={item.address}>
-                        <CopyAddress address={item.address} length={4} isInModal={isInModal()} />
-                      </Show>
+                      <CopyAddressField isUserAddress={false} nativeAddress={item.address} multisigId={item.id} length={4} isInModal={isInModal()} />
                     </div>
                   </div>
                 )}

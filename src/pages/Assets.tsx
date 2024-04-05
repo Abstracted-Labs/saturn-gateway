@@ -105,7 +105,6 @@ export default function Assets() {
     const userBalances = balances();
     const loadTransferableBalances = () => {
       for (const [network, assets] of userBalances) {
-        console.log({ assets, network });
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
           const balances = b as unknown as BalanceType;
           const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);

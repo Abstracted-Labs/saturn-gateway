@@ -46,6 +46,7 @@ export type IProposalProps = {
 };
 
 const TransferProposal = (props: TransferProposalProps) => {
+  console.log('props.asset', props.asset);
   return (
     <div class="flex flex-col gap-2">
       <p class="border-t border border-gray-700 border-dashed pt-2">Amount: <span class="capitalize text-black dark:text-white float-right font-bold">{
@@ -176,7 +177,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!xcmAsset || !saturnContext.state.multisigAddress) return;
 
-      const { partialFee } = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      const { partialFee } = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
 
       const transferCall = saturnContext.state.saturn
         .transferXcmAsset({
@@ -285,7 +286,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!xcmAsset || !saturnContext.state.multisigAddress) return;
 
-      const { partialFee } = await ringApisContext.state[chain].tx.balances.transfer(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      const { partialFee } = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
 
       const bridgeCall = saturnContext.state.saturn
         .bridgeXcmAsset({

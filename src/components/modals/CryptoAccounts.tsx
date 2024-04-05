@@ -20,6 +20,7 @@ import { matchTypeToIcon } from "../../utils/matchTypeToIcon";
 import { useToast } from "../../providers/toastProvider";
 import { useMegaModal } from "../../providers/megaModalProvider";
 import { getMultisigsForAccount } from "../../utils/getMultisigs";
+import { useBalanceContext } from "../../providers/balanceProvider";
 
 type AvailableAccountType = Account & { title?: string; };
 const CryptoAccounts = () => {
@@ -38,6 +39,7 @@ const CryptoAccounts = () => {
   const theme = useThemeContext();
   const modal = useMegaModal();
   const toast = useToast();
+  const balances = useBalanceContext();
 
   const saturn = createMemo(() => saturnContext.state.saturn);
   const isLightTheme = createMemo(() => theme.getColorMode() === 'light');
@@ -81,11 +83,13 @@ const CryptoAccounts = () => {
       if (!saturnContext || !saturnContext.setters) {
         throw new Error('Saturn context is not properly defined');
       }
+
+      balances?.clearBalances();
     } catch (error) {
       console.error(error);
       toast.setToast('An error occurred', 'error');
     } finally {
-      toast.setToast(acc.name + ' is now connected', 'success');
+      toast.setToast('Logged in as ' + acc.name, 'success');
       modal.hideCryptoAccountsModal();
     }
   };
@@ -333,7 +337,7 @@ const CryptoAccounts = () => {
                         <WalletLabel walletType={(account as any).title} />
                         <div class="xxs:text-xxs sm:text-xs"><NetworkBalance address={account.address} /></div>
                       </div>
-                      <CopyAddressField address={account.address} length={18} isInModal={true} />
+                      <CopyAddressField isUserAddress={true} nativeAddress={account.address} length={18} isInModal={true} />
                     </div>
                   );
                 }}

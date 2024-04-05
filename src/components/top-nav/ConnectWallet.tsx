@@ -116,7 +116,7 @@ const ConnectWallet = (props: { inMultisig: boolean; isOpen?: (open: boolean) =>
       </button>
       <div id={WALLET_TOGGLE_ID} class={`${ BUTTON_COMMON_STYLE } hidden rounded-t-none border-t-0 dark:border-t-saturn-black focus:outline-none py-1.5 z-50 flex flex-col w-full`} aria-labelledby={WALLET_DROPDOWN_ID}>
         <Show when={isLoggedIn()}>
-          <CopyAddressField address={selectedAccount.state.account?.address} length={10} />
+          <CopyAddressField isUserAddress={true} isInModal={false} nativeAddress={selectedAccount.state.account?.address} length={10} />
           <dl class="mt-4 text-xs w-full px-5">
             <div class="flex flex-row justify-between mb-5 text-saturn-lightgrey">
               <dt>Balance</dt>
