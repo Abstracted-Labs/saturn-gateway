@@ -553,7 +553,10 @@ const AssetsContext = () => {
             if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
               currentMarketPrice = new BigNumber(specificNetworkPrice);
             } else {
-              const networksHoldingAsset = NetworksByAsset[assetName as AssetEnum];
+              let networksHoldingAsset = NetworksByAsset[assetName as AssetEnum];
+              if (!networksHoldingAsset) {
+                networksHoldingAsset = NetworksByAsset[AssetEnum.ASSETHUB];
+              }
               for (const net of networksHoldingAsset) {
                 const price = allPrices[net as NetworkEnum]?.usd;
                 if (price && new BigNumber(price).isGreaterThan(0)) {

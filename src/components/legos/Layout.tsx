@@ -61,7 +61,7 @@ const Layout = ({ children }: { children: any; }) => {
       </Show>
 
       {/* Main content */}
-      <div class={`lg:w-auto ${ atHome() ? '' : 'lg:ml-[288px] lg:mr-[353px]' }`}>
+      <div class={`lg:w-auto ${ atHome() ? '' : 'lg:ml-[288px] lg:mr-[350px]' }`}>
         {children}
       </div>
 

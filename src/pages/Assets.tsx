@@ -38,7 +38,7 @@ export default function Assets() {
 
   const convertAssetTotalToUsd = (asset: AssetEnum, network: NetworkEnum, total: string) => {
     let totalInUsd = '($0.00)';
-    const allPrices = usdPrices;;
+    const allPrices = usdPrices;
 
     if (!allPrices) return totalInUsd;
 
@@ -56,13 +56,16 @@ export default function Assets() {
       if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(specificNetworkPrice);
       } else {
-        const networksHoldingAsset = NetworksByAsset[asset];
-
+        let networksHoldingAsset = NetworksByAsset[asset];
+        if (!networksHoldingAsset) {
+          networksHoldingAsset = NetworksByAsset[AssetEnum.ASSETHUB];
+        }
         for (const net of networksHoldingAsset) {
           const price = allPrices[net];
           if (price && new BigNumber(price).isGreaterThan(0)) {
             currentMarketPrice = new BigNumber(price);
-            break;
+          } else {
+            currentMarketPrice = 0;
           }
         }
       }
@@ -193,7 +196,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {formatAsset(b.freeBalance, Rings[network as keyof typeof Rings]?.decimals ?? 12)}
+                              {typeof b.freeBalance === 'string' ? formatAsset(b.freeBalance, Rings[network as keyof typeof Rings]?.decimals ?? 12) : formatAsset(b.freeBalance, 0)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">

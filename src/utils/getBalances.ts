@@ -71,7 +71,10 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
           for (const [key, value] of registryMap) {
             const metadata = value.toJSON();
             const storageKey = key.args.map((arg) => arg.toHuman())[0]?.toString().replace(/,/g, '');
-            if (!storageKey) continue;
+            if (!storageKey) {
+              console.warn('Invalid storageKey:', storageKey);
+              continue;
+            };
             const assetId = parseInt(storageKey, 10);
             const symbol = metadata && typeof metadata === 'object' && 'symbol' in metadata && metadata['symbol'] ? hexToString(metadata['symbol'].toString()) : null;
             if (!Number.isNaN(assetId) && symbol) {
@@ -106,7 +109,7 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
 
 export async function getBalancesFromNetwork(api: ApiPromise, address: string, network: NetworkEnum): Promise<ResultBalancesWithNetwork> {
   const balancesByNetwork: ResultBalances = {};
-
+  address = 'i4wycLZ3VkAPksYeiNrnjg2WhcnGTNyK13fhiMYQMUFVker32';
   switch (network) {
     case NetworkEnum.BASILISK: {
       if (api) {
@@ -209,13 +212,13 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         if (api.query.assets) {
           const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.ASSETHUB, api);
           for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
-            const tokens = await api.query.assets.account(assetId, address) as unknown as { balance: string, status: string; };
-            const freeTokens = tokens.balance;
+            const tokens = await api.query.assets.account(assetId, address);
+            const balanceFromJson = tokens.toJSON() as unknown as { balance: string, status: string; };
+            if (!balanceFromJson) continue;
+            const freeTokens = balanceFromJson.balance;
             if (new BigNumber(freeTokens).isZero() || new BigNumber(freeTokens).isNaN()) {
-              // console.log(`Asset ${ assetSymbol } has zero or invalid balance`);
               continue;
             }
-            console.log(`${ assetSymbol } has balance ${ freeTokens } in AssetHub`);
             balancesByNetwork[assetSymbol] = {
               freeBalance: freeTokens,
               reservedBalance: '0',

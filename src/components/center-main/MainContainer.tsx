@@ -1,14 +1,12 @@
 import { isAddress } from "@polkadot/util-crypto";
-import { useLocation, useParams } from "@solidjs/router";
-import { createSignal, createEffect, createMemo, on } from "solid-js";
+import { useLocation } from "@solidjs/router";
+import { createSignal, createEffect, createMemo } from "solid-js";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { setSaturnConnectAccount } from "../../utils/setupSaturnConnect";
 import defaultMultisigImage from '../../assets/images/default-multisig-image.png';
 import MainContent from "./MainContent";
 import { Option } from '@polkadot/types';
-import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
-import { useBalanceContext } from "../../providers/balanceProvider";
 
 const MainContainer = () => {
   const [multisigIdentity, setMultisigIdentity] = createSignal<{
@@ -26,18 +24,12 @@ const MainContainer = () => {
   const loc = useLocation();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
-  const saContext = useSelectedAccountContext();
-  const balanceContext = useBalanceContext();
 
-  const selectedAddress = createMemo(() => saContext.state.account?.address);
   const ringsApiState = createMemo(() => ringApisContext.state);
   const saturnState = createMemo(() => saturnContext.state);
   const tinkernetApi = createMemo(() => ringsApiState().tinkernet);
-  const saturnApi = createMemo(() => saturnState().saturn);
   const multisigId = createMemo(() => saturnState().multisigId);
-  const multisigAddress = createMemo(() => saturnState().multisigAddress);
   const details = createMemo(() => saturnState().multisigDetails);
-  const fetchedOnce = createMemo(() => balanceContext?.fetchedOnce);
   const multisigHashId = createMemo(() => loc.pathname.split('/')[1]);
 
   createEffect(() => {

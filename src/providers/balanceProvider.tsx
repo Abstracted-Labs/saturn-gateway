@@ -41,7 +41,9 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
         const networkPromises = Object.entries(nb).map(async ([network, assets], index) => {
           if (Object.keys(assets).length > 0) {
             setTimeout(() => {
-              setLoading((l: NetworkEnum[]) => l.filter((n) => n !== network));
+              if (!!network) {
+                setLoading((l: NetworkEnum[]) => l.filter((n) => n !== network));
+              }
             }, 30 + (index * 20));
 
             const remappedAssets = Object.entries(assets).map(([asset, assetBalances]) => {
