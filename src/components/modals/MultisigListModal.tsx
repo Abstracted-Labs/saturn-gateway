@@ -20,7 +20,7 @@ const MultisigListModal = () => {
             <span class="sr-only">Close modal</span>
           </button>
         </div>
-        <div class="flex flex-col px-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
+        <div class="flex flex-col px-5 pb-5 lg:px-2 xs:pt-1 lg:pt-0 z-[60] mt-8 w-full max-w-[1200px]">
           <MultisigList isInModal={true} />
           <hr class="border-gray-800 mt-3" />
           <p class="py-4 text-center text-xs text-saturn-lightgrey bg-saturn-offblack">OR</p>
