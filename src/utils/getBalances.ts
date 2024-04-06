@@ -5,7 +5,8 @@ import { PalletBalancesBalanceLock } from '@polkadot/types/lookup';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import { NetworkEnum } from './consts';
 import { createApis } from './createApis';
-import { hexToString, u8aToString } from '@polkadot/util';
+import { formatBalance, hexToString, u8aToString } from '@polkadot/util';
+import { formatAsset } from './formatAsset';
 
 const SUB_ID_START_URL = 'https://sub.id/api/v1/';
 
@@ -14,18 +15,19 @@ export interface BalanceType {
   reservedBalance: string;
   totalBalance: string;
   locks?: PalletBalancesBalanceLock[];
+  decimals?: number;
 };
 
 export type ResultBalances = Record<string, BalanceType>;
 
-export type ResultBalancesWithNetwork = Record<string, ResultBalances>;
+export type ResultBalancesWithNetwork = Record<string, ResultBalances | [number, number]>;
 
 export type NetworkBalances = {
   [Property in keyof typeof Rings]: ResultBalances;
 };
 
-async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise): Promise<Record<string, string | FeeAsset>> {
-  const assetRegistry: Record<string, string | FeeAsset | number> = {};
+async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise): Promise<Record<string, string | FeeAsset | number | [number, number]>> {
+  const assetRegistry: Record<string, string | FeeAsset | number | [number, number]> = {};
 
   switch (network) {
     case NetworkEnum.BASILISK: {
@@ -77,11 +79,16 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
             };
             const assetId = parseInt(storageKey, 10);
             const symbol = metadata && typeof metadata === 'object' && 'symbol' in metadata && metadata['symbol'] ? hexToString(metadata['symbol'].toString()) : null;
+            const decimals = metadata && typeof metadata === 'object' && 'decimals' in metadata && metadata['decimals'] ? metadata['decimals'] : null;
             if (!Number.isNaN(assetId) && symbol) {
               const BILL = 223; // billcoin
               const BAILEGO = 88888; // shibatales
               if (assetId === BILL || assetId === BAILEGO) {
-                assetRegistry[symbol] = assetId;
+                if (decimals !== null) {
+                  assetRegistry[symbol] = [assetId, Number(decimals)];
+                } else {
+                  assetRegistry[symbol] = [assetId, 0];
+                }
               }
             } else {
               console.warn('Invalid assetId or symbol:', { assetId, symbol });
@@ -129,7 +136,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         // query tokens
         const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.BASILISK, api);
         for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
-          const tokens = await api.query.tokens.accounts(address, assetId);
+          const tokens = await api.query.tokens.accounts(address, assetId as number);
           const freeTokens = tokens.free.toString();
           const reservedTokens = tokens.reserved.toString();
           const totalTokens = new BigNumber(freeTokens).plus(new BigNumber(reservedTokens)).toString();
@@ -161,7 +168,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         // query tokens
         const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.PICASSO, api);
         for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
-          const tokens = await api.query.tokens.accounts(address, assetId);
+          const tokens = await api.query.tokens.accounts(address, assetId as number);
           const freeTokens = tokens.free.toString();
           const reservedTokens = tokens.reserved.toString();
           const totalTokens = new BigNumber(freeTokens).plus(new BigNumber(reservedTokens)).toString();
@@ -212,8 +219,9 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         if (api.query.assets) {
           const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.ASSETHUB, api);
           for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
-            const tokens = await api.query.assets.account(assetId, address);
+            const tokens = await api.query.assets.account((assetId as [number, number])[0], address);
             const balanceFromJson = tokens.toJSON() as unknown as { balance: string, status: string; };
+            const decimals = (assetId as [number, number])[1];
             if (!balanceFromJson) continue;
             const freeTokens = balanceFromJson.balance;
             if (new BigNumber(freeTokens).isZero() || new BigNumber(freeTokens).isNaN()) {
@@ -223,6 +231,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
               freeBalance: freeTokens,
               reservedBalance: '0',
               totalBalance: freeTokens,
+              decimals,
             };
           }
         }
@@ -250,7 +259,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.TINKERNET, api);
         if (assetRegistry) {
           for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
-            const tokens = await api.query.tokens.accounts(address, assetId);
+            const tokens = await api.query.tokens.accounts(address, assetId as number);
             const freeTokens = tokens.free.toString();
             const reservedTokens = tokens.reserved.toString();
             const totalTokens = new BigNumber(freeTokens).plus(new BigNumber(reservedTokens)).toString();

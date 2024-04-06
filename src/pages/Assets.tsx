@@ -12,6 +12,7 @@ import { usePriceContext } from '../providers/priceProvider';
 import { useBalanceContext } from '../providers/balanceProvider';
 import { useSaturnContext } from '../providers/saturnProvider';
 import { getNetworkIconByNetwork } from '../utils/getNetworkIconByNetwork';
+import { formatBalance } from '@polkadot/util';
 
 const StakePage = {
   tinkernet_TNKR: 'https://tinker.network/staking',
@@ -196,7 +197,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {typeof b.freeBalance === 'string' ? formatAsset(b.freeBalance, Rings[network as keyof typeof Rings]?.decimals ?? 12) : formatAsset(b.freeBalance, 0)}
+                              {b.decimals ? formatBalance(b.freeBalance, { decimals: b.decimals, withSi: false, withUnit: false }) : formatAsset(b.freeBalance, Rings[network as keyof typeof Rings]?.decimals ?? 12)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
@@ -209,7 +210,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network as keyof typeof Rings]?.decimals ?? 12)}
+                              {b.decimals ? formatBalance((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), { decimals: b.decimals, withSi: false, withUnit: false }) : formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network as keyof typeof Rings]?.decimals ?? 12)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
