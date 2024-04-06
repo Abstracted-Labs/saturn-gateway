@@ -54,12 +54,13 @@ export default function Assets() {
       }
     } else {
       const specificNetworkPrice = allPrices[network];
+      console.log(network, specificNetworkPrice);
       if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(specificNetworkPrice);
       } else {
         let networksHoldingAsset = NetworksByAsset[asset];
         if (!networksHoldingAsset) {
-          networksHoldingAsset = NetworksByAsset[AssetEnum.ASSETHUB];
+          networksHoldingAsset = NetworksByAsset[AssetEnum.KSM];
         }
         for (const net of networksHoldingAsset) {
           const price = allPrices[net];
@@ -74,7 +75,7 @@ export default function Assets() {
 
     if (total && currentMarketPrice !== null) {
       const decimals = Rings[network]?.decimals ?? 12;
-      totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals) })`;
+      totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals, 2) })`;
     } else {
       console.error(`Decimals not found for asset: ${ asset } or market price is $0`);
     }
@@ -111,6 +112,11 @@ export default function Assets() {
       for (const [network, assets] of userBalances) {
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
           const balances = b as unknown as BalanceType;
+          if (network === NetworkEnum.ASSETHUB && asset === AssetEnum.KSM) {
+            const value = convertAssetTotalToUsd(AssetEnum.KSM, NetworkEnum.KUSAMA, balances.freeBalance);
+            setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+            continue;
+          }
           const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);
           setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
         }

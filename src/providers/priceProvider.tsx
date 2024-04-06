@@ -17,6 +17,8 @@ const initialPrices: Record<NetworkEnum, { usd: string; }> = {
   kusama: { usd: "" },
   polkadot: { usd: "" },
   assethub: { usd: "" },
+  bifrost: { usd: "" },
+  astar: { usd: "" },
 };
 
 export function PriceProvider(props: { children: JSX.Element; }) {
@@ -32,6 +34,7 @@ export function PriceProvider(props: { children: JSX.Element; }) {
     } else if (data) {
       setStorageState('prices', JSON.stringify(data));
     }
+    console.log('data', data);
     setPrices(data ? data : initialPrices);
   };
 

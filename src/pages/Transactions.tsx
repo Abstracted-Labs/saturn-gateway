@@ -1,6 +1,6 @@
 import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset } from '@invarch/saturn-sdk';
-import { BN, stringShorten } from '@polkadot/util';
+import { BN, hexToString, stringShorten } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call } from '@polkadot/types/interfaces';
 import { useLocation } from '@solidjs/router';
@@ -259,6 +259,7 @@ export default function Transactions() {
     }
   };
 
+  // Decode transaction call hash
   const processCallDescription = (call: Call): string => {
     switch (call.method) {
       case 'sendCall':
@@ -295,6 +296,7 @@ export default function Transactions() {
     }
   };
 
+  // Decode external transaction to human readable format
   const processExternalCall = (fullCall: Call, call: string): Record<string, AnyJson> | string => {
     console.log('call: ', call);
 
@@ -309,10 +311,11 @@ export default function Transactions() {
       method: null,
       args: null,
     };
-
+    console.log('objectOrder: ', objectOrder);
     return Object.assign(objectOrder, ringApisContext.state[chain].createType('Call', call).toHuman());
   };
 
+  // Calculate the percentage of support met
   const processSupport = (ayes: BN): number => {
     if (!saturnContext.state.multisigDetails) {
       return 0;
@@ -323,8 +326,10 @@ export default function Transactions() {
     return new BN(ayes).mul(new BN('100')).div(totalSupply).toNumber();
   };
 
+  // Calculate the percentage of aye votes
   const processApprovalAye = (ayes: BN, nays: BN): number => new BN(ayes).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
+  // Calculate the percentage of nay votes
   const processApprovalNay = (ayes: BN, nays: BN): number => new BN(nays).mul(new BN('100')).div(new BN(ayes).add(new BN(nays))).toNumber();
 
   const isItemActive = (index: number) => {
@@ -342,19 +347,11 @@ export default function Transactions() {
 
     setActiveIndex(-1);
 
-    let timeout: any;
     const sat = saturn();
     const multisigId = getMultisigId();
 
-    const delayUnload = () => {
-      timeout = setTimeout(() => {
-        setLoading(false);
-      }, 200);
-    };
-
     const runAsync = async () => {
       if (!sat || typeof multisigId !== 'number') {
-        delayUnload();
         return;
       }
 
@@ -365,19 +362,15 @@ export default function Transactions() {
         const pendingCalls = await sat.getPendingCalls(multisigId);
         setPendingProposals(pendingCalls);
       }, 2000);
-
-      delayUnload();
     };
 
     runAsync();
-
-    onCleanup(() => {
-      clearTimeout(timeout);
-    });
   });
 
   createEffect(() => {
     const pc = pendingProposals();
+
+    if (!loading() || !pc.length) return;
 
     if (document && pc) {
       const parentEl = () => document.getElementById(ACCORDION_ID);
@@ -399,6 +392,8 @@ export default function Transactions() {
       const accordion = new FlowAccordion(parentEl(), items);
       setAccordion(accordion);
     }
+
+    setLoading(false);
   });
 
   const voteThreshold = (): JSX.Element => {
@@ -421,7 +416,7 @@ export default function Transactions() {
     <div>
       <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col">
         <Switch fallback={<div>
-          {loading() ? <LoaderAnimation text="Loading transactions..." /> : <span class={FALLBACK_TEXT_STYLE}>Nothig to display.</span>}
+          {loading() ? <LoaderAnimation text="Loading transactions..." /> : <span class={FALLBACK_TEXT_STYLE}>No transactions to display.</span>}
         </div>}>
           <Match when={pendingProposals().length > 0}>
             <div class="overflow-y-auto saturn-scrollbar pr-5 h-[500px]">
