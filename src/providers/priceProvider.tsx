@@ -34,7 +34,6 @@ export function PriceProvider(props: { children: JSX.Element; }) {
     } else if (data) {
       setStorageState('prices', JSON.stringify(data));
     }
-    console.log('data', data);
     setPrices(data ? data : initialPrices);
   };
 

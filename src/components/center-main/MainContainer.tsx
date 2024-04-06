@@ -87,7 +87,6 @@ const MainContainer = () => {
         }
       } else {
         id = parseInt(hashId);
-        console.log('hashId:', id);
         if (isNaN(id)) {
           console.error('Invalid id provided:', multisigHashId);
           return;
@@ -104,7 +103,6 @@ const MainContainer = () => {
       // Set multisig details and address in omniway context
       if (maybeDetails) {
         saturnContext.setters.setMultisigDetails(maybeDetails);
-        console.log('multisig address: ', maybeDetails.parachainAccount.toHuman());
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       } else {
         console.error(`No details found for ID: ${ numericId }`);

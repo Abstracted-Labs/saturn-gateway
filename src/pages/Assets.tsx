@@ -35,7 +35,25 @@ export default function Assets() {
 
   const multisigId = createMemo(() => saturn.state.multisigId);
   const getUsdPrices = createMemo(() => priceContext.prices);
-  const getUsdConversions = createMemo(() => usdPrices);
+
+  const formatTransferBalance = (asset: AssetEnum | string, balance: BalanceType, network: NetworkEnum, decimals: number) => {
+    if (asset === 'BAILEGO') {
+      return balance.freeBalance.toLocaleString();
+    }
+    if (balance.decimals) {
+      return formatBalance(balance.freeBalance, { decimals: balance.decimals, withSi: false, withUnit: false });
+    } else {
+      return formatAsset(balance.freeBalance, Rings[network]?.decimals ?? 12);
+    }
+  };
+
+  const formatTotalBalance = (b: BalanceType, network: NetworkEnum, totalLockAmount: string) => {
+    if (b.decimals) {
+      return formatBalance((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), { decimals: b.decimals, withSi: false, withUnit: false });
+    } else {
+      return formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network]?.decimals ?? 12);
+    }
+  };
 
   const convertAssetTotalToUsd = (asset: AssetEnum, network: NetworkEnum, total: string) => {
     let totalInUsd = '($0.00)';
@@ -53,15 +71,21 @@ export default function Assets() {
         return totalInUsd;
       }
     } else {
-      const specificNetworkPrice = allPrices[network];
-      console.log(network, specificNetworkPrice);
+      let specificNetworkPrice = allPrices[network];
+
+      if (asset === AssetEnum.KSM) {
+        specificNetworkPrice = allPrices[NetworkEnum.KUSAMA];
+      }
+
       if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(specificNetworkPrice);
       } else {
         let networksHoldingAsset = NetworksByAsset[asset];
+
         if (!networksHoldingAsset) {
           networksHoldingAsset = NetworksByAsset[AssetEnum.KSM];
         }
+
         for (const net of networksHoldingAsset) {
           const price = allPrices[net];
           if (price && new BigNumber(price).isGreaterThan(0)) {
@@ -112,13 +136,17 @@ export default function Assets() {
       for (const [network, assets] of userBalances) {
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
           const balances = b as unknown as BalanceType;
-          if (network === NetworkEnum.ASSETHUB && asset === AssetEnum.KSM) {
-            const value = convertAssetTotalToUsd(AssetEnum.KSM, NetworkEnum.KUSAMA, balances.freeBalance);
+          if (balances) {
+            if (asset === AssetEnum.KSM) {
+              const value = convertAssetTotalToUsd(AssetEnum.KSM, NetworkEnum.KUSAMA, balances.freeBalance);
+              setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+              continue;
+            }
+            const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);
             setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
-            continue;
+          } else {
+            console.error(`Transferable USD balance not found for ${ asset } on ${ network }`);
           }
-          const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, balances.freeBalance);
-          setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
         }
       }
     };
@@ -131,14 +159,20 @@ export default function Assets() {
     const userBalances = balances();
     const loadTotalBalances = () => {
       for (const [network, assets] of userBalances) {
-        const assetsCopy = assets;
-        for (const [asset, balanceDetails] of assetsCopy as unknown as NetworkBalancesArray) {
-          const balance = balanceDetails[1] as BalanceType[];
-          if (balance && Array.isArray(balance)) {
-            for (const b of balance) {
-              const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, b.freeBalance);
+        for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
+          const balances = b as unknown as BalanceType;
+          const totalLockAmount = !!balances.locks && balances.locks.length > 0 ? balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
+          if (balances) {
+            const totalBalance = +balances.freeBalance + +balances.reservedBalance + +totalLockAmount;
+            if (asset === AssetEnum.KSM) {
+              const value = convertAssetTotalToUsd(AssetEnum.KSM, NetworkEnum.KUSAMA, totalBalance.toString());
               setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
+              continue;
             }
+            const value = convertAssetTotalToUsd(asset as AssetEnum, network as NetworkEnum, totalBalance.toString());
+            setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
+          } else {
+            console.error(`Total USD balance not found for ${ asset } on ${ network }`);
           }
         }
       }
@@ -203,7 +237,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {b.decimals ? formatBalance(b.freeBalance, { decimals: b.decimals, withSi: false, withUnit: false }) : formatAsset(b.freeBalance, Rings[network as keyof typeof Rings]?.decimals ?? 12)}
+                              {formatTransferBalance(asset, b, network as NetworkEnum, !!b.decimals && b.decimals > 0 ? b.decimals : Rings[network as keyof typeof Rings]?.decimals ?? 12)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
@@ -216,7 +250,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[30%]'>
                           <span class="flex flex-row items-baseline gap-1">
                             <span>
-                              {b.decimals ? formatBalance((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), { decimals: b.decimals, withSi: false, withUnit: false }) : formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network as keyof typeof Rings]?.decimals ?? 12)}
+                              {formatTotalBalance(b, network as NetworkEnum, totalLockAmount)}
                             </span>
                             <span class="text-[9px]">{asset}</span>
                             <span class="text-saturn-lightgrey text-[8px]">
