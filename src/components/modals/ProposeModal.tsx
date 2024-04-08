@@ -177,7 +177,15 @@ export const proposeCall = async (props: IProposalProps) => {
 
       if (!xcmAsset || !saturnContext.state.multisigAddress) return;
 
-      const { partialFee } = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      let partialFee = new BN("0");
+      try {
+        const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+        console.log('xcmTransfer feeInfo', feeInfo.partialFee.toString());
+        partialFee = feeInfo.partialFee.mul(new BN("2"));
+      } catch (error) {
+        console.error('Error fetching fee, using default fee: ', error);
+        partialFee = new BN("10000000000");
+      }
 
       const transferCall = saturnContext.state.saturn
         .transferXcmAsset({
@@ -186,7 +194,7 @@ export const proposeCall = async (props: IProposalProps) => {
           amount: new BN(amount.toString()),
           to,
           xcmFeeAsset: xcmAsset,
-          xcmFee: new BN(partialFee).mul(new BN("2")),
+          xcmFee: partialFee,
           proposalMetadata,
         });
 
@@ -199,7 +207,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
         return;
       } else {
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
         return partialFeePreview;
       }
     }
@@ -224,7 +232,15 @@ export const proposeCall = async (props: IProposalProps) => {
         return;
       };
 
-      const { partialFee } = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      let partialFee;
+      try {
+        const feeInfo = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+        console.log('localTransfer feeInfo', feeInfo.partialFee.toString());
+        partialFee = feeInfo.partialFee.mul(new BN("2"));
+      } catch (error) {
+        console.error('Error fetching fee, using default fee: ', error);
+        partialFee = new BN("10000000000");
+      }
 
       const localTransferCall = ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString()));
 
@@ -256,7 +272,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
         return;
       } else {
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 2);
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
         return partialFeePreview;
       }
     }
@@ -275,7 +291,6 @@ export const proposeCall = async (props: IProposalProps) => {
       const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
-      console.log('saturnContext.state.saturn.chains', saturnContext.state.saturn.chains);
       const xcmAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
 
       console.log("Found xcmAsset: ", xcmAsset);
@@ -289,6 +304,7 @@ export const proposeCall = async (props: IProposalProps) => {
       let partialFee = new BN("0");
       try {
         const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
+        console.log('xcmBridge feeInfo', feeInfo.partialFee.toString());
         partialFee = feeInfo.partialFee.mul(new BN("2"));
       } catch (error) {
         console.error('Error fetching fee, using default fee: ', error);
@@ -315,7 +331,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
         return;
       } else {
-        const partialFeePreview = formatAsset(partialFee.toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 4);
+        const partialFeePreview = formatAsset(partialFee.toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
         return partialFeePreview;
       }
     }

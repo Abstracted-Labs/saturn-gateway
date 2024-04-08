@@ -379,6 +379,7 @@ const AssetsContext = () => {
 
     const paymentInfo = await proposeCall(proposalProps);
     if (paymentInfo) {
+      console.log('Payment Info:', paymentInfo);
       const fee = parseFloat(paymentInfo);
       setNetworkFee(fee);
     } else {
