@@ -3,9 +3,7 @@ import { getAssetIcon } from "./getAssetIcon";
 
 export function getNetworkBlock(network: NetworkEnum) {
   try {
-    if (!network) {
-      throw new Error('Network is not defined.');
-    }
+    if (!network) return;
 
     switch (network) {
       case NetworkEnum.KUSAMA:
