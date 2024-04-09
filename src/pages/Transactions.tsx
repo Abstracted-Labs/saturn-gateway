@@ -343,14 +343,14 @@ export default function Transactions() {
   });
 
   createEffect(() => {
-    if (!loading()) return;
-
-    setActiveIndex(-1);
-
     const sat = saturn();
     const multisigId = getMultisigId();
 
     const runAsync = async () => {
+      setLoading(true);
+
+      toast.setToast('Loading proposals...', 'loading');
+
       if (!sat || typeof multisigId !== 'number') {
         return;
       }
@@ -360,6 +360,12 @@ export default function Transactions() {
 
       setTimeout(async () => {
         const pendingCalls = await sat.getPendingCalls(multisigId);
+
+        if (!pendingCalls || !pendingCalls.length) {
+          setLoading(false);
+          toast.setToast('No proposals to display', 'info');
+        }
+
         setPendingProposals(pendingCalls);
       }, 2000);
     };
@@ -370,30 +376,38 @@ export default function Transactions() {
   createEffect(() => {
     const pc = pendingProposals();
 
-    if (!loading() || !pc.length) return;
-
-    if (document && pc) {
-      const parentEl = () => document.getElementById(ACCORDION_ID);
-      const accordionItems = () => pc.map((p, index) => {
-        const triggerEl = document.getElementById(`heading${ index }`) as HTMLElement;
-        const targetEl = document.getElementById(`content${ index }`) as HTMLElement;
-
-        if (p && triggerEl && targetEl) {
-          return {
-            id: `content${ index }`,
-            triggerEl,
-            targetEl,
-            active: false,
-          };
-        }
-      });
-
-      const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
-      const accordion = new FlowAccordion(parentEl(), items);
-      setAccordion(accordion);
+    if (!pc || !pc.length) {
+      return;
     }
 
-    setLoading(false);
+    try {
+      if (document && pc.length > 0) {
+        const parentEl = () => document.getElementById(ACCORDION_ID);
+        const accordionItems = () => pc.map((p, index) => {
+          const triggerEl = document.getElementById(`heading${ index }`) as HTMLElement;
+          const targetEl = document.getElementById(`content${ index }`) as HTMLElement;
+
+          if (p && triggerEl && targetEl) {
+            return {
+              id: `content${ index }`,
+              triggerEl,
+              targetEl,
+              active: false,
+            };
+          }
+        });
+
+        const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
+        const accordion = new FlowAccordion(parentEl(), items);
+        setAccordion(accordion);
+        toast.setToast('Proposals loaded', 'success');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.setToast('Error loading proposals', 'error');
+    } finally {
+      setLoading(false);
+    }
   });
 
   const voteThreshold = (): JSX.Element => {
@@ -416,7 +430,7 @@ export default function Transactions() {
     <div>
       <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col">
         <Switch fallback={<div>
-          {loading() ? <LoaderAnimation text="Loading transactions..." /> : <span class={FALLBACK_TEXT_STYLE}>No transactions to display.</span>}
+          {loading() ? <LoaderAnimation text="Please wait..." /> : <span class={FALLBACK_TEXT_STYLE}>No transactions to display.</span>}
         </div>}>
           <Match when={pendingProposals().length > 0}>
             <div class="overflow-y-auto saturn-scrollbar pr-5 h-[500px]">

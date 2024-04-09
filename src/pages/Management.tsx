@@ -138,6 +138,7 @@ export default function Management() {
   };
 
   createEffect(on(getMultisigId, () => {
+    toast.setToast('Loading member list...', 'loading');
     setLoading(true);
     setMembers([]);
   }));
@@ -150,6 +151,7 @@ export default function Management() {
     const delayUnload = () => {
       timeout = setTimeout(() => {
         setLoading(false);
+        toast.setToast('Member list loaded', 'success');
       }, 200);
     };
 
