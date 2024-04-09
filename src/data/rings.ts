@@ -70,7 +70,22 @@ export enum AssetEnum {
   ASSETHUB = 'ASSETHUB',
 }
 
-export type NetworksByAssetType = Record<AssetEnum, NetworkEnum[]>;
+export enum AssetHubEnum {
+  BILL = 'BILL',
+  BAILEGO = 'BAILEGO',
+}
+
+export enum AssetHubAssetIdEnum {
+  BILL = '223',
+  BAILEGO = '88888',
+}
+
+export enum AssetHubAssetDecimalsEnum {
+  BILL = 8,
+  BAILEGO = 0,
+}
+
+export type NetworksByAssetType = Record<AssetEnum | AssetHubEnum, NetworkEnum[]>;
 
 export const NetworksByAsset: NetworksByAssetType = {
   TNKR: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET],
@@ -79,6 +94,8 @@ export const NetworksByAsset: NetworksByAssetType = {
   KSM: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET, NetworkEnum.PICASSO],
   DOT: [NetworkEnum.POLKADOT],
   ASSETHUB: [NetworkEnum.ASSETHUB],
+  BILL: [NetworkEnum.ASSETHUB],
+  BAILEGO: [NetworkEnum.ASSETHUB],
 };
 
 export const RingAssets = {

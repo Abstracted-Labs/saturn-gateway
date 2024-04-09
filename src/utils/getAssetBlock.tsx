@@ -1,8 +1,8 @@
-import { AssetEnum } from "../data/rings";
+import { AssetEnum, AssetHubEnum } from "../data/rings";
 import { NetworkEnum } from "./consts";
 import { getAssetIcon } from "./getAssetIcon";
 
-export function getAssetBlock(asset: AssetEnum) {
+export function getAssetBlock(asset: AssetEnum | AssetHubEnum) {
   try {
     if (!asset) {
       throw new Error('Network is not defined.');
@@ -37,10 +37,13 @@ export function getAssetBlock(asset: AssetEnum) {
       case AssetEnum.ASSETHUB:
         return <>
           <img src={getAssetIcon(AssetEnum.ASSETHUB)} alt={AssetEnum.ASSETHUB} width={20} height={20} class="mr-2 block" />
-          <span>{AssetEnum.ASSETHUB}</span>
+          <span class="assethub-token">{AssetEnum.ASSETHUB}</span>
         </>;
       default:
-        return null;
+        return <>
+          <img src={getAssetIcon(AssetEnum.ASSETHUB)} alt={AssetEnum.ASSETHUB} width={20} height={20} class="mr-2 block" />
+          <span class="assethub-token">{asset}</span>
+        </>;
     }
   } catch (error) {
     console.error(error);

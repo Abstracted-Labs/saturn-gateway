@@ -1,5 +1,5 @@
 import { Accessor, createEffect, createMemo, createSignal, Match, Show, Switch } from 'solid-js';
-import { FeeAsset, MultisigCallResult } from '@invarch/saturn-sdk';
+import { FeeAsset, MultisigCallResult, XcmAssetRepresentation } from '@invarch/saturn-sdk';
 import type { Call, DispatchResult } from '@polkadot/types/interfaces';
 import { u8aToHex, BN } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
@@ -8,12 +8,13 @@ import { SaturnContextType, useSaturnContext } from "../../providers/saturnProvi
 import { IRingsContext, useRingApisContext } from "../../providers/ringApisProvider";
 import { SelectedAccountState, useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import FormattedCall from '../legos/FormattedCall';
-import { RingAssets } from "../../data/rings";
+import { AssetHubAssetDecimalsEnum, AssetHubAssetIdEnum, AssetHubEnum, RingAssets } from "../../data/rings";
 import { formatAsset } from '../../utils/formatAsset';
 import { INPUT_COMMON_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
 import { ISubmittableResult } from '@kiltprotocol/sdk-js';
 import { ToastContextType, useToast } from '../../providers/toastProvider';
+import { getNetworkBlock } from '../../utils/getNetworkBlock';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -45,18 +46,35 @@ export type IProposalProps = {
   toast: ToastContextType;
 };
 
+export function getAssetIdFromAssetHubEnum(asset: string | AssetHubEnum): string {
+  const name = asset.toUpperCase();
+  if (!name) return '';
+
+  return AssetHubAssetIdEnum[name as keyof typeof AssetHubAssetIdEnum];
+}
+
+export function getAssetDecimalsFromAssetHubEnum(asset: string | AssetHubEnum): number {
+  const name = asset.toUpperCase();
+  if (!name) return 0;
+
+  return AssetHubAssetDecimalsEnum[name as keyof typeof AssetHubAssetDecimalsEnum];
+}
+
+function formatAmount(amount: BN | BigNumber | string, asset: string): string {
+  const bnAmount = new BigNumber(amount.toString());
+
+  const assetDecimals = BigNumber(RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset));
+
+  const humanReadableAmount = bnAmount.dividedBy(new BigNumber(10).pow(assetDecimals));
+
+  return humanReadableAmount.decimalPlaces(6, BigNumber.ROUND_DOWN).toString();
+}
+
 const TransferProposal = (props: TransferProposalProps) => {
-  console.log('props.asset', props.asset);
   return (
     <div class="flex flex-col gap-2">
-      <p class="border-t border border-gray-700 border-dashed pt-2">Amount: <span class="capitalize text-black dark:text-white float-right font-bold">{
-        BigNumber(props.amount.toString()).div(
-          BigNumber('10').pow(
-            BigNumber(RingAssets[props.asset as keyof typeof RingAssets].decimals),
-          ),
-        ).decimalPlaces(2, 1).toString()
-      } {props.asset}</span></p>
-      <p class="border-t border-b border border-gray-700 border-dashed py-2">To: <span class="capitalize text-black dark:text-white float-right font-bold">{props.to}</span></p>
+      <p class="border-t border-gray-700 border-dashed pt-2">Amount: <span class="capitalize text-black dark:text-white float-right font-bold">{formatAmount(props.amount, props.asset)} {props.asset}</span></p>
+      <p class="border-t border-b border-gray-700 border-dashed py-2">To: <span class="capitalize text-black dark:text-white float-right font-bold">{props.to}</span></p>
     </div>
   );
 };
@@ -165,23 +183,31 @@ export const proposeCall = async (props: IProposalProps) => {
 
       const chain = (proposalData as { destinationChain: string; }).destinationChain;
       const amount = (proposalData as { amount: BN | BigNumber | string; }).amount || '0';
+      console.log('amount', amount);
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
+      const xcmFeeAsset = {
+        [chain]: feeAsset
+      };
 
-      const xcmAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
-      console.log("Found xcmAsset: ", xcmAsset);
+      let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
 
       if (!xcmAsset) {
-        console.error("xcmAsset is undefined. Check chain and asset names for typos or case sensitivity issues.");
+        xcmAsset = {
+          ['AssetHub']: {
+            ['Local']: getAssetIdFromAssetHubEnum(asset)
+          }
+        };
       }
 
-      if (!xcmAsset || !saturnContext.state.multisigAddress) return;
+      console.log('xcmAsset', xcmAsset, chain);
+      if (!saturnContext.state.multisigAddress) return;
 
       let partialFee = new BN("0");
       try {
         const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
         console.log('xcmTransfer feeInfo', feeInfo.partialFee.toString());
-        partialFee = feeInfo.partialFee.mul(new BN("2"));
+        partialFee = feeInfo.partialFee;
       } catch (error) {
         console.error('Error fetching fee, using default fee: ', error);
         partialFee = new BN("10000000000");
@@ -193,7 +219,7 @@ export const proposeCall = async (props: IProposalProps) => {
           asset: xcmAsset,
           amount: new BN(amount.toString()),
           to,
-          xcmFeeAsset: xcmAsset,
+          xcmFeeAsset,
           xcmFee: partialFee,
           proposalMetadata,
         });
@@ -207,7 +233,8 @@ export const proposeCall = async (props: IProposalProps) => {
 
         return;
       } else {
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
+        const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
         return partialFeePreview;
       }
     }
@@ -291,21 +318,24 @@ export const proposeCall = async (props: IProposalProps) => {
       const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
       const to = (proposalData as { to: string; }).to;
       const asset = (proposalData as { asset: string; }).asset;
-      const xcmAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
 
-      console.log("Found xcmAsset: ", xcmAsset);
-
+      let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
       if (!xcmAsset) {
-        console.error("xcmAsset is undefined. Check chain and asset names for typos or case sensitivity issues.");
+        xcmAsset = {
+          ['AssetHub']: {
+            ['Local']: getAssetIdFromAssetHubEnum(asset)
+          }
+        };
       }
 
-      if (!xcmAsset || !saturnContext.state.multisigAddress) return;
+      console.log('xcmAsset', xcmAsset, chain);
+      if (!saturnContext.state.multisigAddress) return;
 
       let partialFee = new BN("0");
       try {
         const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
         console.log('xcmBridge feeInfo', feeInfo.partialFee.toString());
-        partialFee = feeInfo.partialFee.mul(new BN("2"));
+        partialFee = feeInfo.partialFee;
       } catch (error) {
         console.error('Error fetching fee, using default fee: ', error);
         partialFee = new BN("10000000000");
@@ -331,7 +361,8 @@ export const proposeCall = async (props: IProposalProps) => {
 
         return;
       } else {
-        const partialFeePreview = formatAsset(partialFee.toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
+        const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
+        const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
         return partialFeePreview;
       }
     }
@@ -360,6 +391,7 @@ export default function ProposeModal() {
   const toast = useToast();
 
   const closeModal = () => {
+    toast.setToast('Transaction cancelled', 'error');
     modalContext.hideProposeModal();
   };
 
@@ -397,9 +429,9 @@ export default function ProposeModal() {
   });
 
   const ModalBody = () => <div class='flex flex-col gap-2 p-4 text-xs'>
-    <p class="border-t border border-gray-700 border-dashed pt-2">Proposal type: <span class="capitalize text-black dark:text-white float-right font-bold">{processHeader()}</span></p>
-    <p class="border-t border border-gray-700 border-dashed pt-2">Fees paid in: <span class="capitalize text-black dark:text-white float-right font-bold">{feeAsset()}</span></p>
-    <p class="border-t border border-gray-700 border-dashed pt-2">Network: <span class="capitalize text-black dark:text-white float-right font-bold">{networkName() || '--'}</span></p>
+    <p class="border-t border-gray-700 border-dashed pt-2">Proposal type: <span class="capitalize text-black dark:text-white float-right font-bold">{processHeader()}</span></p>
+    {/* <p class="border-t border-gray-700 border-dashed pt-2">Fees paid in: <span class="capitalize text-black dark:text-white float-right font-bold">{feeAsset()}</span></p> */}
+    <p class="border-t border-gray-700 border-dashed pt-2">Network: <span class="capitalize text-black dark:text-white flex flex-row float-right font-bold">{getNetworkBlock(networkName() as NetworkEnum)}</span></p>
     <Switch>
       <Match when={
         proposeContext.state.proposal?.proposalType === ProposalType.LocalCall ||
@@ -417,7 +449,8 @@ export default function ProposeModal() {
       </Match>
       <Match when={
         proposeContext.state.proposal?.proposalType === ProposalType.LocalTransfer ||
-        proposeContext.state.proposal?.proposalType === ProposalType.XcmTransfer
+        proposeContext.state.proposal?.proposalType === ProposalType.XcmTransfer ||
+        proposeContext.state.proposal?.proposalType === ProposalType.XcmBridge
       }>
         {
           maybeProposal() &&

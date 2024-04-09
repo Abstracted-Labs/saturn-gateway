@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { AssetEnum, Rings } from '../data/rings';
+import { AssetEnum, AssetHubAssetIdEnum, Rings } from '../data/rings';
 import { PalletBalancesBalanceLock } from '@polkadot/types/lookup';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import { NetworkEnum } from './consts';
@@ -81,9 +81,7 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
             const symbol = metadata && typeof metadata === 'object' && 'symbol' in metadata && metadata['symbol'] ? hexToString(metadata['symbol'].toString()) : null;
             const decimals = metadata && typeof metadata === 'object' && 'decimals' in metadata && metadata['decimals'] ? metadata['decimals'] : null;
             if (!Number.isNaN(assetId) && symbol) {
-              const BILL = 223; // billcoin
-              const BAILEGO = 88888; // shibatales
-              if (assetId === BILL || assetId === BAILEGO) {
+              if (assetId === parseInt(AssetHubAssetIdEnum.BILL) || assetId === parseInt(AssetHubAssetIdEnum.BAILEGO)) {
                 if (decimals !== null) {
                   assetRegistry[symbol] = [assetId, Number(decimals)];
                 } else {
