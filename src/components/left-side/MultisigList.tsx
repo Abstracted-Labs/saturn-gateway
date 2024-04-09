@@ -155,6 +155,8 @@ const MultisigList = (props: MultisigListProps) => {
   });
 
   createEffect(() => {
+    const _ = saturnContext.proposalSubmitted();
+
     // Load the multisig list
     let timeout: any;
     const sat = saturn();
@@ -272,6 +274,7 @@ const MultisigList = (props: MultisigListProps) => {
       }
 
       setLoading(false);
+      saturnContext.resetProposalSubmitted();
     };
 
     load();

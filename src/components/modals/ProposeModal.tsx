@@ -111,11 +111,11 @@ export const proposeCall = async (props: IProposalProps) => {
     toast.setToast('Processing proposal...', 'loading');
   }
 
-  try {
-    // LocalCall
-    if (proposalType === ProposalType.LocalCall && (proposalData as { encodedCall: Uint8Array; }).encodedCall) {
-      console.log("in LocalCall");
+  // LocalCall
+  if (proposalType === ProposalType.LocalCall && (proposalData as { encodedCall: Uint8Array; }).encodedCall) {
+    console.log("in LocalCall");
 
+    try {
       await saturnContext.state.saturn
         .buildMultisigCall({
           id: saturnContext.state.multisigId,
@@ -127,31 +127,40 @@ export const proposeCall = async (props: IProposalProps) => {
 
       toast.setToast('Local call proposal submitted successfully', 'success');
 
-      return;
+      saturnContext.submitProposal();
+    } catch (error) {
+      console.error('Error submitting proposal: ', error);
+      toast.setToast('Error submitting local call proposal', 'error');
+    } finally {
+      modal.hideProposeModal();
     }
 
-    // XcmCall
-    if (
-      proposalType === ProposalType.XcmCall &&
-      (proposalData as { encodedCall: Uint8Array; }).encodedCall &&
-      (proposalData as { chain: string; }).chain
-    ) {
-      console.log("in XcmCall");
+    return;
+  }
 
-      const chain = (proposalData as { chain: string; }).chain;
-      const callData = (proposalData as { encodedCall: Uint8Array; }).encodedCall;
+  // XcmCall
+  if (
+    proposalType === ProposalType.XcmCall &&
+    (proposalData as { encodedCall: Uint8Array; }).encodedCall &&
+    (proposalData as { chain: string; }).chain
+  ) {
+    console.log("in XcmCall");
 
-      console.log("callData: ", u8aToHex(callData));
+    const chain = (proposalData as { chain: string; }).chain;
+    const callData = (proposalData as { encodedCall: Uint8Array; }).encodedCall;
 
-      const xcmFeeAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets[0].registerType;
+    console.log("callData: ", u8aToHex(callData));
 
-      if (!xcmFeeAsset || !saturnContext.state.multisigAddress) return;
+    const xcmFeeAsset = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets[0].registerType;
 
-      const c = ringApisContext.state[chain].createType("Call", callData);
-      const { weight, partialFee } = await ringApisContext.state[chain].tx(c).paymentInfo(saturnContext.state.multisigAddress);
-      const totalWeight = new BN(weight.refTime.toString()).add(new BN(weight.proofSize.toString()));
-      const fee = new BN(partialFee.toString());
+    if (!xcmFeeAsset || !saturnContext.state.multisigAddress) return;
 
+    const c = ringApisContext.state[chain].createType("Call", callData);
+    const { weight, partialFee } = await ringApisContext.state[chain].tx(c).paymentInfo(saturnContext.state.multisigAddress);
+    const totalWeight = new BN(weight.refTime.toString()).add(new BN(weight.proofSize.toString()));
+    const fee = new BN(partialFee.toString());
+
+    try {
       await saturnContext.state.saturn
         .sendXCMCall({
           id: saturnContext.state.multisigId,
@@ -166,215 +175,217 @@ export const proposeCall = async (props: IProposalProps) => {
 
       toast.setToast('XCM call proposal submitted successfully', 'success');
 
+      saturnContext.submitProposal();
+    } catch (error) {
+      console.error('Error submitting proposal: ', error);
+      toast.setToast('Error submitting XCM call proposal', 'error');
+    } finally {
       modal.hideProposeModal();
-
-      return;
     }
 
-    // XcmTransfer
-    if (
-      proposalType === ProposalType.XcmTransfer &&
-      (proposalData as { chain: string; }).chain &&
-      (proposalData as { destinationChain: string; }).destinationChain &&
-      (((proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
-        (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET) || ((proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET && (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain))
-    ) {
-      console.log("in XcmTransfer");
+    return;
+  }
 
-      const chain = (proposalData as { destinationChain: string; }).destinationChain;
-      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount || '0';
-      console.log('amount', amount);
-      const to = (proposalData as { to: string; }).to;
-      const asset = (proposalData as { asset: string; }).asset;
-      const xcmFeeAsset = {
-        [chain]: feeAsset
+  // XcmTransfer
+  if (
+    proposalType === ProposalType.XcmTransfer &&
+    (proposalData as { chain: string; }).chain &&
+    (proposalData as { destinationChain: string; }).destinationChain &&
+    (((proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
+      (proposalData as { destinationChain: string; }).destinationChain !== NetworkEnum.TINKERNET) || ((proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET && (proposalData as { chain: string; }).chain === (proposalData as { destinationChain: string; }).destinationChain))
+  ) {
+    console.log("in XcmTransfer");
+
+    const chain = (proposalData as { destinationChain: string; }).destinationChain;
+    const amount = (proposalData as { amount: BN | BigNumber | string; }).amount || '0';
+    const to = (proposalData as { to: string; }).to;
+    const asset = (proposalData as { asset: string; }).asset;
+    const xcmFeeAsset = {
+      [chain]: feeAsset
+    };
+
+    let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
+
+    if (!xcmAsset) {
+      xcmAsset = {
+        ['AssetHub']: {
+          ['Local']: getAssetIdFromAssetHubEnum(asset)
+        }
       };
+    }
 
-      let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
+    if (!saturnContext.state.multisigAddress) return;
 
-      if (!xcmAsset) {
-        xcmAsset = {
-          ['AssetHub']: {
-            ['Local']: getAssetIdFromAssetHubEnum(asset)
-          }
-        };
-      }
+    let partialFee = new BN("0");
+    try {
+      const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      console.log('xcmTransfer feeInfo', feeInfo.partialFee.toString());
+      partialFee = feeInfo.partialFee;
+    } catch (error) {
+      console.error('Error fetching fee, using default fee: ', error);
+      partialFee = new BN("10000000000");
+    }
 
-      console.log('xcmAsset', xcmAsset, chain);
-      if (!saturnContext.state.multisigAddress) return;
+    const transferCall = saturnContext.state.saturn
+      .transferXcmAsset({
+        id: saturnContext.state.multisigId,
+        asset: xcmAsset,
+        amount: new BN(amount.toString()),
+        to,
+        xcmFeeAsset,
+        xcmFee: partialFee,
+        proposalMetadata,
+      });
 
-      let partialFee = new BN("0");
+    if (!preview) {
       try {
-        const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-        console.log('xcmTransfer feeInfo', feeInfo.partialFee.toString());
-        partialFee = feeInfo.partialFee;
-      } catch (error) {
-        console.error('Error fetching fee, using default fee: ', error);
-        partialFee = new BN("10000000000");
-      }
-
-      const transferCall = saturnContext.state.saturn
-        .transferXcmAsset({
-          id: saturnContext.state.multisigId,
-          asset: xcmAsset,
-          amount: new BN(amount.toString()),
-          to,
-          xcmFeeAsset,
-          xcmFee: partialFee,
-          proposalMetadata,
-        });
-
-      if (!preview) {
         await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
 
         toast.setToast('XCM Transfer proposal submitted successfully', 'success');
 
+        saturnContext.submitProposal();
+      } catch (error) {
+        console.error('Error submitting proposal: ', error);
+        toast.setToast('Error submitting XCM Transfer proposal', 'error');
+      } finally {
         modal.hideProposeModal();
-
-        return;
-      } else {
-        const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
-        return partialFeePreview;
       }
+
+      return;
+    } else {
+      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
+      const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
+      return partialFeePreview;
+    }
+  }
+
+  // LocalTransfer
+  if (
+    proposalType === ProposalType.LocalTransfer &&
+    (proposalData as { chain: string; }).chain &&
+    (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
+    (proposalData as { destinationChain: string; }).destinationChain &&
+    (proposalData as { destinationChain: string; }).destinationChain === NetworkEnum.TINKERNET
+  ) {
+    console.log("in LocalTransfer");
+
+    const chain = (proposalData as { chain: string; }).chain;
+    const amount = (proposalData as { amount: BN | BigNumber; }).amount;
+    const to = (proposalData as { to: string; }).to;
+    const asset = (proposalData as { asset: string; }).asset;
+
+    if (!saturnContext.state.multisigAddress) {
+      console.error("Multisig address is undefined. Exiting early.");
+      return;
+    };
+
+    let partialFee;
+    try {
+      const feeInfo = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
+      console.log('localTransfer feeInfo', feeInfo.partialFee.toString());
+      partialFee = feeInfo.partialFee.mul(new BN("2"));
+    } catch (error) {
+      console.error('Error fetching fee, using default fee: ', error);
+      partialFee = new BN("10000000000");
     }
 
-    // LocalTransfer
-    if (
-      proposalType === ProposalType.LocalTransfer &&
-      (proposalData as { chain: string; }).chain &&
-      (proposalData as { chain: string; }).chain === NetworkEnum.TINKERNET &&
-      (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { destinationChain: string; }).destinationChain === NetworkEnum.TINKERNET
-    ) {
-      console.log("in LocalTransfer");
+    const localTransferCall = ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString()));
 
-      const chain = (proposalData as { chain: string; }).chain;
-      const amount = (proposalData as { amount: BN | BigNumber; }).amount;
-      const to = (proposalData as { to: string; }).to;
-      const asset = (proposalData as { asset: string; }).asset;
+    const multisigCall = saturnContext.state.saturn
+      .buildMultisigCall({
+        id: saturnContext.state.multisigId,
+        call: localTransferCall,
+        proposalMetadata,
+        feeAsset: FeeAsset[feeAsset()] as unknown as FeeAsset,
+      });
 
-      if (!saturnContext.state.multisigAddress) {
-        console.error("Multisig address is undefined. Exiting early.");
-        return;
-      };
-
-      let partialFee;
+    if (!preview) {
       try {
-        const feeInfo = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-        console.log('localTransfer feeInfo', feeInfo.partialFee.toString());
-        partialFee = feeInfo.partialFee.mul(new BN("2"));
+        await multisigCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+
+        toast.setToast('Local Transfer proposal submitted successfully', 'success');
+
+        saturnContext.submitProposal();
       } catch (error) {
-        console.error('Error fetching fee, using default fee: ', error);
-        partialFee = new BN("10000000000");
+        console.error('Error submitting proposal: ', error);
+        toast.setToast('Error submitting Local Transfer proposal', 'error');
+      } finally {
+        modal.hideProposeModal();
       }
 
-      const localTransferCall = ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString()));
+      return;
+    } else {
+      const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
+      return partialFeePreview;
+    }
+  }
 
-      const multisigCall = saturnContext.state.saturn
-        .buildMultisigCall({
-          id: saturnContext.state.multisigId,
-          call: localTransferCall,
-          proposalMetadata,
-          feeAsset: FeeAsset[feeAsset()] as unknown as FeeAsset,
-        });
+  // XcmBridge
+  if (
+    proposalType === ProposalType.XcmBridge &&
+    (proposalData as { chain: string; }).chain &&
+    (proposalData as { destinationChain: string; }).destinationChain &&
+    (proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET &&
+    (proposalData as { chain: string; }).chain !== (proposalData as { destinationChain: string; }).destinationChain
+  ) {
+    console.log("in XcmBridge");
 
-      if (!preview) {
-        const result: MultisigCallResult = await multisigCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+    const chain = (proposalData as { chain: string; }).chain;
+    const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
+    const to = (proposalData as { to: string; }).to;
+    const asset = (proposalData as { asset: string; }).asset;
 
-        if (result && result.executionResult) {
-          const dispatchResult: DispatchResult = result.executionResult;
-
-          if (dispatchResult.isOk) {
-            toast.setToast('Local transfer proposal submitted successfully', 'success');
-          }
-
-          if (dispatchResult.isErr) {
-            console.error("Error submitting proposal: ", result);
-            throw new Error(JSON.stringify(result));
-          }
+    let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
+    if (!xcmAsset) {
+      xcmAsset = {
+        ['AssetHub']: {
+          ['Local']: getAssetIdFromAssetHubEnum(asset)
         }
-
-        modal.hideProposeModal();
-
-        return;
-      } else {
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
-        return partialFeePreview;
-      }
+      };
     }
 
-    // XcmBridge
-    if (
-      proposalType === ProposalType.XcmBridge &&
-      (proposalData as { chain: string; }).chain &&
-      (proposalData as { destinationChain: string; }).destinationChain &&
-      (proposalData as { chain: string; }).chain !== NetworkEnum.TINKERNET &&
-      (proposalData as { chain: string; }).chain !== (proposalData as { destinationChain: string; }).destinationChain
-    ) {
-      console.log("in XcmBridge");
+    if (!saturnContext.state.multisigAddress) return;
 
-      const chain = (proposalData as { chain: string; }).chain;
-      const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
-      const to = (proposalData as { to: string; }).to;
-      const asset = (proposalData as { asset: string; }).asset;
+    let partialFee = new BN("0");
+    try {
+      const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
+      console.log('xcmBridge feeInfo', feeInfo.partialFee.toString());
+      partialFee = feeInfo.partialFee;
+    } catch (error) {
+      console.error('Error fetching fee, using default fee: ', error);
+      partialFee = new BN("10000000000");
+    }
 
-      let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
-      if (!xcmAsset) {
-        xcmAsset = {
-          ['AssetHub']: {
-            ['Local']: getAssetIdFromAssetHubEnum(asset)
-          }
-        };
-      }
+    const bridgeCall = saturnContext.state.saturn
+      .bridgeXcmAsset({
+        id: saturnContext.state.multisigId,
+        asset: xcmAsset,
+        amount: new BN(amount.toString()),
+        to,
+        xcmFee: partialFee,
+        destination: (proposalData as { destinationChain: string; }).destinationChain,
+        proposalMetadata,
+      });
 
-      console.log('xcmAsset', xcmAsset, chain);
-      if (!saturnContext.state.multisigAddress) return;
-
-      let partialFee = new BN("0");
+    if (!preview) {
       try {
-        const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
-        console.log('xcmBridge feeInfo', feeInfo.partialFee.toString());
-        partialFee = feeInfo.partialFee;
-      } catch (error) {
-        console.error('Error fetching fee, using default fee: ', error);
-        partialFee = new BN("10000000000");
-      }
-
-      const bridgeCall = saturnContext.state.saturn
-        .bridgeXcmAsset({
-          id: saturnContext.state.multisigId,
-          asset: xcmAsset,
-          amount: new BN(amount.toString()),
-          to,
-          xcmFee: partialFee,
-          destination: (proposalData as { destinationChain: string; }).destinationChain,
-          proposalMetadata,
-        });
-
-      if (!preview) {
         await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
 
         toast.setToast('XCM Bridge proposal submitted successfully', 'success');
 
+        saturnContext.submitProposal();
+      } catch (error) {
+        console.error('Error submitting proposal: ', error);
+        toast.setToast('Error submitting XCM Bridge proposal', 'error');
+      } finally {
         modal.hideProposeModal();
-
-        return;
-      } else {
-        const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
-        const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
-        return partialFeePreview;
       }
-    }
 
-    // Unknown proposal type
-    throw new Error(JSON.stringify({
-      chain: proposalData.chain, destinationChain: (proposalData as any).destinationChain, asset: (proposalData as any).asset, to: (proposalData as any).to, amount: (proposalData as any).amount
-    }));
-  } catch (error) {
-    console.error(error);
-    if (!preview) {
-      toast.setToast('Error submitting proposal', 'error');
+      return;
+    } else {
+      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
+      const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
+      return partialFeePreview;
     }
   }
 };

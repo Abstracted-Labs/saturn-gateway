@@ -1,4 +1,4 @@
-import { createContext, createMemo, useContext } from "solid-js";
+import { Accessor, createContext, createMemo, createSignal, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { type Saturn, type MultisigDetails } from "@invarch/saturn-sdk";
 import { MultisigItem } from "../utils/consts";
@@ -21,6 +21,9 @@ export type SaturnContextType = {
     setMultisigItems: (multisigItems: MultisigItem[]) => void;
     logout: () => void;
   },
+  proposalSubmitted: Accessor<boolean>,
+  resetProposalSubmitted: () => void,
+  submitProposal: () => void,
 };
 
 const defaultState: SaturnContextState = {
@@ -41,11 +44,19 @@ const defaultSetters = {
 };
 
 export const SaturnContext = createContext<SaturnContextType>({
-  state: defaultState, setters: defaultSetters
+  state: defaultState,
+  setters: defaultSetters,
+  proposalSubmitted: () => false,
+  resetProposalSubmitted: () => { },
+  submitProposal: () => { }
 });
 
 export function SaturnProvider(props: any) {
+  const [proposalSubmitted, setProposalSubmitted] = createSignal(false);
   const [state, setState] = createStore<SaturnContextState>(defaultState);
+
+  const submitProposal = () => setProposalSubmitted(true);
+  const resetProposalSubmitted = () => setProposalSubmitted(false);
 
   const value = {
     state,
@@ -76,7 +87,10 @@ export function SaturnProvider(props: any) {
         setState("multisigDetails", undefined);
         setState("multisigItems", []);
       }
-    }
+    },
+    proposalSubmitted,
+    resetProposalSubmitted,
+    submitProposal,
   };
 
   return (

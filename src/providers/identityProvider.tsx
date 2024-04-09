@@ -4,6 +4,7 @@ import { createLocalStorage } from "@solid-primitives/storage";
 import { createStore } from "solid-js/store";
 import { useSaturnContext } from "./saturnProvider";
 import { getAllMembers } from "../utils/getAllMembers";
+import { useLocation } from "@solidjs/router";
 
 export type IdentityContextType = {
   state: {
@@ -24,10 +25,12 @@ const initialIdentity: AggregatedIdentity = {
 
 export function IdentityProvider(props: { children: JSX.Element; }) {
   const saturnContext = useSaturnContext();
+  const loc = useLocation();
 
   const satState = createMemo(() => saturnContext.state);
   const id = createMemo(() => satState().multisigId);
   const sat = createMemo(() => satState().saturn);
+  const isManagementPage = createMemo(() => loc.pathname.includes('/management'));
 
   const [addresses, setAddresses] = createSignal<string[]>([]);
   const [identities, setIdentities] = createStore<AggregatedIdentity[]>([]);
@@ -36,6 +39,9 @@ export function IdentityProvider(props: { children: JSX.Element; }) {
   createEffect(() => {
     const multisigId = id();
     const saturn = sat();
+    const executeCode = isManagementPage();
+
+    if (!executeCode) return;
 
     const getMemberAddresses = async () => {
       if (!Number.isNaN(multisigId) && saturn) {
@@ -94,6 +100,9 @@ export function IdentityProvider(props: { children: JSX.Element; }) {
   };
 
   createEffect(() => {
+    const executeCode = isManagementPage();
+    if (!executeCode) return;
+
     getIdentities();
   });
 
