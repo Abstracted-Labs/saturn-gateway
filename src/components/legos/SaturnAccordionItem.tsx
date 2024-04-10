@@ -20,8 +20,8 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
 
   return <>
     <h3 id={props.headingId} onClick={handleAccordionItemClick} class="text-sm">
-      <button type="button" class="flex items-center justify-between w-full p-3 font-medium text-left text-black dark:text-white hover:text-white dark:hover:text-white hover:bg-saturn-purple dark:hover:bg-saturn-purple border-b border-px border-gray-200 dark:border-gray-800 focus:outline-none" data-accordion-target={`#${ props.contentId }`} aria-expanded="true" aria-controls={props.contentId}>
-        <span class="flex items-center">
+      <button type="button" class="flex items-center justify-between w-full px-3 py-2 font-medium text-left text-black dark:text-white hover:text-white dark:hover:text-white hover:bg-saturn-purple dark:hover:bg-saturn-purple border-b border-px border-gray-200 dark:border-gray-800 focus:outline-none" data-accordion-target={`#${ props.contentId }`} aria-expanded="true" aria-controls={props.contentId}>
+        <span class="flex items-center text-xs/tight">
           {props.icon && <img src={props.icon[0]} class="mr-2 rounded-full w-6 h-6 p-1 bg-black" alt="asset-icon" />}
           {props.heading}
         </span>

@@ -268,11 +268,12 @@ export default function Transactions() {
   const processCallDescription = (call: Call): string => {
     const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
     const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString();
-    const recipient = (call.toHuman().args as Record<string, AnyJson>).to?.toString();
+    const recipient = stringShorten((call.toHuman().args as Record<string, AnyJson>).to?.toString() || '', 10);
     const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
     const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
-    const target = (call.toHuman().args as Record<string, AnyJson>).target?.toString();
+    const target = stringShorten((call.toHuman().args as Record<string, AnyJson>).target?.toString() || '', 10);
     let id;
+    const callHash = stringShorten(call.hash.toString(), 10);
 
     switch (call.method) {
       case 'sendCall':
@@ -287,7 +288,7 @@ export default function Transactions() {
         return `Execute ${ xcmCall.section }.${ xcmCall.method } call`;
 
       case 'cancelMultisigProposal':
-        return `Cancel multisig proposal`;
+        return `Cancel multisig proposal with call hash ${ callHash }`;
 
       case 'tokenMint':
         return `Add new member or increase voting power to ${ amount?.toString() } for ${ target }`;
@@ -297,13 +298,13 @@ export default function Transactions() {
 
       case 'transfer':
         if (!dest) return '';
-        id = dest.Id?.toString();
+        id = stringShorten(dest.Id?.toString() || '', 10);
         console.log('data: ', (call.toHuman().args as Record<string, AnyJson>));
         return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
 
       case 'transferKeepAlive':
         if (!dest) return '';
-        id = dest.Id?.toString();
+        id = stringShorten(dest.Id?.toString() || '', 10);
         return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
 
       case 'transferAssets':
