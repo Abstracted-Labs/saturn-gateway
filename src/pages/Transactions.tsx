@@ -294,7 +294,7 @@ export default function Transactions() {
         return `Add new member or increase voting power to ${ amount?.toString() } for ${ target }`;
 
       case 'tokenBurn':
-        return `Remove member or decrease voting power to ${ amount?.toString() } for ${ target }`;
+        return `Remove member or decrease voting power by ${ amount?.toString() } for ${ target }`;
 
       case 'transfer':
         if (!dest) return '';
