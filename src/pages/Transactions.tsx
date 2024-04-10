@@ -1,6 +1,6 @@
 import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset } from '@invarch/saturn-sdk';
-import { BN, hexToString, stringShorten, u8aToHex } from '@polkadot/util';
+import { BN, hexToString, stringShorten, u8aToHex, u8aToString } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call, EventRecord } from '@polkadot/types/interfaces';
 import { useLocation } from '@solidjs/router';
@@ -22,8 +22,7 @@ import LoaderAnimation from '../components/legos/LoaderAnimation';
 import { SubmittableResult } from '@polkadot/api';
 import { getEncodedAddress } from '../utils/getEncodedAddress';
 import { useToast } from '../providers/toastProvider';
-import BigNumber from 'bignumber.js';
-import { encodeAddress } from '@polkadot/keyring';
+import { Identity } from '../components';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -267,9 +266,16 @@ export default function Transactions() {
 
   // Decode transaction call hash
   const processCallDescription = (call: Call): string => {
+    const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
+    const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString();
+    const recipient = (call.toHuman().args as Record<string, AnyJson>).to?.toString();
+    const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
+    const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
+    const target = (call.toHuman().args as Record<string, AnyJson>).target?.toString();
+    let id;
+
     switch (call.method) {
       case 'sendCall':
-        const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
         const innerCall = (call.toHuman().args as Record<string, AnyJson>).call?.toString();
 
         if (!chain || !innerCall || !ringApisContext.state[chain]) {
@@ -279,6 +285,32 @@ export default function Transactions() {
         const xcmCall = ringApisContext.state[chain].createType('Call', innerCall);
 
         return `Execute ${ xcmCall.section }.${ xcmCall.method } call`;
+
+      case 'cancelMultisigProposal':
+        return `Cancel multisig proposal`;
+
+      case 'tokenMint':
+        return `Add new member or increase voting power to ${ amount?.toString() } for ${ target }`;
+
+      case 'tokenBurn':
+        return `Remove member or decrease voting power to ${ amount?.toString() } for ${ target }`;
+
+      case 'transfer':
+        if (!dest) return '';
+        id = dest.Id?.toString();
+        console.log('data: ', (call.toHuman().args as Record<string, AnyJson>));
+        return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
+
+      case 'transferKeepAlive':
+        if (!dest) return '';
+        id = dest.Id?.toString();
+        return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
+
+      case 'transferAssets':
+        return `Cross-chain asset transfer in the amount of ${ amount?.toString() } to ${ recipient }`;
+
+      case 'bridgeAssets':
+        return `Cross-chain asset bridge in the amount of ${ amount?.toString() } to ${ recipient }`;
 
       default:
         return `Execute ${ call.section }.${ call.method } call`;
@@ -427,54 +459,74 @@ export default function Transactions() {
     const votesNeeded = Math.ceil(totalMembers.length * minimumSupport);
 
     return (
-      <p class="text-xs text-saturn-lightgrey mb-10">
-        <span class="mr-1">Voting Threshold:</span><br /><br /><span class="font-bold text-white">{votesNeeded} {votesNeeded > 1 ? "votes" : "vote"}</span> {votesNeeded > 1 ? "are" : "is"} needed from a pool of <span class="font-bold text-white">{totalMembers.length} {totalMembers.length > 1 ? "members" : "member"}</span>
-      </p>
+      <div class="text-xs text-saturn-lightgrey mb-10">
+        <p>
+          <span class="mr-1">Voting Threshold:</span><br /><br /><span class="font-bold text-white">{votesNeeded} {votesNeeded > 1 ? "votes" : "vote"}</span> {votesNeeded > 1 ? "are" : "is"} needed from a pool of <span class="font-bold text-white">{totalMembers.length} {totalMembers.length > 1 ? "members" : "member"}</span>
+        </p>
+      </div>
     );
   };
 
   return (
     <div>
-      <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col">
+      <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col h-full">
         <Switch fallback={<div>
           {loading() ? <LoaderAnimation text="Please wait..." /> : <span class={FALLBACK_TEXT_STYLE}>No transactions to display.</span>}
         </div>}>
           <Match when={pendingProposals().length > 0}>
-            <div class="overflow-y-auto saturn-scrollbar pr-5 h-[500px]">
+            <div class="overflow-y-scroll saturn-scrollbar pr-5 md:h-[550px] mb-3">
               <For each={pendingProposals()}>
                 {(pc: CallDetailsWithHash, index) => {
+                  const metadata = pc.details.proposalMetadata;
+                  console.log('metadata: ', metadata);
+                  const proposalMetadata = typeof metadata === 'string' ? metadata : metadata ? u8aToString(metadata) : null;
+                  const parsedMetadata = proposalMetadata ? JSON.parse(proposalMetadata).message : null;
+                  const preparer = pc.details.originalCaller;
                   return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
+                    {/* Proposal description */}
+                    {proposalMetadata && <div class="flex flex-col mt-3">
+                      <div class="text-xs text-saturn-lightgrey mb-1">Proposal description:</div>
+                      <p class="rounded-md p-3 border-2 border-gray-800 text-sm">{parsedMetadata}</p>
+                    </div>}
                     <div class="flex flex-row">
                       {/* Call data */}
                       <div class="max-h-[300px] w-full my-2 grow">
                         <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
                       </div>
 
-                      {/* Votes history */}
-                      <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-60 h-32 overflow-y-scroll saturn-scrollbar'>
-                        <For each={Object.entries(pc.details.tally.records)}>
-                          {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
-                            const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
-                            return <div class="flex flex-row">
-                              <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
-                                {vote.aye
-                                  ? <img src={AyeIcon} />
-                                  : <img src={NayIcon} />
-                                }
-                              </div>
-                              <div class='flex flex-col pt-2'>
-                                <div
-                                  class='text-xs font-bold text-black dark:text-white'
-                                >
-                                  {stringShorten(voter, 4)}
+                      <div>
+                        {/* Preparer */}
+                        <div class="flex flex-col items-end ml-2 mt-2">
+                          <div class="text-xs text-saturn-lightgrey mb-1">Prepared by:</div>
+                          <Identity address={preparer} />
+                        </div>
+
+                        {/* Votes history */}
+                        <div class='relative items-start flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-60 h-32 overflow-y-scroll saturn-scrollbar'>
+                          <For each={Object.entries(pc.details.tally.records)}>
+                            {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
+                              const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
+                              return <div class="flex flex-row">
+                                <div class='flex lg:h-3 lg:w-3 md:h-3 md:w-3 rounded-full relative top-[9px] mr-1'>
+                                  {vote.aye
+                                    ? <img src={AyeIcon} />
+                                    : <img src={NayIcon} />
+                                  }
                                 </div>
-                                <div class="text-xxs text-saturn-lightgrey leading-none">
-                                  {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                                <div class='flex flex-col pt-2'>
+                                  <div
+                                    class='text-xs font-bold text-black dark:text-white'
+                                  >
+                                    {stringShorten(voter, 4)}
+                                  </div>
+                                  <div class="text-xxs text-saturn-lightgrey leading-none">
+                                    {` voted ${ vote.aye ? 'Aye' : 'Nay' } with ${ voteCount } ${ +voteCount > 1 ? 'votes' : 'vote' }`}
+                                  </div>
                                 </div>
-                              </div>
-                            </div>;
-                          }}
-                        </For>
+                              </div>;
+                            }}
+                          </For>
+                        </div>
                       </div>
                     </div>
                     <div class="flex flex-row justify-between">
