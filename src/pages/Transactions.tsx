@@ -1,8 +1,8 @@
 import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset } from '@invarch/saturn-sdk';
-import { BN, hexToString, stringShorten } from '@polkadot/util';
+import { BN, hexToString, stringShorten, u8aToHex } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
-import type { Call } from '@polkadot/types/interfaces';
+import type { Call, EventRecord } from '@polkadot/types/interfaces';
 import { useLocation } from '@solidjs/router';
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
@@ -23,6 +23,7 @@ import { SubmittableResult } from '@polkadot/api';
 import { getEncodedAddress } from '../utils/getEncodedAddress';
 import { useToast } from '../providers/toastProvider';
 import BigNumber from 'bignumber.js';
+import { encodeAddress } from '@polkadot/keyring';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -185,11 +186,13 @@ export default function Transactions() {
         id: multisigId,
         callHash,
       });
-      await call.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer });
 
-      toast.setToast('Your vote has been withdrawn', 'success');
+      await call.signAndSend(selectedAccountAddress, { signer: selectedAccountContext.state.wallet?.signer }, ({ status }) => {
+        console.log(status.isFinalized, status.isInBlock);
+        toast.setToast('Vote withdrawn', 'success');
+        setLoading(true);
+      });
 
-      setLoading(true);
     } catch (error) {
       console.error(error);
       toast.setToast('An error occurred', 'error');
@@ -212,11 +215,13 @@ export default function Transactions() {
         id: saturnContext.state.multisigId,
         callHash,
         aye,
-      }).signAndSend(selected.account.address, { signer: selected.wallet.signer });
+      }).signAndSend(selected.account.address, { signer: selected.wallet.signer }, ({ status }) => {
+        if (status.isFinalized || status.isInBlock) {
+          toast.setToast('Vote submitted', 'success');
+          setLoading(true);
+        }
+      });
 
-      toast.setToast('Vote successfully submitted', 'success');
-
-      setLoading(true);
     } catch (error) {
       console.error(error);
       toast.setToast('An error occurred', 'error');
@@ -249,6 +254,7 @@ export default function Transactions() {
       if (result) {
         toast.setToast('Kill bill successfully submitted', 'success');
       } else {
+        toast.setToast('Failed to kill bill', 'error');
         throw new Error('Failed to submit kill bill');
       }
 
@@ -280,20 +286,17 @@ export default function Transactions() {
   };
 
   const processNetworkIcons = (call: Call): string[] => {
-    switch (call.method) {
-      case 'sendCall':
-        const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
-        if (!chain) {
-          return [];
-        }
+    if (call.method === 'sendCall') {
+      const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
+      if (!chain) {
+        return [];
+      }
 
-        const ring = JSON.parse(JSON.stringify(Rings))[chain];
-
-        return [ring.icon];
-
-      default:
-        return [Rings.tinkernet?.icon as string];
+      const ring = JSON.parse(JSON.stringify(Rings))[chain];
+      console.log('ring: ', ring);
+      return [ring.icon];
     }
+    return [Rings.tinkernet?.icon as string];
   };
 
   // Decode external transaction to human readable format
@@ -346,6 +349,8 @@ export default function Transactions() {
     const sat = saturn();
     const multisigId = getMultisigId();
 
+    if (!loading()) return;
+
     const runAsync = async () => {
       setLoading(true);
 
@@ -364,9 +369,11 @@ export default function Transactions() {
         if (!pendingCalls || !pendingCalls.length) {
           setLoading(false);
           toast.setToast('No proposals to display', 'info');
+          return;
         }
 
         setPendingProposals(pendingCalls);
+        toast.setToast('Proposals loaded', 'success');
       }, 2000);
     };
 
@@ -400,7 +407,7 @@ export default function Transactions() {
         const items = accordionItems().filter(item => item !== undefined) as FlowAccordionItem[];
         const accordion = new FlowAccordion(parentEl(), items);
         setAccordion(accordion);
-        toast.setToast('Proposals loaded', 'success');
+        // toast.setToast('Proposals loaded', 'success');
       }
     } catch (e) {
       console.error(e);

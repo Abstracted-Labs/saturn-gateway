@@ -44,10 +44,10 @@ const FeeAssetModal = () => {
     if (isFeeDropDownActive()) {
       setFeeAsset(fee);
       selectedAccount.setters.setFeeAsset(fee);
+      toast.setToast(`${ fee } is now the default fee asset`, 'info');
+      megaModal.hideFeeAssetModal();
       setIsFeeDropDownActive(false);
       feeDropdown()?.hide();
-      megaModal.hideFeeAssetModal();
-      toast.setToast(`${ fee } is now the default fee asset`, 'info');
     }
   };
 
