@@ -30,7 +30,7 @@ export function IdentityProvider(props: { children: JSX.Element; }) {
   const satState = createMemo(() => saturnContext.state);
   const id = createMemo(() => satState().multisigId);
   const sat = createMemo(() => satState().saturn);
-  const isManagementPage = createMemo(() => loc.pathname.includes('/management'));
+  const isManagementPage = createMemo(() => ['/management', '/transactions'].some(path => loc.pathname.includes(path)));
 
   const [addresses, setAddresses] = createSignal<string[]>([]);
   const [identities, setIdentities] = createStore<AggregatedIdentity[]>([]);
