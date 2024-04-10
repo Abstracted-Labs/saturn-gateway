@@ -272,8 +272,8 @@ export default function Transactions() {
     const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
     const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
     const target = stringShorten((call.toHuman().args as Record<string, AnyJson>).target?.toString() || '', 10);
-    let id;
     const callHash = stringShorten(call.hash.toString(), 10);
+    let id;
 
     switch (call.method) {
       case 'sendCall':
