@@ -11,14 +11,18 @@ const PriceContext = createContext<{
 }>();
 
 const initialPrices: Record<NetworkEnum, { usd: string; }> = {
+  // polkadot: { usd: "" },
+  kusama: { usd: "" },
   tinkernet: { usd: "" },
   basilisk: { usd: "" },
   picasso: { usd: "" },
-  kusama: { usd: "" },
-  polkadot: { usd: "" },
   assethub: { usd: "" },
   bifrost: { usd: "" },
-  astar: { usd: "" },
+  shiden: { usd: "" },
+  karura: { usd: "" },
+  moonriver: { usd: "" },
+  turing: { usd: "" },
+  khala: { usd: "" },
 };
 
 export function PriceProvider(props: { children: JSX.Element; }) {

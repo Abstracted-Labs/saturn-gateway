@@ -34,7 +34,7 @@ const ChangeNetworkButton = () => {
   function allTheNetworks(): Record<string, JSXElement> {
     return ({
       [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
-      [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+      // [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
     });
   };
 
