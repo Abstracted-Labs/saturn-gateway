@@ -61,21 +61,33 @@ const notAllowedToSendToTinkernet = [
 ];
 
 const allTheNetworks = (): Record<string, JSXElement> => ({
-  [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
   // [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
+  [NetworkEnum.KUSAMA]: getNetworkBlock(NetworkEnum.KUSAMA),
   [NetworkEnum.TINKERNET]: getNetworkBlock(NetworkEnum.TINKERNET),
   [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
   [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
   [NetworkEnum.ASSETHUB]: getNetworkBlock(NetworkEnum.ASSETHUB),
+  [NetworkEnum.BIFROST]: getNetworkBlock(NetworkEnum.BIFROST),
+  [NetworkEnum.SHIDEN]: getNetworkBlock(NetworkEnum.SHIDEN),
+  [NetworkEnum.KARURA]: getNetworkBlock(NetworkEnum.KARURA),
+  [NetworkEnum.MOONRIVER]: getNetworkBlock(NetworkEnum.MOONRIVER),
+  [NetworkEnum.TURING]: getNetworkBlock(NetworkEnum.TURING),
+  [NetworkEnum.KHALA]: getNetworkBlock(NetworkEnum.KHALA),
 });
 
 const allTheAssets = (): Record<string, JSXElement> => ({
-  [AssetEnum.TNKR]: getAssetBlock(AssetEnum.TNKR),
-  [AssetEnum.KSM]: getAssetBlock(AssetEnum.KSM),
   // [AssetEnum.DOT]: getAssetBlock(AssetEnum.DOT),
+  [AssetEnum.KSM]: getAssetBlock(AssetEnum.KSM),
+  [AssetEnum.TNKR]: getAssetBlock(AssetEnum.TNKR),
   [AssetEnum.BSX]: getAssetBlock(AssetEnum.BSX),
   [AssetEnum.PICA]: getAssetBlock(AssetEnum.PICA),
   [AssetEnum.ASSETHUB]: getAssetBlock(AssetEnum.ASSETHUB),
+  [AssetEnum.BNC]: getAssetBlock(AssetEnum.BNC),
+  [AssetEnum.KPHA]: getAssetBlock(AssetEnum.KPHA),
+  [AssetEnum.KAR]: getAssetBlock(AssetEnum.KAR),
+  [AssetEnum.TUR]: getAssetBlock(AssetEnum.TUR),
+  [AssetEnum.MOVR]: getAssetBlock(AssetEnum.MOVR),
+  [AssetEnum.SDN]: getAssetBlock(AssetEnum.SDN),
   [AssetHubEnum.BILL]: getAssetBlock(AssetHubEnum.BILL),
   [AssetHubEnum.BAILEGO]: getAssetBlock(AssetHubEnum.BAILEGO),
 });
@@ -746,7 +758,7 @@ const AssetsContext = () => {
       <div class='flex flex-col gap-1'>
         <div class='flex flex-row items-center gap-1'>
           <span class="text-xxs text-saturn-lightgrey">from</span>
-          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={handleFromDropdown}>
+          <SaturnSelect isOpen={isFromDropdownActive()} isMini={true} toggleId={FROM_TOGGLE_ID} dropdownId={FROM_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().from)} onClick={handleFromDropdown} scrollable={true}>
             <For each={fromNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleFromOptionClick(name as NetworkEnum);
@@ -757,7 +769,7 @@ const AssetsContext = () => {
             </For>
           </SaturnSelect>
           <span class="text-xxs text-saturn-lightgrey">to</span>
-          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={handleToDropdown}>
+          <SaturnSelect isOpen={isToDropdownActive()} isMini={true} toggleId={TO_TOGGLE_ID} dropdownId={TO_DROPDOWN_ID} initialOption={renderSelectedOption(finalNetworkPair().to)} onClick={handleToDropdown} scrollable={true}>
             <For each={toNetworks()}>
               {([name, element]) => element !== null && <SaturnSelectItem onClick={() => {
                 handleToOptionClick(name as NetworkEnum);

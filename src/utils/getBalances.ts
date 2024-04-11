@@ -436,7 +436,7 @@ export async function getBalancesFromAllNetworks(address: string): Promise<Netwo
   const apis = await createApis();
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
     const api = apis[network as NetworkEnum];
-    return getBalancesFromNetwork(api, 'i4zA33U9GQnNfqT4avPUWS8q8uJ45R3VexohLNxrgECRi6TAo', network as NetworkEnum);
+    return getBalancesFromNetwork(api, address, network as NetworkEnum);
   });
   const results: ResultBalancesWithNetwork[] = await Promise.all(promises);
   const allBalances: NetworkBalances = Object.assign({}, ...results);
