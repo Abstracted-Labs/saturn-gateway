@@ -223,7 +223,8 @@ export const proposeCall = async (props: IProposalProps) => {
     try {
       const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
       console.log('xcmTransfer feeInfo', feeInfo.partialFee.toString());
-      partialFee = feeInfo.partialFee;
+      // partialFee = feeInfo.partialFee;
+      partialFee = new BN("10000000000");
     } catch (error) {
       console.error('Error fetching fee, using default fee: ', error);
       partialFee = new BN("10000000000");
@@ -287,7 +288,8 @@ export const proposeCall = async (props: IProposalProps) => {
     try {
       const feeInfo = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
       console.log('localTransfer feeInfo', feeInfo.partialFee.toString());
-      partialFee = feeInfo.partialFee.mul(new BN("2"));
+      // partialFee = feeInfo.partialFee.mul(new BN("2"));
+      partialFee = new BN("10000000000");
     } catch (error) {
       console.error('Error fetching fee, using default fee: ', error);
       partialFee = new BN("10000000000");
@@ -355,7 +357,8 @@ export const proposeCall = async (props: IProposalProps) => {
     try {
       const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
       console.log('xcmBridge feeInfo', feeInfo.partialFee.toString());
-      partialFee = feeInfo.partialFee;
+      // partialFee = feeInfo.partialFee;
+      partialFee = new BN("10000000000");
     } catch (error) {
       console.error('Error fetching fee, using default fee: ', error);
       partialFee = new BN("10000000000");
