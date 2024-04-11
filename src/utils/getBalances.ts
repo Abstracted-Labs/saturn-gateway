@@ -101,6 +101,11 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
       break;
     }
 
+    case NetworkEnum.BIFROST: {
+
+      break;
+    }
+
     // NetworkEnum.TINKERNET
     default: {
       assetRegistry[AssetEnum.TNKR] = FeeAsset.Native;
@@ -237,6 +242,128 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
       break;
     }
 
+    case NetworkEnum.BIFROST: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.BNC] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+
+        // query tokens
+        // const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.BIFROST, api);
+        // for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
+        //   const tokens = await api.query.tokens.accounts(address, assetId as number);
+        //   const freeTokens = tokens.free.toString();
+        //   const reservedTokens = tokens.reserved.toString();
+        //   const totalTokens = new BigNumber(freeTokens).plus(new BigNumber(reservedTokens)).toString();
+        //   balancesByNetwork[assetSymbol] = {
+        //     freeBalance: freeTokens,
+        //     reservedBalance: reservedTokens,
+        //     totalBalance: totalTokens,
+        //   };
+        // }
+      }
+      break;
+    }
+
+    case NetworkEnum.KHALA: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.KPHA] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+      }
+      break;
+    }
+
+    case NetworkEnum.KARURA: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.KAR] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+      }
+      break;
+    }
+
+    case NetworkEnum.MOONRIVER: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.MOVR] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+      }
+      break;
+    }
+
+    case NetworkEnum.SHIDEN: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.SDN] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+      }
+      break;
+    }
+
+    case NetworkEnum.TURING: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
+        const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.TUR] = {
+          freeBalance,
+          reservedBalance,
+          totalBalance,
+          locks,
+        };
+      }
+      break;
+    }
+
     // NetworkEnum.TINKERNET
     default: {
       if (api) {
@@ -309,7 +436,7 @@ export async function getBalancesFromAllNetworks(address: string): Promise<Netwo
   const apis = await createApis();
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
     const api = apis[network as NetworkEnum];
-    return getBalancesFromNetwork(api, address, network as NetworkEnum);
+    return getBalancesFromNetwork(api, 'i4zA33U9GQnNfqT4avPUWS8q8uJ45R3VexohLNxrgECRi6TAo', network as NetworkEnum);
   });
   const results: ResultBalancesWithNetwork[] = await Promise.all(promises);
   const allBalances: NetworkBalances = Object.assign({}, ...results);

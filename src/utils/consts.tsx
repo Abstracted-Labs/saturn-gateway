@@ -4,6 +4,12 @@ import PicassoIcon from '../assets/icons/picasso-icon.svg';
 import KusamaIcon from '../assets/icons/kusama-icon.svg';
 import KusamaAssetHubIcon from '../assets/icons/assethub-icon.svg';
 import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
+import TuringIcon from '../assets/icons/turing-logo.svg';
+import MoonriverIcon from '../assets/icons/moonriver-logo.svg';
+import KhalaIcon from '../assets/icons/khala-logo.svg';
+import BifrostIcon from '../assets/icons/bifrost-logo.svg';
+import ShidenIcon from '../assets/icons/shiden-logo.svg';
+import KaruraIcon from '../assets/icons/karura-logo.svg';
 import { JSXElement } from 'solid-js';
 
 export const BUTTON_COMMON_STYLE = 'rounded-lg border-[1.5px] border-saturn-purple bg-gray-200 dark:bg-saturn-darkgrey active:border-saturn-purple visited:border-saturn-purple flex flex-row items-center focus:outline-none';
@@ -41,12 +47,14 @@ export enum NetworkEnum {
   BASILISK = "basilisk",
   PICASSO = "picasso",
   KUSAMA = "kusama",
-  POLKADOT = "polkadot",
+  // POLKADOT = "polkadot",
   ASSETHUB = "assethub",
   BIFROST = "bifrost",
   SHIDEN = "shiden",
   KARURA = "karura",
   MOONRIVER = "moonriver",
+  TURING = "turing",
+  KHALA = "khala",
 }
 
 // export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
@@ -65,6 +73,12 @@ export const AssetIconByCurrency: Record<string, string> = {
   KSM: KusamaIcon,
   DOT: PolkadotIcon,
   ASSETHUB: KusamaAssetHubIcon,
+  BNC: BifrostIcon,
+  SDN: ShidenIcon,
+  KAR: KaruraIcon,
+  MOVR: MoonriverIcon,
+  TUR: TuringIcon,
+  KPHA: KhalaIcon,
 };
 
 export const NetworkIconByNetwork: Record<NetworkEnum, string> = {
@@ -72,21 +86,29 @@ export const NetworkIconByNetwork: Record<NetworkEnum, string> = {
   [NetworkEnum.BASILISK]: BasiliskIcon,
   [NetworkEnum.PICASSO]: PicassoIcon,
   [NetworkEnum.KUSAMA]: KusamaIcon,
-  [NetworkEnum.POLKADOT]: PolkadotIcon,
+  // [NetworkEnum.POLKADOT]: PolkadotIcon,
   [NetworkEnum.ASSETHUB]: KusamaAssetHubIcon,
-  [NetworkEnum.BIFROST]: KusamaAssetHubIcon,
-  [NetworkEnum.SHIDEN]: KusamaAssetHubIcon,
-  [NetworkEnum.KARURA]: KusamaAssetHubIcon,
-  [NetworkEnum.MOONRIVER]: KusamaAssetHubIcon,
+  [NetworkEnum.BIFROST]: BifrostIcon,
+  [NetworkEnum.SHIDEN]: ShidenIcon,
+  [NetworkEnum.KARURA]: KaruraIcon,
+  [NetworkEnum.MOONRIVER]: MoonriverIcon,
+  [NetworkEnum.TURING]: TuringIcon,
+  [NetworkEnum.KHALA]: KhalaIcon,
 };
 
 export const NetworkIconByCurrency: Record<string, string[]> = {
   TNKR: [TinkernetIcon, BasiliskIcon],
   BSX: [BasiliskIcon],
   PICA: [PicassoIcon],
-  KSM: [KusamaIcon, TinkernetIcon, BasiliskIcon, PicassoIcon, KusamaAssetHubIcon],
+  KSM: [KusamaIcon, TinkernetIcon, BasiliskIcon, PicassoIcon, KusamaAssetHubIcon, BifrostIcon, ShidenIcon, KaruraIcon, MoonriverIcon, TuringIcon, KhalaIcon],
   DOT: [PolkadotIcon],
   ASSETHUB: [KusamaAssetHubIcon],
+  BNC: [BifrostIcon],
+  SDN: [ShidenIcon],
+  KAR: [KaruraIcon],
+  MOVR: [MoonriverIcon],
+  TUR: [TuringIcon],
+  KPHA: [KhalaIcon],
 };
 
 export enum KusamaFeeAssetEnum {

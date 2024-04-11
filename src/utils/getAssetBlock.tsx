@@ -14,11 +14,11 @@ export function getAssetBlock(asset: AssetEnum | AssetHubEnum) {
           <img src={getAssetIcon(AssetEnum.KSM)} alt={AssetEnum.KSM} width={20} height={20} class="mr-2 block" />
           <span>{AssetEnum.KSM}</span>
         </>;
-      case AssetEnum.DOT:
-        return <>
-          <img src={getAssetIcon(AssetEnum.DOT)} alt={AssetEnum.DOT} width={20} height={20} class="mr-1 block" />
-          <span>{AssetEnum.DOT}</span>
-        </>;
+      // case AssetEnum.DOT:
+      //   return <>
+      //     <img src={getAssetIcon(AssetEnum.DOT)} alt={AssetEnum.DOT} width={20} height={20} class="mr-1 block" />
+      //     <span>{AssetEnum.DOT}</span>
+      //   </>;
       case AssetEnum.TNKR:
         return <>
           <img src={getAssetIcon(AssetEnum.TNKR)} alt={AssetEnum.TNKR} width={20} height={20} class="mr-2 block" />
@@ -38,6 +38,36 @@ export function getAssetBlock(asset: AssetEnum | AssetHubEnum) {
         return <>
           <img src={getAssetIcon(AssetEnum.ASSETHUB)} alt={AssetEnum.ASSETHUB} width={20} height={20} class="mr-2 block" />
           <span class="assethub-token">{AssetEnum.ASSETHUB}</span>
+        </>;
+      case AssetEnum.BNC:
+        return <>
+          <img src={getAssetIcon(AssetEnum.BNC)} alt={AssetEnum.BNC} width={20} height={20} class="mr-2 block" />
+          <span>{AssetEnum.BNC}</span>
+        </>;
+      case AssetEnum.KPHA:
+        return <>
+          <img src={getAssetIcon(AssetEnum.KPHA)} alt={AssetEnum.KPHA} width={20} height={20} class="mr-2 block" />
+          <span>K-PHA</span>
+        </>;
+      case AssetEnum.KAR:
+        return <>
+          <img src={getAssetIcon(AssetEnum.KAR)} alt={AssetEnum.KAR} width={20} height={20} class="mr-2 block" />
+          <span>{AssetEnum.KAR}</span>
+        </>;
+      case AssetEnum.TUR:
+        return <>
+          <img src={getAssetIcon(AssetEnum.TUR)} alt={AssetEnum.TUR} width={20} height={20} class="mr-2 block" />
+          <span>{AssetEnum.TUR}</span>
+        </>;
+      case AssetEnum.MOVR:
+        return <>
+          <img src={getAssetIcon(AssetEnum.MOVR)} alt={AssetEnum.MOVR} width={20} height={20} class="mr-2 block" />
+          <span>{AssetEnum.MOVR}</span>
+        </>;
+      case AssetEnum.SDN:
+        return <>
+          <img src={getAssetIcon(AssetEnum.SDN)} alt={AssetEnum.SDN} width={20} height={20} class="mr-2 block" />
+          <span>{AssetEnum.SDN}</span>
         </>;
       default:
         return <>
