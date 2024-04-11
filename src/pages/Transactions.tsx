@@ -401,7 +401,7 @@ export default function Transactions() {
     if (!loading()) return;
 
     const runAsync = async () => {
-      setLoading(true);
+      setActiveIndex(-1);
 
       toast.setToast('Loading proposals...', 'loading');
 
