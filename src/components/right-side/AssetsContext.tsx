@@ -157,6 +157,16 @@ const AssetsContext = () => {
       return;
     }
 
+    if (!targetAddress()) {
+      toast.setToast('Recipient field cannot be blank. Please enter a valid address.', 'error', 0);
+      return;
+    }
+
+    if (amount() <= 0 || isNaN(amount())) {
+      toast.setToast('Amount must be greater than zero', 'error', 0);
+      return;
+    }
+
     if (notAllowedToSendToTinkernet.includes(pair.from) && pair.to === NetworkEnum.TINKERNET) {
       const source = pair.from.charAt(0).toUpperCase() + pair.from.slice(1);
       toast.setToast(`Cannot send assets from ${ source } to Tinkernet`, 'error', 0);

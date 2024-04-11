@@ -15,6 +15,7 @@ import { MegaModalContextType, useMegaModal } from '../../providers/megaModalPro
 import { ISubmittableResult } from '@kiltprotocol/sdk-js';
 import { ToastContextType, useToast } from '../../providers/toastProvider';
 import { getNetworkBlock } from '../../utils/getNetworkBlock';
+import { withTimeout } from '../../utils/withTimeout';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -116,14 +117,14 @@ export const proposeCall = async (props: IProposalProps) => {
     console.log("in LocalCall");
 
     try {
-      await saturnContext.state.saturn
+      await withTimeout(saturnContext.state.saturn
         .buildMultisigCall({
           id: saturnContext.state.multisigId,
           call: (proposalData as { encodedCall: Uint8Array; }).encodedCall,
           proposalMetadata,
           feeAsset: FeeAsset[feeAsset()] as unknown as FeeAsset,
         })
-        .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        .signAndSend(selected.account.address, selected.wallet.signer, feeAsset()), 60000, 'Something went wrong and your request to submit a local call timed out.');
 
       toast.setToast('Local call proposal submitted successfully', 'success');
 
@@ -133,6 +134,7 @@ export const proposeCall = async (props: IProposalProps) => {
       toast.setToast('Error submitting local call proposal', 'error');
     } finally {
       modal.hideProposeModal();
+      selected.wallet.disconnect();
     }
 
     return;
@@ -161,7 +163,7 @@ export const proposeCall = async (props: IProposalProps) => {
     const fee = new BN(partialFee.toString());
 
     try {
-      await saturnContext.state.saturn
+      await withTimeout(saturnContext.state.saturn
         .sendXCMCall({
           id: saturnContext.state.multisigId,
           destination: chain,
@@ -171,7 +173,7 @@ export const proposeCall = async (props: IProposalProps) => {
           weight: totalWeight,
           proposalMetadata,
         })
-        .signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        .signAndSend(selected.account.address, selected.wallet.signer, feeAsset()), 60000, 'Something went wrong and your request to submit an XCM call timed out.');
 
       toast.setToast('XCM call proposal submitted successfully', 'success');
 
@@ -181,6 +183,7 @@ export const proposeCall = async (props: IProposalProps) => {
       toast.setToast('Error submitting XCM call proposal', 'error');
     } finally {
       modal.hideProposeModal();
+      selected.wallet.disconnect();
     }
 
     return;
@@ -239,7 +242,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
     if (!preview) {
       try {
-        await transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        await withTimeout(transferCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset()), 60000, 'Something went wrong and your request to submit an XCM transfer timed out.');
 
         toast.setToast('XCM Transfer proposal submitted successfully', 'success');
 
@@ -249,6 +252,7 @@ export const proposeCall = async (props: IProposalProps) => {
         toast.setToast('Error submitting XCM Transfer proposal', 'error');
       } finally {
         modal.hideProposeModal();
+        selected.wallet.disconnect();
       }
 
       return;
@@ -301,7 +305,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
     if (!preview) {
       try {
-        await multisigCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        await withTimeout(multisigCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset()), 60000, 'Something went wrong and your request to submit a local Tinkernet transfer timed out.');
 
         toast.setToast('Local Transfer proposal submitted successfully', 'success');
 
@@ -311,6 +315,7 @@ export const proposeCall = async (props: IProposalProps) => {
         toast.setToast('Error submitting Local Transfer proposal', 'error');
       } finally {
         modal.hideProposeModal();
+        selected.wallet.disconnect();
       }
 
       return;
@@ -369,7 +374,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
     if (!preview) {
       try {
-        await bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset());
+        await withTimeout(bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset()), 60000, 'Something went wrong and your request to submit an XCM bridge timed out.');
 
         toast.setToast('XCM Bridge proposal submitted successfully', 'success');
 
@@ -379,6 +384,7 @@ export const proposeCall = async (props: IProposalProps) => {
         toast.setToast('Error submitting XCM Bridge proposal', 'error');
       } finally {
         modal.hideProposeModal();
+        selected.wallet.disconnect();
       }
 
       return;

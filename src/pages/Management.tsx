@@ -14,6 +14,8 @@ import { FeeAsset, MultisigCallResult } from '@invarch/saturn-sdk';
 import { useSelectedAccountContext } from '../providers/selectedAccountProvider';
 import { useRingApisContext } from '../providers/ringApisProvider';
 import { useToast } from '../providers/toastProvider';
+import { getEncodedAddress } from '../utils/getEncodedAddress';
+import { withTimeout } from '../utils/withTimeout';
 
 export type MembersType = { address: string, votes: BigNumber; };
 
@@ -36,10 +38,12 @@ export default function Management() {
 
   const removeMember = async (address: string) => {
     const tinkernetApi = ringsApisContext.state.tinkernet;
+    const encodedAddress = getEncodedAddress(address, 117);
     const saturn = saturnContext.state.saturn;
     const account = selectedState().account;
     const wallet = selectedState().wallet;
     const feeAsset = selectedState().feeAsset;
+    const creationFeeAsset = feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay;
 
     if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
       toast.setToast('Required components not available for operation', 'error');
@@ -54,26 +58,31 @@ export default function Management() {
       if (id !== undefined && wallet?.signer) {
         const memberBalance = await saturn.getMultisigMemberBalance({
           id,
-          address: address,
+          address: encodedAddress,
         });
 
         const proposeCall = saturn.proposeMemberRemoval({
           id,
-          address: address,
+          address: encodedAddress,
           amount: memberBalance,
         });
 
-        const result = await proposeCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+        const finalCall = saturn.buildMultisigCall({
+          call: proposeCall.call,
+          id,
+          feeAsset: creationFeeAsset,
+          proposalMetadata: JSON.stringify({ message: 'removeMember' }),
+        });
 
-        if (result.executionResult) {
-          if (result.executionResult.isErr && result.executionResult.asErr) {
-            throw new Error(JSON.stringify(result.executionResult.asErr));
-          } else if (result.executionResult.isOk) {
-            toast.setToast('Member removal proposed successfully', 'success');
+        const result = await withTimeout(finalCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay), 60000, 'Something went wrong; the request to remove member timed out.');
 
-            const newMembers = members().filter((member) => member.address !== address);
-            setMembers(newMembers);
-          }
+        if (result) {
+          toast.setToast('Member removal proposed successfully', 'success');
+
+          const newMembers = members().filter((member) => member.address !== address);
+          setMembers(newMembers);
+        } else {
+          throw new Error();
         }
       }
     } catch (error) {
@@ -88,6 +97,7 @@ export default function Management() {
 
   const proposeNewVotingPower = async (address: string, amount: string) => {
     const tinkernetApi = ringsApisContext.state.tinkernet;
+    const encodedAddress = getEncodedAddress(address, 117);
     const saturn = saturnState().saturn;
     const account = selectedState().account;
     const wallet = selectedState().wallet;
@@ -104,28 +114,35 @@ export default function Management() {
 
     try {
       if (id !== undefined && wallet?.signer) {
-        const bnAmount = new BN(amount);
+        const bnAmount = new BN(amount).mul(new BN("1000000"));
         const proposeCall = saturn.proposeMemberRemoval({
           id,
-          address,
+          address: encodedAddress,
           amount: bnAmount,
         });
 
-        const result: MultisigCallResult = await proposeCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+        const finalCall = saturn.buildMultisigCall({
+          call: proposeCall.call,
+          id,
+          feeAsset: feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay,
+          proposalMetadata: JSON.stringify({ message: 'proposeNewVotingPower' }),
+        });
 
-        if (result.executionResult) {
-          if (result.executionResult.isOk) {
-            toast.setToast('New voting power proposal submitted successfully. Please wait for the vote to pass.', 'success');
-          } else if (result.executionResult.isErr) {
-            const message = JSON.parse(result.executionResult.asErr.toString());
-            const error = hexToString(message.module.error);
-            throw new Error(error);
-          }
+        const result: MultisigCallResult = await withTimeout(finalCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay), 60000, 'Something went wrong; the request to update voting power timed out.');
+
+        if (result) {
+          toast.setToast('New voting power proposal submitted successfully. Please wait for the vote to pass.', 'success');
+
+          saturnContext.submitProposal();
+        } else {
+          throw new Error();
         }
       }
     } catch (error) {
       console.error(error);
       toast.setToast('Failed to propose new voting power', 'error');
+    } finally {
+      wallet.disconnect();
     }
   };
 

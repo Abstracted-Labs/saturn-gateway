@@ -23,6 +23,7 @@ import { SubmittableResult } from '@polkadot/api';
 import { getEncodedAddress } from '../utils/getEncodedAddress';
 import { useToast } from '../providers/toastProvider';
 import { Identity } from '../components';
+import { withTimeout } from '../utils/withTimeout';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -248,12 +249,12 @@ export default function Transactions() {
         call: cancelCall,
       });
 
-      const result = await multisigCall.signAndSend(selectedAccountAddress, signer, feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+      const result = await withTimeout(multisigCall.signAndSend(selectedAccountAddress, signer, feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay), 60000, 'Something went wrong and your kill bill request timed out.');
 
       if (result) {
         toast.setToast('Kill bill successfully submitted', 'success');
       } else {
-        toast.setToast('Failed to kill bill', 'error');
+        toast.setToast('Failed to submit kill bill', 'error');
         throw new Error('Failed to submit kill bill');
       }
 
@@ -265,7 +266,7 @@ export default function Transactions() {
   };
 
   // Decode transaction call hash
-  const processCallDescription = (call: Call): string => {
+  const processCallDescription = (call: Call, metadata?: string): string => {
     const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
     const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString();
     const recipient = stringShorten((call.toHuman().args as Record<string, AnyJson>).to?.toString() || '', 10);
@@ -312,6 +313,21 @@ export default function Transactions() {
 
       case 'bridgeAssets':
         return `Cross-chain asset bridge in the amount of ${ amount?.toString() } to ${ recipient }`;
+
+      case 'operateMultisig':
+        const operateMultisigMsg = metadata;
+        if (operateMultisigMsg && operateMultisigMsg.includes('removeMember')) {
+          return 'Remove member from omnisig';
+        }
+        if (operateMultisigMsg && operateMultisigMsg.includes('proposeNewVotingPower')) {
+          return 'Propose new voting power for a member';
+        }
+
+      case 'batchAll':
+        const batchAllMsg = metadata;
+        if (batchAllMsg && batchAllMsg.includes('proposeNewMembers')) {
+          return 'Add new member(s) to omnisig';
+        }
 
       default:
         return `Execute ${ call.section }.${ call.method } call`;
@@ -382,7 +398,7 @@ export default function Transactions() {
     const sat = saturn();
     const multisigId = getMultisigId();
 
-    if (!loading()) return;
+    // if (!loading()) return;
 
     const runAsync = async () => {
       setLoading(true);
@@ -483,7 +499,7 @@ export default function Transactions() {
                   const proposalMetadata = typeof metadata === 'string' ? metadata : metadata ? u8aToString(metadata) : null;
                   const parsedMetadata = proposalMetadata ? JSON.parse(proposalMetadata).message : null;
                   const preparer = pc.details.originalCaller;
-                  return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
+                  return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call, parsedMetadata)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
                     {/* Proposal description */}
                     {proposalMetadata && <div class="flex flex-col mt-3">
                       <div class="text-xs text-saturn-lightgrey mb-1">Proposal description:</div>

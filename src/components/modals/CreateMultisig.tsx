@@ -32,6 +32,7 @@ import { useMegaModal } from "../../providers/megaModalProvider";
 import debounce from "../../utils/debounce";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
 import { useToast } from "../../providers/toastProvider";
+import { withTimeout } from "../../utils/withTimeout";
 
 const EllipsisAnimation = lazy(() => import('../legos/EllipsisAnimation'));
 
@@ -212,10 +213,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       return;
     }
 
-    toast.setToast('Creating multisig...', 'loading');
+    toast.setToast('A signature is required to create the multisig', 'loading');
 
     try {
-      const createMultisigResult: MultisigCreateResult = await createMultisigCall.signAndSend(account.address, wallet.signer);
+      const createMultisigResult: MultisigCreateResult = await withTimeout(createMultisigCall.signAndSend(account.address, wallet.signer, creationFeeAsset), 60000, 'Something went wrong and the multisig was not created.');
+
+      toast.setToast('Finalizing...', 'loading');
 
       if (createMultisigResult) {
         setCreateMultiSigResult(createMultisigResult);
@@ -227,7 +230,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         if (members().length > 1) {
           // If there is more than one member, enable create membership
           createMembership(true);
-          createMultisig(false);
         } else {
           // If there is only one member, take to assets page
           setTimeout(() => {
@@ -262,25 +264,26 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const tinkernetApi = ringApisContext.state.tinkernet;
     const multisigParty = members();
     const createMultisigResult = createMultiSigResult();
+    const creationFeeAsset = feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay;
 
     if (!saturn || !wallet || !account || !createMultisigResult) return;
 
     wallet.connect();
 
-    toast.setToast('Adding members to multisig...', 'loading');
+    toast.setToast('A signature is required to add members to the multisig', 'loading');
 
     const encodedAddress = getEncodedAddress(account.address, 117);
     const multisigAddress = createMultisigResult.account.toHuman();
     const multisigId = createMultisigResult.id;
     const onAssetsPage = location.pathname.includes('assets');
-
     let innerCalls = [];
 
     if (multisigParty && typeof multisigParty === 'object') {
       for (const [address, weight] of multisigParty) {
-        if (address !== encodedAddress) {
+        const processedAddress = address.includes(':') ? address.split(':')[1] : address;
+        if (processedAddress !== encodedAddress) {
           const votes = weight * 1000000;
-          innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, address));
+          innerCalls.push(tinkernetApi.tx.inv4.tokenMint(votes, processedAddress));
         }
       }
     }
@@ -292,6 +295,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       saturn.buildMultisigCall({
         id: multisigId,
         call: innerCallsBatch as unknown as SubmittableExtrinsic<ApiTypes, ISubmittableResult>,
+        feeAsset: creationFeeAsset,
       }).call as Uint8Array | Call | SubmittableExtrinsic<ApiTypes, ISubmittableResult>
     ];
 
@@ -309,7 +313,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
 
     try {
-      await finalCallsBatch.signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
+      await withTimeout(finalCallsBatch.signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
         if (result.isError && result.dispatchError) {
           const error = result.dispatchError.toHuman();
           if (error) {
@@ -322,8 +326,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
           }
         }
 
+        toast.setToast('Finalizing...', 'loading');
+
         if (result.isFinalized || result.isInBlock) {
           toast.setToast('Members successfully added to multisig.', 'success');
+
+          saturnContext.submitProposal();
 
           setTimeout(() => {
             if (multisigId) {
@@ -333,18 +341,16 @@ const CreateMultisig = (props: CreateMultisigProps) => {
               }
             }
           }, 1000);
-
-          removeModal();
-
-          abortUi();
         }
-      });
+      }), 60000, 'Something went wrong; the address is probably not using a Tinkernet prefix.');
     } catch (error) {
       console.error(error);
       if (!onAssetsPage) {
         toast.setToast('Failed to create multisig', 'error');
       }
     } finally {
+      removeModal();
+      abortUi();
       wallet.disconnect();
     }
   };
@@ -354,7 +360,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const saturn = saturnState().saturn;
     const account = selectedState().account;
     const wallet = selectedState().wallet;
-    const feeAsset = selectedState().feeAsset;
+    const creationFeeAsset = selectedState().feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay;
 
     if (!tinkernetApi || !saturn || !account?.address || !wallet?.signer) {
       toast.setToast('Required components not available for operation', 'error');
@@ -364,50 +370,74 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     toast.setToast('Proposing new members...', 'loading');
 
     const id = saturnState().multisigId;
+    const encodedAddress = getEncodedAddress(account.address, 117);
+    let innerCalls = [];
 
     try {
       if (id !== undefined && wallet?.signer) {
-        const wrappedCalls = await Promise.all(members().map(async ([address, initialBalance]) => {
+        for (const [address, initialBalance] of members()) {
           const processedAddress = address.includes(':') ? address.split(':')[1] : address;
-          const amount = new BN(initialBalance);
-          const proposeCall = saturn.proposeNewMember({
-            id,
-            address: processedAddress,
-            amount,
-          });
+          if (processedAddress !== encodedAddress) {
+            const amount = new BN(initialBalance * 1000000);
+            innerCalls.push(tinkernetApi.tx.inv4.tokenMint(amount, processedAddress));
+          }
+        }
 
-          return proposeCall.call;
-        }));
+        const innerCallsBatch = tinkernetApi.tx.utility.batchAll(innerCalls);
 
-        const call = tinkernetApi.tx.utility.batchAll(wrappedCalls);
+        // const finalCalls = [
+        //   saturn.buildMultisigCall({
+        //     id,
+        //     call: innerCallsBatch,
+        //     feeAsset: creationFeeAsset,
+        //   }).call as Uint8Array | Call | SubmittableExtrinsic<ApiTypes, ISubmittableResult>
+        // ];
 
-        const buildCall = saturn.buildMultisigCall({
+        // const finalCallsBatch = tinkernetApi.tx.utility.batchAll(finalCalls);
+
+        // await withTimeout(finalCallsBatch.signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
+        //   if (result.isError && result.dispatchError) {
+        //     const error = result.dispatchError.toHuman();
+        //     if (error) {
+        //       const errorEntries = Object.entries(error);
+        //       for (const [key, value] of errorEntries) {
+        //         if (value === true) {
+        //           throw new Error(key);
+        //         }
+        //       }
+        //     }
+        //   }
+
+        //   toast.setToast('Finalizing...', 'loading');
+
+        //   if (result.isFinalized || result.isInBlock) {
+        //     toast.setToast('Members successfully added to multisig.', 'success');
+
+        //     saturnContext.submitProposal();
+        //   }
+        // }), 60000, 'Something went wrong; the request to propose new members timed out.');
+
+        const finalCall = saturn.buildMultisigCall({
           id,
-          call,
+          call: innerCallsBatch,
+          feeAsset: creationFeeAsset,
+          proposalMetadata: JSON.stringify({ message: 'proposeNewMembers' }),
         });
 
-        const result: MultisigCallResult = await buildCall.signAndSend(account.address, wallet.signer, feeAsset === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay);
+        const result = await withTimeout(finalCall.signAndSend(account.address, wallet.signer, creationFeeAsset), 60000, 'Something went wrong; the request to propose new members timed out.');
 
-        if (result.executionResult) {
-          if (result.executionResult.isOk) {
-            toast.setToast('New members have been proposed successfully. Please wait for each proposal to pass.', 'success');
-
-            setTimeout(() => {
-              navigate(`/${ id }/transactions`);
-            }, 1000);
-
-            modal.hideCreateMultisigModal();
-          } else if (result.executionResult.isErr) {
-            const message = JSON.parse(result.executionResult.asErr.toString());
-            const error = hexToString(message.module.error);
-            throw new Error(error);
-          }
+        if (result) {
+          toast.setToast('Members successfully added to multisig.', 'success');
+          saturnContext.submitProposal();
+        } else {
+          throw new Error();
         }
       }
     } catch (error) {
       console.error(error);
       toast.setToast('Failed to propose new members', 'error');
     } finally {
+      modal.hideCreateMultisigModal();
       wallet.disconnect();
     }
   };
@@ -569,8 +599,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const instance = modal;
     if (instance) {
       if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
+        toast.setToast('Add member operation cancelled', 'info');
         instance.hideAddMemberModal();
       } else {
+        toast.setToast('Create multisig operation cancelled', 'info');
         instance.hideCreateMultisigModal();
       }
     }
@@ -589,6 +621,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
     let isValidAddress;
     let addressFromWeb3Name: string | null = null;
+    let tinkerAddressFromPolkadot: string | null = null;
 
     try {
       isValidAddress = isValidPolkadotAddress(inputValue);
@@ -602,8 +635,11 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       if (!isValidAddress) {
         const web3Name = await isValidKiltWeb3Name(inputValue);
         addressFromWeb3Name = getEncodedAddress(web3Name, 117);
+        toast.setToast('Your web3Name was converted to Tinkernet address', 'info');
         isValidAddress = web3Name !== '';
       } else {
+        tinkerAddressFromPolkadot = getEncodedAddress(inputValue, 117);
+        toast.setToast('Your Substrate address was converted to Tinkernet address', 'info');
         setHasAddressError(current => current.filter(i => i !== memberIndex));
         setDisableAddMember(false);
       }
@@ -623,7 +659,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
 
     if (isValidAddress && isUnique && !isInMultisig) {
-      newMembers[memberIndex][0] = addressFromWeb3Name ? (inputValue + ':' + addressFromWeb3Name) : inputValue;
+      newMembers[memberIndex][0] = addressFromWeb3Name ? (inputValue + ':' + addressFromWeb3Name) : tinkerAddressFromPolkadot as string;
       setMembers(newMembers);
       setHasAddressError(current => current.filter(i => i !== memberIndex));
       setDisableAddMember(false);
@@ -817,7 +853,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         setTextHint('Vote thresholds are the minimum number of votes required to pass a proposal.');
         break;
       case accessibleSteps()[4]:
-        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } ${ feeAsset() } in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } ${ feeAsset() } required).`);
+        setTextHint(!notEnoughBalance() ? `Make sure to have more than ${ coreCreationFee() } TNKR in your account to create this multisig.` : `Cannot create multisig with insufficient balance (${ coreCreationFee() } TNKR required).`);
         break;
       case accessibleSteps()[5]:
         setFinishing(false);
@@ -1207,7 +1243,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                         </dd>
                       </div>
                       <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey font-bold border-y border-gray-700 border-dashed py-2">
-                        <dt>TOTAL ({feeAsset()})</dt>
+                        <dt>TOTAL (TNKR)</dt>
                         <dd class="text-white">
                           {totalCosts()}
                         </dd>
