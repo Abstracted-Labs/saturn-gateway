@@ -398,7 +398,7 @@ export default function Transactions() {
     const sat = saturn();
     const multisigId = getMultisigId();
 
-    // if (!loading()) return;
+    if (!loading()) return;
 
     const runAsync = async () => {
       setLoading(true);
