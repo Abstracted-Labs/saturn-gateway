@@ -13,7 +13,7 @@ import { getAllMembers } from '../utils/getAllMembers';
 import { MembersType } from './Management';
 import SaturnAccordionItem from '../components/legos/SaturnAccordionItem';
 import { initAccordions, AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
-import { FALLBACK_TEXT_STYLE, KusamaFeeAssetEnum } from '../utils/consts';
+import { FALLBACK_TEXT_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../utils/consts';
 import { processCallData } from '../utils/processCallData';
 import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
@@ -269,10 +269,10 @@ export default function Transactions() {
   const processCallDescription = (call: Call, metadata?: string): string => {
     const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
     const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString();
-    const recipient = stringShorten((call.toHuman().args as Record<string, AnyJson>).to?.toString() || '', 10);
+    const recipient = stringShorten((call.toHuman().args as Record<string, AnyJson>).to?.toString() || 'self', 10);
     const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
     const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
-    const target = stringShorten((call.toHuman().args as Record<string, AnyJson>).target?.toString() || '', 10);
+    const target = stringShorten((call.toHuman().args as Record<string, AnyJson>).target?.toString() || 'self', 10);
     const callHash = stringShorten(call.hash.toString(), 10);
     let id;
 
@@ -309,10 +309,10 @@ export default function Transactions() {
         return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
 
       case 'transferAssets':
-        return `Cross-chain asset transfer in the amount of ${ amount?.toString() } to ${ recipient }`;
+        return `Transfer tokens in the amount of ${ amount?.toString() } to ${ recipient }`;
 
       case 'bridgeAssets':
-        return `Cross-chain asset bridge in the amount of ${ amount?.toString() } to ${ recipient }`;
+        return `Transfer tokens in the amount of ${ amount?.toString() } to ${ recipient }`;
 
       case 'operateMultisig':
         const operateMultisigMsg = metadata;
@@ -335,17 +335,23 @@ export default function Transactions() {
   };
 
   const processNetworkIcons = (call: Call): string[] => {
-    if (call.method === 'sendCall') {
-      const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
-      if (!chain) {
-        return [];
-      }
+    const destinationChain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
 
-      const ring = JSON.parse(JSON.stringify(Rings))[chain];
+    const sourceAssetInfo = ((call.toHuman().args as Record<string, AnyJson>).asset as Record<string, string> | string);
+
+    const sourceChain = typeof sourceAssetInfo !== 'string' && typeof sourceAssetInfo === 'object' ? Object.entries(sourceAssetInfo)[0][0].toLocaleLowerCase() as NetworkEnum : undefined;
+
+    if (destinationChain) {
+      const ring = JSON.parse(JSON.stringify(Rings))[destinationChain];
       console.log('ring: ', ring);
       return [ring.icon];
+    } else if (sourceChain && !destinationChain) {
+      const ring = JSON.parse(JSON.stringify(Rings))[sourceChain];
+      console.log('ring: ', ring);
+      return [ring.icon];
+    } else {
+      return [Rings.tinkernet?.icon as string];
     }
-    return [Rings.tinkernet?.icon as string];
   };
 
   // Decode external transaction to human readable format
