@@ -289,7 +289,7 @@ export default function Transactions() {
         return `Execute ${ xcmCall.section }.${ xcmCall.method } call`;
 
       case 'cancelMultisigProposal':
-        return `Cancel multisig proposal with call hash ${ callHash }`;
+        return `Cancel omnisig proposal with call hash ${ callHash }`;
 
       case 'tokenMint':
         return `Add new member or increase voting power to ${ amount?.toString() } for ${ target }`;
