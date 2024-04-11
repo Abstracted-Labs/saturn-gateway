@@ -90,19 +90,19 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
   function ModalAddressSelector(selected: { relay: string, native: string; evm: string; }) {
     return <div class="flex flex-col gap-2">
       <div>
-        <span class="text-xxs">Native Parachain (Tinkernet)</span>
+        <span class="text-xxs">Parachain Address</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xs hover:cursor-copy border border-gray-800" onClick={(e) => copyNativeToClipboard(e, selected.native)}>
           <span class="mx-2">{selected.native && stringShorten(selected.native ?? '--', selected.native?.length)}</span>
         </div>
       </div>
       <div>
-        <span class="text-xxs">Relay Chain (Kusama)</span>
+        <span class="text-xxs">Relay Chain Address</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xs hover:cursor-copy border border-gray-800" onClick={(e) => copyRelayToClipboard(e, selected.relay)}>
           <span class="mx-2">{selected.relay && stringShorten(selected.relay ?? '--', selected.relay?.length)}</span>
         </div>
       </div>
       <div>
-        <span class="text-xxs">EVM Chains (Moonriver, etc.)</span>
+        <span class="text-xxs">EVM Address</span>
         <div class="rounded-md bg-saturn-offwhite dark:bg-gray-900 text-saturn-darkgrey dark:text-saturn-lightgrey px-2 py-1 flex flex-row items-center justify-center text-xs hover:cursor-copy border border-gray-800" onClick={(e) => copyNativeToClipboard(e, selected.evm)}>
           <span class="mx-2">{selected.evm && stringShorten(selected.evm ?? '--', selected.evm?.length)}</span>
         </div>
