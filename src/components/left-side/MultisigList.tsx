@@ -304,7 +304,7 @@ const MultisigList = (props: MultisigListProps) => {
       <div class={`relative mb-2`}>
         <div
           ref={scrollContainerRef!}
-          class={`${ multisigItemsLength() < 2 ? 'h-32' : 'h-64' } pr-5 overflow-y-scroll overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
+          class={`${ multisigItemsLength() < 2 ? 'h-32' : 'h-64' } pr-5 overflow-y-auto overflow-x-hidden saturn-scrollbar pb-2 ${ isLightTheme() ? 'islight' : 'isdark' }`}
         >
           {/* Multisig list */}
           <Switch fallback={<div>
