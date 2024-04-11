@@ -119,7 +119,7 @@ export const Rings: RingsType = {
     polkaholicId: 'karura',
     decimals: RingAssets.KAR.decimals,
     icon: KaruraIcon,
-    websocket: 'wss://rpc-karura.luckyfriday.io',
+    websocket: 'wss://karura-rpc-1.aca-api.network',
     genesisHash: "",
   },
   [NetworkEnum.MOONRIVER]: {
