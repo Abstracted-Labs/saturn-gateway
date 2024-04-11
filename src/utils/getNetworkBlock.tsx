@@ -18,52 +18,52 @@ export function getNetworkBlock(network: NetworkEnum) {
       //   </>;
       case NetworkEnum.TINKERNET:
         return <>
-          <img src={getAssetIcon('TNKR')} alt={NetworkEnum.TINKERNET} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('TNKR')} alt={NetworkEnum.TINKERNET} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Tinkernet</span>
         </>;
       case NetworkEnum.BASILISK:
         return <>
-          <img src={getAssetIcon('BSX')} alt={NetworkEnum.BASILISK} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('BSX')} alt={NetworkEnum.BASILISK} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Basilisk</span>
         </>;
       case NetworkEnum.PICASSO:
         return <>
-          <img src={getAssetIcon('PICA')} alt={NetworkEnum.PICASSO} width={13} height={10} class="mr-2 block bg-saturn-black" />
+          <img src={getAssetIcon('PICA')} alt={NetworkEnum.PICASSO} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Picasso</span>
         </>;
       case NetworkEnum.ASSETHUB:
         return <>
-          <img src={getAssetIcon('ASSETHUB')} alt={NetworkEnum.ASSETHUB} width={15} height={15} class="mr-2 block bg-saturn-black" />
+          <img src={getAssetIcon('ASSETHUB')} alt={NetworkEnum.ASSETHUB} width={15} height={15} class="mr-2 block bg-saturn-black rounded-full" />
           <span>AssetHub</span>
         </>;
       case NetworkEnum.BIFROST:
         return <>
-          <img src={getAssetIcon('BNC')} alt={NetworkEnum.BIFROST} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('BNC')} alt={NetworkEnum.BIFROST} width={15} height={15} class="mr-2 bloc rounded-full" />
           <span>Bifrost</span>
         </>;
       case NetworkEnum.SHIDEN:
         return <>
-          <img src={getAssetIcon('SDN')} alt={NetworkEnum.SHIDEN} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('SDN')} alt={NetworkEnum.SHIDEN} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Shiden</span>
         </>;
       case NetworkEnum.KARURA:
         return <>
-          <img src={getAssetIcon('KAR')} alt={NetworkEnum.KARURA} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('KAR')} alt={NetworkEnum.KARURA} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Karura</span>
         </>;
       case NetworkEnum.MOONRIVER:
         return <>
-          <img src={getAssetIcon('MOVR')} alt={NetworkEnum.MOONRIVER} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('MOVR')} alt={NetworkEnum.MOONRIVER} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Moonriver</span>
         </>;
       case NetworkEnum.TURING:
         return <>
-          <img src={getAssetIcon('TUR')} alt={NetworkEnum.TURING} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('TUR')} alt={NetworkEnum.TURING} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Turing</span>
         </>;
       case NetworkEnum.KHALA:
         return <>
-          <img src={getAssetIcon('KPHA')} alt={NetworkEnum.KHALA} width={15} height={15} class="mr-2 block" />
+          <img src={getAssetIcon('KPHA')} alt={NetworkEnum.KHALA} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Khala</span>
         </>;
       default:
