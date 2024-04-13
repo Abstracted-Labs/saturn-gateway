@@ -54,7 +54,7 @@ export enum NetworkEnum {
   KARURA = "karura",
   MOONRIVER = "moonriver",
   TURING = "turing",
-  KHALA = "khala",
+  KHALA = "phala",
 }
 
 // export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
@@ -78,7 +78,7 @@ export const AssetIconByCurrency: Record<string, string> = {
   KAR: KaruraIcon,
   MOVR: MoonriverIcon,
   TUR: TuringIcon,
-  KPHA: KhalaIcon,
+  PHA: KhalaIcon,
 };
 
 export const NetworkIconByNetwork: Record<NetworkEnum, string> = {
@@ -108,7 +108,8 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   KAR: [KaruraIcon],
   MOVR: [MoonriverIcon],
   TUR: [TuringIcon],
-  KPHA: [KhalaIcon],
+  PHA: [KhalaIcon],
+  ZLK: [BifrostIcon],
 };
 
 export enum KusamaFeeAssetEnum {

@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { createSignal, createEffect, For, Show, createMemo, JSXElement, onCleanup, on } from "solid-js";
-import { AssetEnum, AssetHubEnum, NetworksByAsset, Rings } from "../../data/rings";
+import { AssetEnum, AssetHubEnum, ExtraAssetEnum, NetworksByAsset, Rings } from "../../data/rings";
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
@@ -11,13 +11,12 @@ import SaturnSelect from "../legos/SaturnSelect";
 import { Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
 import { getNetworkBlock } from "../../utils/getNetworkBlock";
 import { getAssetBlock } from "../../utils/getAssetBlock";
-import { getAssetsFromNetwork } from "../../utils/getAssetsFromNetwork";
 import { BalanceType } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
 import { NetworkAssetBalance } from "../../pages/Assets";
-import { getAssetDecimalsFromAssetHubEnum, proposeCall } from "../modals/ProposeModal";
+import { getAssetDecimals, proposeCall } from "../modals/ProposeModal";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import getProposalType from "../../utils/getProposalType";
 import { useMegaModal } from "../../providers/megaModalProvider";
@@ -25,7 +24,6 @@ import { usePriceContext } from "../../providers/priceProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
 import { useToast } from "../../providers/toastProvider";
-import { formatBalance } from "@polkadot/util";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -50,7 +48,7 @@ const assetOptions: DropdownOptions = {
   delay: 300,
 };
 
-const notAllowedToSendToTinkernet = [
+const OPEN_DESTINATIONS = [
   NetworkEnum.BASILISK,
   NetworkEnum.PICASSO,
   NetworkEnum.ASSETHUB,
@@ -58,6 +56,7 @@ const notAllowedToSendToTinkernet = [
   NetworkEnum.KARURA,
   NetworkEnum.MOONRIVER,
   NetworkEnum.KUSAMA,
+
 ];
 
 const allTheNetworks = (): Record<string, JSXElement> => ({
@@ -83,13 +82,14 @@ const allTheAssets = (): Record<string, JSXElement> => ({
   [AssetEnum.PICA]: getAssetBlock(AssetEnum.PICA),
   [AssetEnum.ASSETHUB]: getAssetBlock(AssetEnum.ASSETHUB),
   [AssetEnum.BNC]: getAssetBlock(AssetEnum.BNC),
-  [AssetEnum.KPHA]: getAssetBlock(AssetEnum.KPHA),
+  [AssetEnum.PHA]: getAssetBlock(AssetEnum.PHA),
   [AssetEnum.KAR]: getAssetBlock(AssetEnum.KAR),
   [AssetEnum.TUR]: getAssetBlock(AssetEnum.TUR),
   [AssetEnum.MOVR]: getAssetBlock(AssetEnum.MOVR),
   [AssetEnum.SDN]: getAssetBlock(AssetEnum.SDN),
   [AssetHubEnum.BILL]: getAssetBlock(AssetHubEnum.BILL),
   [AssetHubEnum.BAILEGO]: getAssetBlock(AssetHubEnum.BAILEGO),
+  [ExtraAssetEnum.ZLK]: getAssetBlock(ExtraAssetEnum.ZLK),
 });
 
 const AssetsContext = () => {
@@ -104,7 +104,7 @@ const AssetsContext = () => {
   const [dropdownTo, setDropdownTo] = createSignal<DropdownInterface | null>(null);
   const [dropdownAsset, setDropdownAsset] = createSignal<DropdownInterface | null>(null);
   const [amount, setAmount] = createSignal<number>(0);
-  const [asset, setAsset] = createSignal<AssetEnum | AssetHubEnum>(AssetEnum.TNKR);
+  const [asset, setAsset] = createSignal<AssetEnum | AssetHubEnum | ExtraAssetEnum>(AssetEnum.TNKR);
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
   const [finalNetworkPair, setFinalNetworkPair] = createSignal<{ from: NetworkEnum; to: NetworkEnum; }>({ from: NetworkEnum.TINKERNET, to: NetworkEnum.TINKERNET });
   const [targetAddress, setTargetAddress] = createSignal<string>('');
@@ -122,7 +122,6 @@ const AssetsContext = () => {
   const [isLoggedIn, setIsLoggedIn] = createSignal<boolean>(false);
   const [fromNetworks, setFromNetworks] = createSignal<[string, JSXElement][]>([]);
   const [toNetworks, setToNetworks] = createSignal<[string, JSXElement][]>([]);
-
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
@@ -179,9 +178,15 @@ const AssetsContext = () => {
       return;
     }
 
-    if (notAllowedToSendToTinkernet.includes(pair.from) && pair.to === NetworkEnum.TINKERNET) {
+    if (!OPEN_DESTINATIONS.includes(pair.from)) {
       const source = pair.from.charAt(0).toUpperCase() + pair.from.slice(1);
-      toast.setToast(`Cannot send assets from ${ source } to Tinkernet`, 'error', 0);
+      toast.setToast(`Cannot send assets from ${ source }`, 'error', 0);
+      return;
+    }
+
+    if (!OPEN_DESTINATIONS.includes(pair.to)) {
+      const destination = pair.to.charAt(0).toUpperCase() + pair.to.slice(1);
+      toast.setToast(`Cannot send assets to ${ destination }`, 'error', 0);
       return;
     }
 
@@ -200,7 +205,7 @@ const AssetsContext = () => {
     if (!networkBalances) return;
     const selectBalances = Array.from(networkBalances[1] as unknown as [string, BalanceType][]);
     const selectedAssetBalance = selectBalances.find(([name, _]) => name === selectedAsset);
-    const assetDecimals = selectedAssetBalance ? selectedAssetBalance[1].decimals : Rings[fromNetwork as keyof typeof Rings]?.decimals ?? getAssetDecimalsFromAssetHubEnum(selectedAsset as AssetHubEnum) ?? 12;
+    const assetDecimals = selectedAssetBalance && selectedAssetBalance[1] && selectedAssetBalance[1].decimals ? selectedAssetBalance[1].decimals : Rings[fromNetwork as keyof typeof Rings]?.decimals ?? getAssetDecimals(selectedAsset as AssetHubEnum) ?? 12;
 
     if (fromNetwork === toNetwork && senderAddress === recipientAddress) {
       toast.setToast(`Cannot send ${ asset() } to yourself on the same network`, 'error', 0);
@@ -211,11 +216,14 @@ const AssetsContext = () => {
 
     if (selectedAsset === AssetHubEnum.BAILEGO) {
       bnAmount = new BigNumber(amount());
-    } else if (selectedAsset === AssetHubEnum.BILL && assetDecimals) {
-      bnAmount = new BigNumber(amount()).multipliedBy(new BigNumber(10).pow(assetDecimals));
+    } else if (selectedAsset === AssetHubEnum.BILL || assetDecimals) {
+      const decimals = assetDecimals;
+      bnAmount = new BigNumber(amount()).multipliedBy(new BigNumber(10).pow(decimals));
     } else {
       bnAmount = new BigNumber(amount()).multipliedBy(new BigNumber(10).pow(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0));
     }
+
+    console.log(asset(), bnAmount.toString());
 
     const amountPlank = new BigNumber(bnAmount.toString().split('.')[0]);
 
@@ -347,7 +355,7 @@ const AssetsContext = () => {
     }
   };
 
-  const handleAssetOptionClick = (asset: AssetEnum | AssetHubEnum) => {
+  const handleAssetOptionClick = (asset: AssetEnum | AssetHubEnum | ExtraAssetEnum) => {
     setAmount(0);
     setAsset(asset);
   };
@@ -366,7 +374,7 @@ const AssetsContext = () => {
     return getNetworkBlock(network);
   };
 
-  const renderAssetOption = (asset: AssetEnum | AssetHubEnum | undefined) => {
+  const renderAssetOption = (asset: AssetEnum | AssetHubEnum | ExtraAssetEnum | undefined) => {
     const filteredAssetsList = filteredAssets().map(([name, _]) => name);
     return (asset && filteredAssetsList.length > 0 && filteredAssetsList.includes(asset)) ? getAssetBlock(asset) : getAssetBlock(AssetEnum.TNKR);
   };
@@ -486,7 +494,7 @@ const AssetsContext = () => {
         if (filterAssetsFromNetwork.length > 0) {
           const asset = filterAssetsFromNetwork[0];
           const balances = asset as unknown as [string, BalanceType];
-          setAsset(balances[0] as AssetEnum | AssetHubEnum);
+          setAsset(balances[0] as AssetEnum | AssetHubEnum | ExtraAssetEnum);
         }
       }
     }
@@ -530,12 +538,10 @@ const AssetsContext = () => {
       }
     }
 
-    if (filteredToNetworks.length > 0 && selectedToNetwork === NetworkEnum.TINKERNET && notAllowedToSendToTinkernet.includes(selectedFromNetwork)) {
-      const alternativeNetwork = filteredToNetworks.find(([name, _]) => !notAllowedToSendToTinkernet.includes(name as NetworkEnum));
-      console.log('alternativeNetwork', alternativeNetwork);
+    if (filteredToNetworks.length > 0 && selectedToNetwork === NetworkEnum.TINKERNET && OPEN_DESTINATIONS.includes(selectedFromNetwork)) {
+      const alternativeNetwork = filteredToNetworks.find(([name, _]) => !OPEN_DESTINATIONS.includes(name as NetworkEnum));
       if (alternativeNetwork) {
         selectedToNetwork = alternativeNetwork[0] as NetworkEnum;
-        console.log('selectedToNetwork', selectedToNetwork);
         setFinalNetworkPair({ from: selectedFromNetwork, to: selectedToNetwork });
         toast.setToast(`Cannot send assets from ${ selectedFromNetwork } to Tinkernet`, 'error', 0);
       }
@@ -595,8 +601,6 @@ const AssetsContext = () => {
       let sumTotalPortfolio = new BigNumber(0);
 
       for (const [network, assets] of balances()) {
-        const decimals = Rings[network as keyof typeof Rings]?.decimals ?? 12;
-
         for (const [assetName, balance] of assets as unknown as [string, BalanceType][]) {
           let currentMarketPrice = new BigNumber(0);
 
@@ -627,6 +631,7 @@ const AssetsContext = () => {
 
           // Continue with balance calculations
           if (currentMarketPrice.isGreaterThan(0)) {
+            let decimals = Object.values(ExtraAssetEnum).includes(assetName as ExtraAssetEnum) && balance.decimals ? balance.decimals : Rings[network as keyof typeof Rings]?.decimals ?? 12;
             const transferable = new BigNumber(balance.freeBalance).dividedBy(new BigNumber(10).pow(decimals));
             const totalLockAmount = balance.locks && balance.locks.length > 0
               ? balance.locks.reduce((acc, lock) => acc.plus(new BigNumber(lock.amount.toString())), new BigNumber(0)).dividedBy(new BigNumber(10).pow(decimals))
@@ -641,7 +646,7 @@ const AssetsContext = () => {
       }
 
       // Format and set the calculated values
-      const formatValue = (value: BigNumber) => `$${ value.isGreaterThan(0) ? value.toFixed(2) : '0.00' }`;
+      const formatValue = (value: BigNumber) => `$${ value.isGreaterThan(0) ? value.decimalPlaces(2, BigNumber.ROUND_DOWN).toString() : '0.00' }`;
 
       setTransferableAmount(formatValue(sumTransferable));
       setNonTransferableAmount(formatValue(sumNonTransferable));
@@ -813,9 +818,9 @@ const AssetsContext = () => {
             <SaturnSelect disabled={filteredAssetCount() <= 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={handleAssetsDropdown}>
               <For each={filteredAssets()}>
                 {([name, _]) => {
-                  const displayElement = getAssetBlock(name as AssetEnum | AssetHubEnum);
+                  const displayElement = getAssetBlock(name as AssetEnum | AssetHubEnum | ExtraAssetEnum);
                   return displayElement && <SaturnSelectItem onClick={() => {
-                    handleAssetOptionClick(name as AssetEnum | AssetHubEnum);
+                    handleAssetOptionClick(name as AssetEnum | AssetHubEnum | ExtraAssetEnum);
                     getPaymentInfo();
                   }}>
                     {displayElement}

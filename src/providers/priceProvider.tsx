@@ -22,14 +22,12 @@ const initialPrices: Record<NetworkEnum, { usd: string; }> = {
   karura: { usd: "" },
   moonriver: { usd: "" },
   turing: { usd: "" },
-  khala: { usd: "" },
+  phala: { usd: "" },
 };
 
 export function PriceProvider(props: { children: JSX.Element; }) {
   const [prices, setPrices] = createStore<Record<NetworkEnum, { usd: string; }>>({ ...initialPrices });
   const [storageState, setStorageState, { remove }] = createLocalStorage<Record<NetworkEnum, { usd: string; }>>();
-
-  // const usdPrices = createMemo(() => prices);
 
   const fetchPrices = async () => {
     let data = await getAllUsdPrices();
@@ -38,6 +36,7 @@ export function PriceProvider(props: { children: JSX.Element; }) {
     } else if (data) {
       setStorageState('prices', JSON.stringify(data));
     }
+    console.log('prices: ', data);
     setPrices(data ? data : initialPrices);
   };
 

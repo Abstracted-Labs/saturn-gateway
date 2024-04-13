@@ -46,7 +46,7 @@ export const RingAssets = {
   KAR: {
     decimals: 12,
   },
-  K_PHA: {
+  PHA: {
     decimals: 12,
   },
   BNC: {
@@ -141,7 +141,7 @@ export const Rings: RingsType = {
   [NetworkEnum.KHALA]: {
     wcNamespace: 'polkadot:0x',
     polkaholicId: 'khala',
-    decimals: RingAssets.K_PHA.decimals,
+    decimals: RingAssets.PHA.decimals,
     icon: KhalaIcon,
     websocket: 'wss://khala-rpc.dwellir.com',
     genesisHash: "",
@@ -156,11 +156,15 @@ export enum AssetEnum {
   // DOT = 'DOT', // Polkadot
   ASSETHUB = 'ASSETHUB', // AssetHub
   BNC = 'BNC', // Bifrost
-  KPHA = 'K_PHA', // Khala
+  PHA = 'PHA', // Khala
   KAR = 'KAR', // Karura
   TUR = 'TUR', // Turing
   MOVR = 'MOVR', // Moonriver
   SDN = 'SDN', // Shiden
+}
+
+export enum ExtraAssetEnum {
+  ZLK = 'ZLK', // Zenlink
 }
 
 export enum AssetHubEnum {
@@ -173,12 +177,13 @@ export enum AssetHubAssetIdEnum {
   BAILEGO = '88888',
 }
 
-export enum AssetHubAssetDecimalsEnum {
+export enum ExtraAssetDecimalsEnum {
   BILL = 8,
   BAILEGO = 0,
+  ZLK = 18,
 }
 
-export type NetworksByAssetType = Record<AssetEnum | AssetHubEnum, NetworkEnum[]>;
+export type NetworksByAssetType = Record<AssetEnum | AssetHubEnum | ExtraAssetEnum, NetworkEnum[]>;
 
 export const NetworksByAsset: NetworksByAssetType = {
   TNKR: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET],
@@ -194,5 +199,8 @@ export const NetworksByAsset: NetworksByAssetType = {
   KAR: [NetworkEnum.KARURA],
   MOVR: [NetworkEnum.MOONRIVER],
   TUR: [NetworkEnum.TURING],
-  K_PHA: [NetworkEnum.KHALA],
+  PHA: [NetworkEnum.KHALA],
+
+  // Extra tokens
+  ZLK: [NetworkEnum.BIFROST],
 };

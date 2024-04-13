@@ -1,8 +1,8 @@
-import { AssetEnum, AssetHubEnum } from "../data/rings";
+import { AssetEnum, AssetHubEnum, ExtraAssetEnum } from "../data/rings";
 import { NetworkEnum } from "./consts";
 import { getAssetIcon } from "./getAssetIcon";
 
-export function getAssetBlock(asset: AssetEnum | AssetHubEnum) {
+export function getAssetBlock(asset: AssetEnum | AssetHubEnum | ExtraAssetEnum | string | null | undefined) {
   try {
     if (!asset) {
       throw new Error('Network is not defined.');
@@ -44,9 +44,9 @@ export function getAssetBlock(asset: AssetEnum | AssetHubEnum) {
           <img src={getAssetIcon(AssetEnum.BNC)} alt={AssetEnum.BNC} width={20} height={20} class="mr-2 block" />
           <span>{AssetEnum.BNC}</span>
         </>;
-      case AssetEnum.KPHA:
+      case AssetEnum.PHA:
         return <>
-          <img src={getAssetIcon(AssetEnum.KPHA)} alt={AssetEnum.KPHA} width={20} height={20} class="mr-2 block" />
+          <img src={getAssetIcon(AssetEnum.PHA)} alt={AssetEnum.PHA} width={20} height={20} class="mr-2 block" />
           <span>K-PHA</span>
         </>;
       case AssetEnum.KAR:
@@ -68,6 +68,11 @@ export function getAssetBlock(asset: AssetEnum | AssetHubEnum) {
         return <>
           <img src={getAssetIcon(AssetEnum.SDN)} alt={AssetEnum.SDN} width={20} height={20} class="mr-2 block" />
           <span>{AssetEnum.SDN}</span>
+        </>;
+      case ExtraAssetEnum.ZLK:
+        return <>
+          <img src={getAssetIcon(ExtraAssetEnum.ZLK, true)} alt={ExtraAssetEnum.ZLK} width={20} height={20} class="mr-2 block" />
+          <span>{ExtraAssetEnum.ZLK}</span>
         </>;
       default:
         return <>

@@ -8,7 +8,7 @@ import { SaturnContextType, useSaturnContext } from "../../providers/saturnProvi
 import { IRingsContext, useRingApisContext } from "../../providers/ringApisProvider";
 import { SelectedAccountState, useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import FormattedCall from '../legos/FormattedCall';
-import { AssetHubAssetDecimalsEnum, AssetHubAssetIdEnum, AssetHubEnum, RingAssets } from "../../data/rings";
+import { ExtraAssetDecimalsEnum, AssetHubAssetIdEnum, AssetHubEnum, RingAssets, ExtraAssetEnum, AssetEnum } from "../../data/rings";
 import { formatAsset } from '../../utils/formatAsset';
 import { INPUT_COMMON_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
@@ -54,17 +54,17 @@ export function getAssetIdFromAssetHubEnum(asset: string | AssetHubEnum): string
   return AssetHubAssetIdEnum[name as keyof typeof AssetHubAssetIdEnum];
 }
 
-export function getAssetDecimalsFromAssetHubEnum(asset: string | AssetHubEnum): number {
+export function getAssetDecimals(asset: string | AssetHubEnum): number {
   const name = asset.toUpperCase();
   if (!name) return 0;
 
-  return AssetHubAssetDecimalsEnum[name as keyof typeof AssetHubAssetDecimalsEnum];
+  return ExtraAssetDecimalsEnum[name as keyof typeof ExtraAssetDecimalsEnum];
 }
 
 function formatAmount(amount: BN | BigNumber | string, asset: string): string {
   const bnAmount = new BigNumber(amount.toString());
 
-  const assetDecimals = BigNumber(RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset));
+  const assetDecimals = BigNumber(RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimals(asset));
 
   const humanReadableAmount = bnAmount.dividedBy(new BigNumber(10).pow(assetDecimals));
 
@@ -208,13 +208,26 @@ export const proposeCall = async (props: IProposalProps) => {
     };
 
     let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
-
     if (!xcmAsset) {
-      xcmAsset = {
-        ['AssetHub']: {
-          ['Local']: getAssetIdFromAssetHubEnum(asset)
-        }
-      };
+      if (Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum)) {
+        xcmAsset = {
+          [chain]: {
+            ['Local']: asset
+          }
+        };
+      } else if (Object.values(AssetEnum).includes(asset as AssetEnum)) {
+        xcmAsset = {
+          [chain]: {
+            ['Native']: asset
+          }
+        };
+      } else {
+        xcmAsset = {
+          ['assethub']: {
+            ['Local']: getAssetIdFromAssetHubEnum(asset)
+          }
+        };
+      }
     }
 
     if (!saturnContext.state.multisigAddress) return;
@@ -222,7 +235,6 @@ export const proposeCall = async (props: IProposalProps) => {
     let partialFee = new BN("0");
     try {
       const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-      console.log('xcmTransfer feeInfo', feeInfo.partialFee.toString());
       // partialFee = feeInfo.partialFee;
       partialFee = new BN("10000000000");
     } catch (error) {
@@ -258,7 +270,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       return;
     } else {
-      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
+      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimals(asset);
       const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
       return partialFeePreview;
     }
@@ -287,7 +299,6 @@ export const proposeCall = async (props: IProposalProps) => {
     let partialFee;
     try {
       const feeInfo = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-      console.log('localTransfer feeInfo', feeInfo.partialFee.toString());
       // partialFee = feeInfo.partialFee.mul(new BN("2"));
       partialFee = new BN("10000000000");
     } catch (error) {
@@ -344,11 +355,25 @@ export const proposeCall = async (props: IProposalProps) => {
 
     let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
     if (!xcmAsset) {
-      xcmAsset = {
-        ['AssetHub']: {
-          ['Local']: getAssetIdFromAssetHubEnum(asset)
-        }
-      };
+      if (Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum)) {
+        xcmAsset = {
+          [chain]: {
+            ['Local']: asset
+          }
+        };
+      } else if (Object.values(AssetEnum).includes(asset as AssetEnum)) {
+        xcmAsset = {
+          [chain]: {
+            ['Local']: asset
+          }
+        };
+      } else {
+        xcmAsset = {
+          ['assethub']: {
+            ['Local']: getAssetIdFromAssetHubEnum(asset)
+          }
+        };
+      }
     }
 
     if (!saturnContext.state.multisigAddress) return;
@@ -356,7 +381,6 @@ export const proposeCall = async (props: IProposalProps) => {
     let partialFee = new BN("0");
     try {
       const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
-      console.log('xcmBridge feeInfo', feeInfo.partialFee.toString());
       // partialFee = feeInfo.partialFee;
       partialFee = new BN("10000000000");
     } catch (error) {
@@ -392,7 +416,7 @@ export const proposeCall = async (props: IProposalProps) => {
 
       return;
     } else {
-      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimalsFromAssetHubEnum(asset);
+      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimals(asset);
       const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
       return partialFeePreview;
     }

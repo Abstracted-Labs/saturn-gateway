@@ -339,11 +339,11 @@ const App = () => (
               <SelectedAccountProvider>
                 <IdentityProvider>
                   <ThemeProvider>
-                    <PriceProvider>
-                      <BalanceProvider>
+                    <BalanceProvider>
+                      <PriceProvider>
                         <HomePlanet />
-                      </BalanceProvider>
-                    </PriceProvider>
+                      </PriceProvider>
+                    </BalanceProvider>
                   </ThemeProvider>
                 </IdentityProvider>
               </SelectedAccountProvider>

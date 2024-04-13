@@ -5,7 +5,7 @@ import { PalletBalancesBalanceLock } from '@polkadot/types/lookup';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import { NetworkEnum } from './consts';
 import { createApis } from './createApis';
-import { formatBalance, hexToString, u8aToString } from '@polkadot/util';
+import { formatBalance, hexToNumber, hexToString, u8aToString } from '@polkadot/util';
 import { formatAsset } from './formatAsset';
 
 const SUB_ID_START_URL = 'https://sub.id/api/v1/';
@@ -26,8 +26,8 @@ export type NetworkBalances = {
   [Property in keyof typeof Rings]: ResultBalances;
 };
 
-async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise): Promise<Record<string, string | FeeAsset | number | [number, number]>> {
-  const assetRegistry: Record<string, string | FeeAsset | number | [number, number]> = {};
+async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise): Promise<Record<string, string | FeeAsset | number | [number | string, number]>> {
+  const assetRegistry: Record<string, string | FeeAsset | number | [number | string, number]> = {};
 
   switch (network) {
     case NetworkEnum.BASILISK: {
@@ -102,7 +102,56 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
     }
 
     case NetworkEnum.BIFROST: {
+      if (api.query.assetRegistry && 'assetMetadatas' in api.query.assetRegistry) {
+        try {
+          const registryMap = await (api.query.assetRegistry.assetMetadatas as any).entries();
+          for (const [_, value] of registryMap) {
+            const metadata = value.toJSON() as unknown as { symbol: string, decimals: number; };
+            if (!metadata) {
+              console.warn('Invalid metadata:', metadata);
+              continue;
+            }
+            const symbol = hexToString(metadata.symbol);
+            const decimals = metadata.decimals;
+            if (symbol && !Number.isNaN(decimals)) {
+              assetRegistry[symbol] = [symbol, Number(decimals)];
+            } else {
+              console.warn('Invalid symbol or decimals:', { symbol, decimals });
+            }
+          }
+        } catch (error) {
+          console.error('Error retrieving entries from BIFROST network:', error);
+        }
+      } else {
+        console.warn('assets or assetMetadatas not available on BIFROST network');
+      }
+      break;
+    }
 
+    case NetworkEnum.KHALA: {
+      if (api.query.assetRegistry && 'assetMetadatas' in api.query.assetRegistry) {
+        try {
+          const registryMap = await (api.query.assetRegistry.assetMetadatas as any).entries();
+          for (const [_, value] of registryMap) {
+            const metadata = value.toJSON() as unknown as { symbol: string, decimals: number; };
+            if (!metadata) {
+              console.warn('Invalid metadata:', metadata);
+              continue;
+            }
+            const symbol = hexToString(metadata.symbol);
+            const decimals = metadata.decimals;
+            if (symbol && !Number.isNaN(decimals)) {
+              assetRegistry[symbol] = [symbol, Number(decimals)];
+            } else {
+              console.warn('Invalid symbol or decimals:', { symbol, decimals });
+            }
+          }
+        } catch (error) {
+          console.error('Error retrieving entries from KHALA network:', error);
+        }
+      } else {
+        console.warn('assets or assetMetadatas not available on KHALA network');
+      }
       break;
     }
 
@@ -258,18 +307,27 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         };
 
         // query tokens
-        // const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.BIFROST, api);
-        // for (const [assetSymbol, assetId] of Object.entries(assetRegistry)) {
-        //   const tokens = await api.query.tokens.accounts(address, assetId as number);
-        //   const freeTokens = tokens.free.toString();
-        //   const reservedTokens = tokens.reserved.toString();
-        //   const totalTokens = new BigNumber(freeTokens).plus(new BigNumber(reservedTokens)).toString();
-        //   balancesByNetwork[assetSymbol] = {
-        //     freeBalance: freeTokens,
-        //     reservedBalance: reservedTokens,
-        //     totalBalance: totalTokens,
-        //   };
-        // }
+        if (api.query.tokens) {
+          const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.BIFROST, api);
+          for (const [symbol, decimals] of Object.entries(assetRegistry)) {
+            const tokens = await api.query.tokens.accounts.entries(address);
+            tokens.forEach(([storageKey, balances]) => {
+              const tokenSymbol = Object.values(storageKey.args.map((k) => k.toJSON())[1])[0];
+              if (symbol === tokenSymbol) {
+                const balance = balances.toHuman();
+                const freeBalance = new BigNumber(balance.free.replace(/,/g, "")).toString();
+                const decimalFormat = typeof decimals === 'string' ? parseInt(decimals, 10) : typeof decimals === 'object' ? decimals[1] : decimals;
+                balancesByNetwork[symbol] = {
+                  decimals: decimalFormat,
+                  freeBalance,
+                  reservedBalance: "0",
+                  totalBalance: freeBalance,
+                };
+                return;
+              }
+            });
+          }
+        }
       }
       break;
     }
@@ -282,7 +340,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         const reservedBalance = balances.data.reserved.toString();
         const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
         const locks = await api.query.balances.locks(address);
-        balancesByNetwork[AssetEnum.KPHA] = {
+        balancesByNetwork[AssetEnum.PHA] = {
           freeBalance,
           reservedBalance,
           totalBalance,
@@ -429,6 +487,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
   }
 
   api.disconnect();
+  console.log(`Balances for ${ network } network:`, balancesByNetwork);
   return ({ [network]: balancesByNetwork });
 }
 
@@ -436,7 +495,7 @@ export async function getBalancesFromAllNetworks(address: string): Promise<Netwo
   const apis = await createApis();
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
     const api = apis[network as NetworkEnum];
-    return getBalancesFromNetwork(api, address, network as NetworkEnum);
+    return getBalancesFromNetwork(api, 'i4zA33U9GQnNfqT4avPUWS8q8uJ45R3VexohLNxrgECRi6TAo', network as NetworkEnum);
   });
   const results: ResultBalancesWithNetwork[] = await Promise.all(promises);
   const allBalances: NetworkBalances = Object.assign({}, ...results);
