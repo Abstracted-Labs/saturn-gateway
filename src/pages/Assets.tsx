@@ -87,17 +87,23 @@ export default function Assets() {
       if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(specificNetworkPrice);
       } else {
-        const networksHoldingAsset = NetworksByAsset[asset];
+        // Ensure exact matches for assets like xcKAR and KAR, excluding partial matches like KARSON or LUKARIO
+        const matchingAssetKey = Object.keys(NetworksByAsset).find(key =>
+          (asset.toLowerCase() === key.toLowerCase()) ||
+          (asset.toLowerCase().startsWith(key.toLowerCase()) && asset.length === key.length) ||
+          (key.toLowerCase().startsWith(asset.toLowerCase()) && key.length === asset.length)
+        );
+        const networksHoldingAsset = matchingAssetKey ? (NetworksByAsset as Record<string, string[]>)[matchingAssetKey] : undefined;
         if (networksHoldingAsset) {
           for (const net of networksHoldingAsset) {
             const price = allPrices[net];
             if (price && new BigNumber(price).isGreaterThan(0)) {
               currentMarketPrice = new BigNumber(price);
-            } else {
-              currentMarketPrice = 0;
+              break; // Stop once a valid price is found
             }
           }
         }
+        if (!currentMarketPrice) currentMarketPrice = new BigNumber(0);
       }
     }
 

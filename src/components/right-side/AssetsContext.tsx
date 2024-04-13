@@ -608,21 +608,33 @@ const AssetsContext = () => {
               currentMarketPrice = new BigNumber(tnkrPrice);
             }
           } else {
-            const specificNetworkPrice = allPrices[network as NetworkEnum]?.usd;
+            let specificNetworkPrice = allPrices[network as NetworkEnum]?.usd;
+            if (assetName === AssetEnum.KSM) {
+              specificNetworkPrice = allPrices[NetworkEnum.KUSAMA]?.usd;
+            }
+            if (Object.values(ExtraAssetEnum).includes(assetName as ExtraAssetEnum) && assetName in allPrices) {
+              specificNetworkPrice = allPrices[assetName as keyof typeof allPrices]?.usd;
+            }
             if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
               currentMarketPrice = new BigNumber(specificNetworkPrice);
             } else {
-              let networksHoldingAsset = NetworksByAsset[assetName as AssetEnum];
-              if (!networksHoldingAsset) {
-                networksHoldingAsset = NetworksByAsset[AssetEnum.ASSETHUB];
-              }
-              for (const net of networksHoldingAsset) {
-                const price = allPrices[net as NetworkEnum]?.usd;
-                if (price && new BigNumber(price).isGreaterThan(0)) {
-                  currentMarketPrice = new BigNumber(price);
-                  break;
+              // Ensure exact matches for assets like xcKAR and KAR, excluding partial matches like KARSON or LUKARIO
+              const matchingAssetKey = Object.keys(NetworksByAsset).find(key =>
+                (assetName.toLowerCase() === key.toLowerCase()) ||
+                (assetName.toLowerCase().startsWith(key.toLowerCase()) && assetName.length === key.length) ||
+                (key.toLowerCase().startsWith(assetName.toLowerCase()) && key.length === assetName.length)
+              );
+              const networksHoldingAsset = matchingAssetKey ? NetworksByAsset[matchingAssetKey as keyof typeof NetworksByAsset] : undefined;
+              if (networksHoldingAsset) {
+                for (const net of networksHoldingAsset) {
+                  const price = allPrices[net as NetworkEnum]?.usd;
+                  if (price && new BigNumber(price).isGreaterThan(0)) {
+                    currentMarketPrice = new BigNumber(price);
+                    break;
+                  }
                 }
               }
+              if (!currentMarketPrice) currentMarketPrice = new BigNumber(0);
             }
           }
 
