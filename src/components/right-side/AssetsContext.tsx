@@ -164,7 +164,7 @@ const AssetsContext = () => {
       !ringApisContext.state[pair.from] ||
       !asset()
     ) {
-      toast.setToast('Error in submitting transfer', 'error', 0);
+      toast.setToast('Error in submitting transfer.', 'error', 0);
       return;
     }
 
@@ -174,19 +174,19 @@ const AssetsContext = () => {
     }
 
     if (amount() <= 0 || isNaN(amount())) {
-      toast.setToast('Amount must be greater than zero', 'error', 0);
+      toast.setToast('Amount must be greater than zero.', 'error', 0);
       return;
     }
 
     if (!OPEN_DESTINATIONS.includes(pair.from)) {
       const source = pair.from.charAt(0).toUpperCase() + pair.from.slice(1);
-      toast.setToast(`Cannot send assets from ${ source }`, 'error', 0);
+      toast.setToast(`Cannot send assets from ${ source } at this time.`, 'error', 0);
       return;
     }
 
     if (!OPEN_DESTINATIONS.includes(pair.to)) {
       const destination = pair.to.charAt(0).toUpperCase() + pair.to.slice(1);
-      toast.setToast(`Cannot send assets to ${ destination }`, 'error', 0);
+      toast.setToast(`Cannot send assets to ${ destination } at this time.`, 'error', 0);
       return;
     }
 
@@ -208,7 +208,7 @@ const AssetsContext = () => {
     const assetDecimals = selectedAssetBalance && selectedAssetBalance[1] && selectedAssetBalance[1].decimals ? selectedAssetBalance[1].decimals : Rings[fromNetwork as keyof typeof Rings]?.decimals ?? getAssetDecimals(selectedAsset as AssetHubEnum) ?? 12;
 
     if (fromNetwork === toNetwork && senderAddress === recipientAddress) {
-      toast.setToast(`Cannot send ${ asset() } to yourself on the same network`, 'error', 0);
+      toast.setToast(`Cannot send ${ asset() } to yourself on the same network.`, 'error', 0);
       return;
     }
 
@@ -228,12 +228,12 @@ const AssetsContext = () => {
     const amountPlank = new BigNumber(bnAmount.toString().split('.')[0]);
 
     if (new BigNumber(amount()).lte(0)) {
-      toast.setToast('Amount must be greater than zero', 'error', 0);
+      toast.setToast('Amount must be greater than zero.', 'error', 0);
       return;
     }
 
     if (new BigNumber(amount()).gt(maxAssetAmount() ?? 0)) {
-      toast.setToast('Amount exceeds available balance', 'error', 0);
+      toast.setToast('Amount exceeds available balance.', 'error', 0);
       return;
     }
 
