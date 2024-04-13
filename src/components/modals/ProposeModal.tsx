@@ -209,22 +209,21 @@ export const proposeCall = async (props: IProposalProps) => {
 
     let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
     if (!xcmAsset) {
-      const capitalizedChain = chain.charAt(0).toUpperCase() + chain.slice(1);
       if (Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum)) {
         xcmAsset = {
-          [capitalizedChain]: {
+          [chain]: {
             ['Local']: asset
           }
         };
       } else if (Object.values(AssetEnum).includes(asset as AssetEnum)) {
         xcmAsset = {
-          [capitalizedChain]: {
+          [chain]: {
             ['Native']: asset
           }
         };
       } else {
         xcmAsset = {
-          ['AssetHub']: {
+          ['assethub']: {
             ['Local']: getAssetIdFromAssetHubEnum(asset)
           }
         };
@@ -356,22 +355,21 @@ export const proposeCall = async (props: IProposalProps) => {
 
     let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
     if (!xcmAsset) {
-      const capitalizedChain = chain.charAt(0).toUpperCase() + chain.slice(1);
       if (Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum)) {
         xcmAsset = {
-          [capitalizedChain]: {
+          [chain]: {
             ['Local']: asset
           }
         };
       } else if (Object.values(AssetEnum).includes(asset as AssetEnum)) {
         xcmAsset = {
-          [capitalizedChain]: {
-            ['Local']: asset
+          [chain]: {
+            ['Native']: asset
           }
         };
       } else {
         xcmAsset = {
-          ['AssetHub']: {
+          ['assethub']: {
             ['Local']: getAssetIdFromAssetHubEnum(asset)
           }
         };
