@@ -165,6 +165,7 @@ export enum AssetEnum {
 
 export enum ExtraAssetEnum {
   ZLK = 'ZLK', // Zenlink
+  RMRK = 'RMRK', // RMRK
 }
 
 export enum AssetHubEnum {
@@ -181,6 +182,7 @@ export enum ExtraAssetDecimalsEnum {
   BILL = 8,
   BAILEGO = 0,
   ZLK = 18,
+  RMRK = 10,
 }
 
 export type NetworksByAssetType = Record<AssetEnum | AssetHubEnum | ExtraAssetEnum, NetworkEnum[]>;
@@ -203,6 +205,7 @@ export const NetworksByAsset: NetworksByAssetType = {
 
   // Extra tokens
   ZLK: [NetworkEnum.BIFROST],
+  RMRK: [NetworkEnum.MOONRIVER],
 };
 
 export const OPEN_DESTINATIONS = [
@@ -213,4 +216,9 @@ export const OPEN_DESTINATIONS = [
   NetworkEnum.KARURA,
   NetworkEnum.MOONRIVER,
   NetworkEnum.KUSAMA,
+];
+
+export const EXTRA_COINGECKO_TOKENS: [ExtraAssetEnum, string][] = [
+  [ExtraAssetEnum.ZLK, 'zenlink-network-token'],
+  [ExtraAssetEnum.RMRK, 'rmrk'],
 ];

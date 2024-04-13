@@ -15,7 +15,7 @@ import { BalanceType } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
-import { NetworkAssetBalance } from "../../pages/Assets";
+import { NetworkAssetBalance, findMatchingAssetKey } from "../../pages/Assets";
 import { getAssetDecimals, proposeCall } from "../modals/ProposeModal";
 import { FeeAsset } from "@invarch/saturn-sdk";
 import getProposalType from "../../utils/getProposalType";
@@ -601,52 +601,50 @@ const AssetsContext = () => {
         for (const [assetName, balance] of assets as unknown as [string, BalanceType][]) {
           let currentMarketPrice = new BigNumber(0);
 
-          // Apply logic from convertAssetTotalToUsd
-          if (assetName === AssetEnum.TNKR) {
-            const tnkrPrice = allPrices[network as NetworkEnum]?.usd;
+          const matchingAssetKey = findMatchingAssetKey(assetName);
+
+          if (matchingAssetKey === AssetEnum.TNKR) {
+            const tnkrPrice = allPrices[network]?.usd;
             if (tnkrPrice && new BigNumber(tnkrPrice).isGreaterThan(0)) {
               currentMarketPrice = new BigNumber(tnkrPrice);
             }
           } else {
-            let specificNetworkPrice = allPrices[network as NetworkEnum]?.usd;
-            if (assetName === AssetEnum.KSM) {
-              specificNetworkPrice = allPrices[NetworkEnum.KUSAMA]?.usd;
-            }
-            if (Object.values(ExtraAssetEnum).includes(assetName as ExtraAssetEnum) && assetName in allPrices) {
-              specificNetworkPrice = allPrices[assetName as keyof typeof allPrices]?.usd;
-            }
-            if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
-              currentMarketPrice = new BigNumber(specificNetworkPrice);
-            } else {
-              // Ensure exact matches for assets like xcKAR and KAR, excluding partial matches like KARSON or LUKARIO
-              const matchingAssetKey = Object.keys(NetworksByAsset).find(key =>
-                (assetName.toLowerCase() === key.toLowerCase()) ||
-                (assetName.toLowerCase().startsWith(key.toLowerCase()) && assetName.length === key.length) ||
-                (key.toLowerCase().startsWith(assetName.toLowerCase()) && key.length === assetName.length)
-              );
-              const networksHoldingAsset = matchingAssetKey ? NetworksByAsset[matchingAssetKey as keyof typeof NetworksByAsset] : undefined;
-              if (networksHoldingAsset) {
-                for (const net of networksHoldingAsset) {
-                  const price = allPrices[net as NetworkEnum]?.usd;
-                  if (price && new BigNumber(price).isGreaterThan(0)) {
-                    currentMarketPrice = new BigNumber(price);
-                    break;
+            let specificNetworkPrice: string | null = null;
+
+            if (matchingAssetKey) {
+              if (matchingAssetKey === AssetEnum.KSM) {
+                specificNetworkPrice = allPrices[NetworkEnum.KUSAMA]?.usd;
+              } else if (Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum)) {
+                specificNetworkPrice = allPrices[matchingAssetKey]?.usd;
+              } else {
+                specificNetworkPrice = allPrices[network]?.usd;
+              }
+
+              if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
+                currentMarketPrice = new BigNumber(specificNetworkPrice);
+              } else {
+                const networksHoldingAsset = NetworksByAsset[matchingAssetKey as AssetEnum | AssetHubEnum | ExtraAssetEnum];
+                if (networksHoldingAsset) {
+                  for (const net of networksHoldingAsset) {
+                    const price = allPrices[net]?.usd;
+                    if (price && new BigNumber(price).isGreaterThan(0)) {
+                      currentMarketPrice = new BigNumber(price);
+                      break;
+                    }
                   }
                 }
               }
-              if (!currentMarketPrice) currentMarketPrice = new BigNumber(0);
             }
           }
 
-          // Continue with balance calculations
           if (currentMarketPrice.isGreaterThan(0)) {
-            let decimals = Object.values(ExtraAssetEnum).includes(assetName as ExtraAssetEnum) && balance.decimals ? balance.decimals : Rings[network as keyof typeof Rings]?.decimals ?? 12;
+            const decimals = balance.decimals ? balance.decimals : Rings[network as keyof typeof Rings]?.decimals ?? 12;
             const transferable = new BigNumber(balance.freeBalance).dividedBy(new BigNumber(10).pow(decimals));
             const totalLockAmount = balance.locks && balance.locks.length > 0
               ? balance.locks.reduce((acc, lock) => acc.plus(new BigNumber(lock.amount.toString())), new BigNumber(0)).dividedBy(new BigNumber(10).pow(decimals))
               : new BigNumber(0);
             const nonTransferable = new BigNumber(balance.reservedBalance).plus(totalLockAmount).dividedBy(new BigNumber(10).pow(decimals));
-
+            console.log(assetName, transferable.toString(), currentMarketPrice.toString());
             sumTransferable = sumTransferable.plus(transferable.times(currentMarketPrice));
             sumNonTransferable = sumNonTransferable.plus(nonTransferable.times(currentMarketPrice));
             sumTotalPortfolio = sumTotalPortfolio.plus(transferable.plus(nonTransferable).times(currentMarketPrice));

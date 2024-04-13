@@ -5,7 +5,7 @@ import { getAllUsdPrices } from "../utils/getCurrentUsdPrice";
 import { createStore } from "solid-js/store";
 
 const PriceContext = createContext<{
-  prices: Record<NetworkEnum, { usd: string; }> | null;
+  prices: Record<NetworkEnum | string, { usd: string; }> | null;
   fetchPrices: () => Promise<void>;
   clearPrices: () => void;
 }>();
@@ -22,7 +22,7 @@ const initialPrices: Record<NetworkEnum, { usd: string; }> = {
   karura: { usd: "" },
   moonriver: { usd: "" },
   turing: { usd: "" },
-  phala: { usd: "" },
+  khala: { usd: "" },
 };
 
 export function PriceProvider(props: { children: JSX.Element; }) {

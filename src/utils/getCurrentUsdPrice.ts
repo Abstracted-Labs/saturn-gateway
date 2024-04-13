@@ -1,4 +1,4 @@
-import { AssetEnum, ExtraAssetEnum } from "../data/rings";
+import { AssetEnum, EXTRA_COINGECKO_TOKENS, ExtraAssetEnum } from "../data/rings";
 import { NetworkEnum } from "./consts";
 import { BalanceType } from "./getBalances";
 
@@ -50,10 +50,6 @@ export async function getCurrentUsdPrice(network: NetworkEnum) {
   return data;
 }
 
-export const EXTRA_COINGECKO_TOKENS: [ExtraAssetEnum, string][] = [
-  [ExtraAssetEnum.ZLK, 'zenlink-network-token']
-];
-
 export async function getAllUsdPrices(): Promise<Record<NetworkEnum | ExtraAssetEnum, { usd: string; }> | null> {
   const networks = Object.values(NetworkEnum);
   let filteredNetworks: string[] = networks.filter(network => network !== NetworkEnum.ASSETHUB);
@@ -65,7 +61,7 @@ export async function getAllUsdPrices(): Promise<Record<NetworkEnum | ExtraAsset
       case NetworkEnum.TINKERNET:
         return "tinkernet";
       case NetworkEnum.BASILISK:
-        return "hydra";
+        return "basilisk";
       case NetworkEnum.PICASSO:
         return "picasso";
       case NetworkEnum.KUSAMA:
@@ -124,6 +120,9 @@ export async function getAllUsdPrices(): Promise<Record<NetworkEnum | ExtraAsset
             break;
           case "zenlink-network-token":
             networkKey = ExtraAssetEnum.ZLK;
+            break;
+          case "rmrk":
+            networkKey = ExtraAssetEnum.RMRK;
             break;
           default:
             networkKey = key as NetworkEnum;

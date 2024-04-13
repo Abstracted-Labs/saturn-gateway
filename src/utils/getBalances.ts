@@ -5,8 +5,9 @@ import { PalletBalancesBalanceLock } from '@polkadot/types/lookup';
 import { FeeAsset } from '@invarch/saturn-sdk';
 import { NetworkEnum } from './consts';
 import { createApis } from './createApis';
-import { formatBalance, hexToNumber, hexToString, u8aToString } from '@polkadot/util';
+import { bnToU8a, formatBalance, hexToNumber, hexToString, u8aToBigInt, u8aToString } from '@polkadot/util';
 import { formatAsset } from './formatAsset';
+import { isEthereumAddress } from '@polkadot/util-crypto';
 
 const SUB_ID_START_URL = 'https://sub.id/api/v1/';
 
@@ -126,6 +127,28 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
         console.warn('assets or assetMetadatas not available on BIFROST network');
       }
       break;
+    }
+
+    case NetworkEnum.MOONRIVER: {
+      if (api.query.assets && 'asset' in api.query.assets && 'metadata' in api.query.assets) {
+        const registryMap = await api.query.assets.asset.entries();
+        const storageKeys = registryMap.map(([key]) => key.args.map((arg) => arg.toHuman())[0]?.toString().replace(/,/g, ''));
+        const moonriverAssets = await api.query.assets.metadata.entries();
+        storageKeys.forEach((storageKey) => {
+          if (!storageKey) {
+            console.warn('Invalid storageKey:', storageKey);
+            return;
+          }
+          const metadata = moonriverAssets.find(([key]) => key.args.map((arg) => arg.toHuman())[0]?.toString().replace(/,/g, '') === storageKey);
+          const symbol = metadata && typeof metadata[1] === 'object' && 'symbol' in metadata[1] && metadata[1]['symbol'] ? hexToString(metadata[1]['symbol'].toString()) : null;
+          const decimals = metadata && typeof metadata[1] === 'object' && 'decimals' in metadata[1] && metadata[1]['decimals'] ? metadata[1]['decimals'].toString() : null;
+          if (!Number.isNaN(storageKey) && symbol) {
+            assetRegistry[symbol] = [storageKey, Number(decimals)];
+          } else {
+            console.warn('Invalid assetId or symbol:', { storageKey, symbol });
+          }
+        });
+      }
     }
 
     case NetworkEnum.KHALA: {
@@ -317,6 +340,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
                 const balance = balances.toHuman();
                 const freeBalance = new BigNumber(balance.free.replace(/,/g, "")).toString();
                 const decimalFormat = typeof decimals === 'string' ? parseInt(decimals, 10) : typeof decimals === 'object' ? decimals[1] : decimals;
+                console.log(symbol, freeBalance, decimalFormat);
                 balancesByNetwork[symbol] = {
                   decimals: decimalFormat,
                   freeBalance,
@@ -326,6 +350,51 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
                 return;
               }
             });
+          }
+        }
+      }
+      break;
+    }
+
+    case NetworkEnum.MOONRIVER: {
+      if (api) {
+        // query balances
+        const balances = await api.query.system.account(address);
+        const freeBalance = balances.data.free.toString();
+        const reservedBalance = balances.data.reserved.toString();
+        // Moonriver has a frozen balance that we need to account for
+        const frozenBalance = (balances.data as any).frozen.toString() || '0';
+        const totalNonTransferable = new BigNumber(reservedBalance).plus(new BigNumber(frozenBalance)).toString();
+        const totalTransferable = new BigNumber(freeBalance).minus(totalNonTransferable).toString();
+        // const locks = await api.query.balances.locks(address);
+        balancesByNetwork[AssetEnum.MOVR] = {
+          freeBalance: totalTransferable,
+          reservedBalance: totalNonTransferable,
+          totalBalance: new BigNumber(totalTransferable).minus(new BigNumber(totalNonTransferable)).toString(),
+          // locks,
+        };
+
+        // query tokens
+        if (api.query.assets.account) {
+          const assetRegistry = await getAssetRegistryByNetwork(NetworkEnum.MOONRIVER, api);
+          for (const [symbol, assetInfo] of Object.entries(assetRegistry)) {
+            if (typeof assetInfo === 'object') {
+              const assetId = assetInfo[0];
+              const decimals = assetInfo[1];
+              const tokens = await api.query.assets.account(assetId, address);
+              const balanceFromJson = tokens.toJSON() as unknown as { balance: string, status: string; };
+              if (!balanceFromJson) continue;
+              const freeTokens = balanceFromJson.balance;
+              if (new BigNumber(freeTokens).isZero() || new BigNumber(freeTokens).isNaN()) {
+                continue;
+              }
+              balancesByNetwork[symbol] = {
+                freeBalance: freeTokens,
+                reservedBalance: '0',
+                totalBalance: freeTokens,
+                decimals,
+              };
+            }
           }
         }
       }
@@ -359,24 +428,6 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
         const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
         const locks = await api.query.balances.locks(address);
         balancesByNetwork[AssetEnum.KAR] = {
-          freeBalance,
-          reservedBalance,
-          totalBalance,
-          locks,
-        };
-      }
-      break;
-    }
-
-    case NetworkEnum.MOONRIVER: {
-      if (api) {
-        // query balances
-        const balances = await api.query.system.account(address);
-        const freeBalance = balances.data.free.toString();
-        const reservedBalance = balances.data.reserved.toString();
-        const totalBalance = new BigNumber(freeBalance).plus(new BigNumber(reservedBalance)).toString();
-        const locks = await api.query.balances.locks(address);
-        balancesByNetwork[AssetEnum.MOVR] = {
           freeBalance,
           reservedBalance,
           totalBalance,
@@ -493,9 +544,18 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
 
 export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
   const apis = await createApis();
+  const userAddress = 'i4zA33U9GQnNfqT4avPUWS8q8uJ45R3VexohLNxrgECRi6TAo';
+  const isEthereumAddr = isEthereumAddress(userAddress);
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
-    const api = apis[network as NetworkEnum];
-    return getBalancesFromNetwork(api, address, network as NetworkEnum);
+    if (isEthereumAddr && (network === NetworkEnum.MOONRIVER)) {
+      // If EVM address, only fetch balances from Moonriver (add more EVM networks later)
+      const api = apis[network as NetworkEnum];
+      return getBalancesFromNetwork(api, userAddress, network as NetworkEnum);
+    } else if (!isEthereumAddr) {
+      const api = apis[network as NetworkEnum];
+      return getBalancesFromNetwork(api, userAddress, network as NetworkEnum);
+    }
+    return Promise.resolve({ [network]: {} });
   });
   const results: ResultBalancesWithNetwork[] = await Promise.all(promises);
   const allBalances: NetworkBalances = Object.assign({}, ...results);

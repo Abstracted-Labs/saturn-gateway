@@ -1,5 +1,5 @@
 import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on, onMount } from 'solid-js';
-import { AssetEnum, ExtraAssetEnum, NetworksByAsset, Rings } from '../data/rings';
+import { AssetEnum, AssetHubEnum, ExtraAssetEnum, NetworksByAsset, Rings } from '../data/rings';
 import type { BalanceType } from "../utils/getBalances";
 import { formatAsset } from '../utils/formatAsset';
 import { getAssetIcon } from '../utils/getAssetIcon';
@@ -22,6 +22,16 @@ export type NetworkAssetBalance = [string, BalanceType[]];
 
 export type NetworkBalancesArray = [string, NetworkAssetBalance[]];
 
+export const findMatchingAssetKey = (asset: string) => Object.keys(NetworksByAsset).find(key => {
+  const normalizedAsset = asset.toLowerCase();
+  const normalizedKey = key.toLowerCase();
+  const isExactMatch = normalizedAsset === normalizedKey;
+  const isContainedMatch = normalizedAsset.includes(normalizedKey) || normalizedKey.includes(normalizedAsset);
+  const lengthDifference = Math.abs(normalizedAsset.length - normalizedKey.length);
+  const isLikelyPrefixSuffixDifference = lengthDifference <= 2;
+  return isExactMatch || (isContainedMatch && isLikelyPrefixSuffixDifference);
+});
+
 export default function Assets() {
   const [loading, setLoading] = createSignal<NetworkEnum[]>([]);
   const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
@@ -36,25 +46,32 @@ export default function Assets() {
   const multisigId = createMemo(() => saturn.state.multisigId);
   const getUsdPrices = createMemo(() => priceContext.prices);
 
-  const formatTransferBalance = (asset: AssetEnum | ExtraAssetEnum | string, balance: BalanceType, network: NetworkEnum) => {
-    if (asset === 'BAILEGO') {
+  const formatTransferBalance = (asset: AssetEnum | AssetHubEnum | ExtraAssetEnum | string, balance: BalanceType, network: NetworkEnum) => {
+    const matchingAssetKey = findMatchingAssetKey(asset);
+
+    if (matchingAssetKey === 'BAILEGO') {
       return balance.freeBalance.toLocaleString();
     }
-    if (balance.decimals) {
-      return formatBalance(balance.freeBalance, { decimals: balance.decimals, withSi: false, withUnit: false });
+    const isAssetHubOrExtraAsset = Object.values(AssetHubEnum).includes(matchingAssetKey as AssetHubEnum) || Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum);
+    if (balance.decimals && isAssetHubOrExtraAsset) {
+      return formatAsset(balance.freeBalance, balance.decimals);
     } else {
       return formatAsset(balance.freeBalance, Rings[network]?.decimals ?? 12);
     }
   };
 
-  const formatTotalBalance = (b: BalanceType, network: NetworkEnum, totalLockAmount: string, asset: AssetEnum | ExtraAssetEnum | string) => {
-    if (asset === 'BAILEGO') {
-      return (+b.freeBalance + +b.reservedBalance + +totalLockAmount).toLocaleString();
+  const formatTotalBalance = (balance: BalanceType, network: NetworkEnum, totalLockAmount: string, asset: AssetEnum | ExtraAssetEnum | string) => {
+    const matchingAssetKey = findMatchingAssetKey(asset);
+
+    if (matchingAssetKey === 'BAILEGO') {
+      return (+balance.freeBalance + +balance.reservedBalance + +totalLockAmount).toLocaleString();
     }
-    if (b.decimals) {
-      return formatBalance((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), { decimals: b.decimals, withSi: false, withUnit: false });
+
+    const isAssetHubOrExtraAsset = Object.values(AssetHubEnum).includes(matchingAssetKey as AssetHubEnum) || Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum);
+    if (balance.decimals && isAssetHubOrExtraAsset) {
+      return formatAsset((+balance.freeBalance + +balance.reservedBalance + +totalLockAmount).toString(), balance.decimals);
     } else {
-      return formatAsset((+b.freeBalance + +b.reservedBalance + +totalLockAmount).toString(), Rings[network]?.decimals ?? 12);
+      return formatAsset((+balance.freeBalance + +balance.reservedBalance + +totalLockAmount).toString(), Rings[network]?.decimals ?? 12);
     }
   };
 
@@ -62,11 +79,16 @@ export default function Assets() {
     let totalInUsd = '($0.00)';
     const allPrices = usdPrices;
 
-    if (!allPrices) return totalInUsd;
+    if (!allPrices) {
+      console.error('Prices not found');
+      return totalInUsd;
+    };
 
     let currentMarketPrice = null;
 
-    if (asset === AssetEnum.TNKR) {
+    const matchingAssetKey = findMatchingAssetKey(asset);
+
+    if (matchingAssetKey === AssetEnum.TNKR) {
       const tnkrPrice = allPrices[network];
       if (tnkrPrice && new BigNumber(tnkrPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(tnkrPrice);
@@ -74,25 +96,30 @@ export default function Assets() {
         return totalInUsd;
       }
     } else {
-      let specificNetworkPrice = allPrices[network];
+      let specificNetworkPrice: string | null = null;
 
-      if (asset === AssetEnum.KSM) {
+      if (!matchingAssetKey) {
+        console.error(`Matching asset not found for ${ matchingAssetKey }`);
+        return totalInUsd;
+      }
+
+      if (matchingAssetKey === AssetEnum.KSM) {
+        // Get a price for KSM from somewhere
         specificNetworkPrice = allPrices[NetworkEnum.KUSAMA];
       }
 
-      if (Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum)) {
-        specificNetworkPrice = allPrices[asset];
+      if (Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum)) {
+        // Handle price retrieval for extra tokens
+        specificNetworkPrice = allPrices[matchingAssetKey];
+      } else {
+        // Handle price retrieval for main tokens
+        specificNetworkPrice = allPrices[network];
       }
 
       if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(specificNetworkPrice);
       } else {
-        // Ensure exact matches for assets like xcKAR and KAR, excluding partial matches like KARSON or LUKARIO
-        const matchingAssetKey = Object.keys(NetworksByAsset).find(key =>
-          (asset.toLowerCase() === key.toLowerCase()) ||
-          (asset.toLowerCase().startsWith(key.toLowerCase()) && asset.length === key.length) ||
-          (key.toLowerCase().startsWith(asset.toLowerCase()) && key.length === asset.length)
-        );
+        // Handle cases where the price is not available on the network
         const networksHoldingAsset = matchingAssetKey ? (NetworksByAsset as Record<string, string[]>)[matchingAssetKey] : undefined;
         if (networksHoldingAsset) {
           for (const net of networksHoldingAsset) {
@@ -108,10 +135,11 @@ export default function Assets() {
     }
 
     if (total && currentMarketPrice !== null) {
-      let decimals = Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum) && decimalFormat ? decimalFormat : Rings[network]?.decimals ?? 12;
-      totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals, 2) })`;
+      let decimals = Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum) && decimalFormat ? decimalFormat : Rings[network]?.decimals ?? 12;
+
+      totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals, 4) })`;
     } else {
-      console.error(`Decimals not found for asset: ${ asset } or market price is $0`);
+      console.error(`Decimals not found for asset: ${ matchingAssetKey } or market price is $0`);
     }
 
     return totalInUsd;

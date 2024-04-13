@@ -54,7 +54,7 @@ export enum NetworkEnum {
   KARURA = "karura",
   MOONRIVER = "moonriver",
   TURING = "turing",
-  KHALA = "phala",
+  KHALA = "khala",
 }
 
 // export const WSS_TINKERNET = 'wss://brainstorm.invarch.network/rococo';
