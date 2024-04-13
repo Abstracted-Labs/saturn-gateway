@@ -109,7 +109,7 @@ export const NetworkIconByCurrency: Record<string, string[]> = {
   MOVR: [MoonriverIcon],
   TUR: [TuringIcon],
   PHA: [KhalaIcon],
-  ZLK: [BifrostIcon],
+  // ZLK: [BifrostIcon],
 };
 
 export enum KusamaFeeAssetEnum {

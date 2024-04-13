@@ -78,7 +78,7 @@ const allTheAssets = (): Record<string, JSXElement> => ({
   [AssetEnum.SDN]: getAssetBlock(AssetEnum.SDN),
   [AssetHubEnum.BILL]: getAssetBlock(AssetHubEnum.BILL),
   [AssetHubEnum.BAILEGO]: getAssetBlock(AssetHubEnum.BAILEGO),
-  [ExtraAssetEnum.ZLK]: getAssetBlock(ExtraAssetEnum.ZLK),
+  // [ExtraAssetEnum.ZLK]: getAssetBlock(ExtraAssetEnum.ZLK),
 });
 
 const AssetsContext = () => {
@@ -134,9 +134,13 @@ const AssetsContext = () => {
     const allAssets = Object.entries(allTheAssets());
     const networksFromBalances = balances().find(([network, _]) => network === pair.from);
     if (!networksFromBalances) return 0;
+    const networkName = networksFromBalances[0];
     const assetNamesInBalances = Object.entries(networksFromBalances[1]).map(([key, value]) => Object.values(value)[0] as string);
     const filteredAssets = assetNamesInBalances
-      .map(name => [name, allAssets.find(([assetName, _]) => assetName === name || assetName in AssetHubEnum)?.[1] ?? null])
+      .map(name => {
+        const foundAsset = allAssets.find(([assetName, _]) => assetName === name || assetName in AssetHubEnum);
+        return [name, foundAsset ? foundAsset[1] : getAssetBlock(name, networkName as NetworkEnum)];
+      })
       .filter(([_, element]) => element !== null);
     return filteredAssets.length;
   });
@@ -272,9 +276,13 @@ const AssetsContext = () => {
     const allAssets = Object.entries(allTheAssets());
     const networksFromBalances = balances().find(([network, _]) => network === pair.from);
     if (!networksFromBalances) return [];
+    const networkName = networksFromBalances[0];
     const assetNamesInBalances = Object.entries(networksFromBalances[1]).map(([key, value]) => Object.values(value)[0] as string);
     const filteredAssets = assetNamesInBalances
-      .map(name => [name, allAssets.find(([assetName, _]) => assetName === name || assetName in AssetHubEnum)?.[1] ?? null])
+      .map(name => {
+        const foundAsset = allAssets.find(([assetName, _]) => assetName === name || assetName in AssetHubEnum);
+        return [name, foundAsset ? foundAsset[1] : getAssetBlock(name, networkName as NetworkEnum)];
+      })
       .filter(([_, element]) => element !== null);
     return filteredAssets;
   };
@@ -365,7 +373,7 @@ const AssetsContext = () => {
 
   const renderAssetOption = (asset: AssetEnum | AssetHubEnum | ExtraAssetEnum | undefined) => {
     const filteredAssetsList = filteredAssets().map(([name, _]) => name);
-    return (asset && filteredAssetsList.length > 0 && filteredAssetsList.includes(asset)) ? getAssetBlock(asset) : getAssetBlock(AssetEnum.TNKR);
+    return (asset && filteredAssetsList.length > 0 && filteredAssetsList.includes(asset)) ? getAssetBlock(asset, finalNetworkPair().from) : getAssetBlock(AssetEnum.TNKR);
   };
 
   const clearAddress = () => {
@@ -807,7 +815,7 @@ const AssetsContext = () => {
             <SaturnSelect disabled={filteredAssetCount() <= 1} isOpen={isAssetDropdownActive()} isMini={true} toggleId={ASSET_TOGGLE_ID} dropdownId={ASSET_DROPDOWN_ID} initialOption={renderAssetOption(asset())} onClick={handleAssetsDropdown}>
               <For each={filteredAssets()}>
                 {([name, _]) => {
-                  const displayElement = getAssetBlock(name as AssetEnum | AssetHubEnum | ExtraAssetEnum);
+                  const displayElement = getAssetBlock(name as AssetEnum | AssetHubEnum | ExtraAssetEnum, finalNetworkPair().from);
                   return displayElement && <SaturnSelectItem onClick={() => {
                     handleAssetOptionClick(name as AssetEnum | AssetHubEnum | ExtraAssetEnum);
                     getPaymentInfo();

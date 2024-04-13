@@ -229,7 +229,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[20%]'>
                           <span class="flex flex-row items-center gap-1">
                             <span class='h-5 w-5 flex rounded-full bg-black'>
-                              <img src={getAssetIcon(asset, Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum))} class="p-1" alt={asset} />
+                              <img src={getAssetIcon(asset, network as NetworkEnum)} class="p-1" alt={asset} />
                             </span>
                             <span>
                               {asset}
@@ -266,7 +266,7 @@ export default function Assets() {
                         {/* Chains */}
                         <td>
                           <span class="flex flex-row items-center gap-1">
-                            <For each={getNetworkIconByAsset(asset).filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
+                            <For each={[getNetworkIconByAsset(asset, !Object.values(AssetEnum).includes(asset as AssetEnum) ? network as NetworkEnum : undefined)].flat().filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
                               {icon =>
                                 <span class='h-5 w-5 flex rounded-full bg-black'>
                                   <img src={icon} class="p-1" alt="asset-icon" />

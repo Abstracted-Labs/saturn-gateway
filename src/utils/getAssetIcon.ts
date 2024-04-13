@@ -1,12 +1,14 @@
 import { AssetEnum } from "../data/rings";
-import { AssetIconByCurrency, NetworkEnum, NetworkIconByCurrency } from "./consts";
+import { AssetIconByCurrency, NetworkEnum, NetworkIconByCurrency, NetworkIconByNetwork } from "./consts";
 
-export function getAssetIcon(asset: string, isExtra?: boolean | undefined) {
-  if (!!isExtra && isExtra) {
-    return NetworkIconByCurrency[asset][0];
+export function getAssetIcon(asset: string, network?: NetworkEnum) {
+  if (network) {
+    if (NetworkIconByCurrency[asset] && NetworkIconByCurrency[asset].length > 0) {
+      return NetworkIconByCurrency[asset][0];
+    } else {
+      return NetworkIconByNetwork[network as NetworkEnum];
+    }
+  } else {
+    return AssetIconByCurrency[asset] ?? AssetIconByCurrency[AssetEnum.ASSETHUB];
   }
-  if (AssetIconByCurrency[asset] === undefined) {
-    return AssetIconByCurrency[AssetEnum.ASSETHUB];
-  }
-  return AssetIconByCurrency[asset];
 }
