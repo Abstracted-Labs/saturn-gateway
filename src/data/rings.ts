@@ -204,3 +204,13 @@ export const NetworksByAsset: NetworksByAssetType = {
   // Extra tokens
   ZLK: [NetworkEnum.BIFROST],
 };
+
+export const OPEN_DESTINATIONS = [
+  NetworkEnum.BASILISK,
+  NetworkEnum.PICASSO,
+  NetworkEnum.ASSETHUB,
+  NetworkEnum.SHIDEN,
+  NetworkEnum.KARURA,
+  NetworkEnum.MOONRIVER,
+  NetworkEnum.KUSAMA,
+];

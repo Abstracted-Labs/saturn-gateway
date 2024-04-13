@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { createSignal, createEffect, For, Show, createMemo, JSXElement, onCleanup, on } from "solid-js";
-import { AssetEnum, AssetHubEnum, ExtraAssetEnum, NetworksByAsset, Rings } from "../../data/rings";
+import { AssetEnum, AssetHubEnum, ExtraAssetEnum, NetworksByAsset, OPEN_DESTINATIONS, Rings } from "../../data/rings";
 import { useProposeContext, Proposal, ProposalType } from "../../providers/proposeProvider";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { useSaturnContext } from "../../providers/saturnProvider";
@@ -47,17 +47,6 @@ const assetOptions: DropdownOptions = {
   offsetDistance: -6,
   delay: 300,
 };
-
-const OPEN_DESTINATIONS = [
-  NetworkEnum.BASILISK,
-  NetworkEnum.PICASSO,
-  NetworkEnum.ASSETHUB,
-  NetworkEnum.SHIDEN,
-  NetworkEnum.KARURA,
-  NetworkEnum.MOONRIVER,
-  NetworkEnum.KUSAMA,
-
-];
 
 const allTheNetworks = (): Record<string, JSXElement> => ({
   // [NetworkEnum.POLKADOT]: getNetworkBlock(NetworkEnum.POLKADOT),
