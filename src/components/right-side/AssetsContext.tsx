@@ -171,17 +171,17 @@ const AssetsContext = () => {
       return;
     }
 
-    if (!OPEN_DESTINATIONS.includes(pair.from)) {
-      const source = pair.from.charAt(0).toUpperCase() + pair.from.slice(1);
-      toast.setToast(`Cannot send assets from ${ source } at this time.`, 'error', 0);
-      return;
-    }
+    // if (!OPEN_DESTINATIONS.includes(pair.from)) {
+    //   const source = pair.from.charAt(0).toUpperCase() + pair.from.slice(1);
+    //   toast.setToast(`Cannot send assets from ${ source } at this time.`, 'error', 0);
+    //   return;
+    // }
 
-    if (!OPEN_DESTINATIONS.includes(pair.to)) {
-      const destination = pair.to.charAt(0).toUpperCase() + pair.to.slice(1);
-      toast.setToast(`Cannot send assets to ${ destination } at this time.`, 'error', 0);
-      return;
-    }
+    // if (!OPEN_DESTINATIONS.includes(pair.to)) {
+    //   const destination = pair.to.charAt(0).toUpperCase() + pair.to.slice(1);
+    //   toast.setToast(`Cannot send assets to ${ destination } at this time.`, 'error', 0);
+    //   return;
+    // }
 
     const fromNetwork = pair.from;
     const toNetwork = pair.to;
