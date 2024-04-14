@@ -47,7 +47,7 @@ export function getAssetBlock(asset: AssetEnum | AssetHubEnum | ExtraAssetEnum |
       case AssetEnum.PHA:
         return <>
           <img src={getAssetIcon(AssetEnum.PHA)} alt={AssetEnum.PHA} width={20} height={20} class="mr-2 block" />
-          <span>K-PHA</span>
+          <span>PHA</span>
         </>;
       case AssetEnum.KAR:
         return <>

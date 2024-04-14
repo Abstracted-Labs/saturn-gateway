@@ -644,7 +644,7 @@ const AssetsContext = () => {
               ? balance.locks.reduce((acc, lock) => acc.plus(new BigNumber(lock.amount.toString())), new BigNumber(0)).dividedBy(new BigNumber(10).pow(decimals))
               : new BigNumber(0);
             const nonTransferable = new BigNumber(balance.reservedBalance).plus(totalLockAmount).dividedBy(new BigNumber(10).pow(decimals));
-            console.log(assetName, transferable.toString(), currentMarketPrice.toString());
+            // console.log(assetName, transferable.toString(), currentMarketPrice.toString());
             sumTransferable = sumTransferable.plus(transferable.times(currentMarketPrice));
             sumNonTransferable = sumNonTransferable.plus(nonTransferable.times(currentMarketPrice));
             sumTotalPortfolio = sumTotalPortfolio.plus(transferable.plus(nonTransferable).times(currentMarketPrice));

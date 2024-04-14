@@ -63,7 +63,7 @@ export function getNetworkBlock(network: NetworkEnum) {
         </>;
       case NetworkEnum.KHALA:
         return <>
-          <img src={getAssetIcon('PHA')} alt={NetworkEnum.KHALA} width={15} height={15} class="mr-2 block rounded-full" />
+          <img src={getAssetIcon('KHA', NetworkEnum.KHALA)} alt={NetworkEnum.KHALA} width={15} height={15} class="mr-2 block rounded-full" />
           <span>Khala</span>
         </>;
       default:

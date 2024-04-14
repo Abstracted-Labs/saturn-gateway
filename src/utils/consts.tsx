@@ -7,6 +7,7 @@ import PolkadotIcon from '../assets/icons/polkadot-icon-25x25.png';
 import TuringIcon from '../assets/icons/turing-logo.svg';
 import MoonriverIcon from '../assets/icons/moonriver-logo.svg';
 import KhalaIcon from '../assets/icons/khala-logo.svg';
+import PhalaIcon from '../assets/icons/phala-logo.svg';
 import BifrostIcon from '../assets/icons/bifrost-logo.svg';
 import ShidenIcon from '../assets/icons/shiden-logo.svg';
 import KaruraIcon from '../assets/icons/karura-logo.svg';
@@ -78,7 +79,7 @@ export const AssetIconByCurrency: Record<string, string> = {
   KAR: KaruraIcon,
   MOVR: MoonriverIcon,
   TUR: TuringIcon,
-  PHA: KhalaIcon,
+  PHA: PhalaIcon,
 };
 
 export const NetworkIconByNetwork: Record<NetworkEnum, string> = {

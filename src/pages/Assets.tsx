@@ -87,9 +87,8 @@ export default function Assets() {
     let currentMarketPrice = null;
 
     const matchingAssetKey = findMatchingAssetKey(asset);
-
     if (matchingAssetKey === AssetEnum.TNKR) {
-      const tnkrPrice = allPrices[network];
+      const tnkrPrice = allPrices[NetworkEnum.TINKERNET];
       if (tnkrPrice && new BigNumber(tnkrPrice).isGreaterThan(0)) {
         currentMarketPrice = new BigNumber(tnkrPrice);
       } else {
@@ -263,7 +262,7 @@ export default function Assets() {
                         <td class='py-3 px-4 text-left w-[20%]'>
                           <span class="flex flex-row items-center gap-1">
                             <span class='h-5 w-5 flex rounded-full bg-black'>
-                              <img src={getAssetIcon(asset, network as NetworkEnum)} class="p-1" alt={asset} />
+                              <img src={getAssetIcon(asset, network as NetworkEnum, asset === AssetEnum.PHA)} class="p-1" alt={asset} />
                             </span>
                             <span>
                               {asset}

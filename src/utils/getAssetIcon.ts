@@ -1,8 +1,11 @@
 import { AssetEnum } from "../data/rings";
 import { AssetIconByCurrency, NetworkEnum, NetworkIconByCurrency, NetworkIconByNetwork } from "./consts";
 
-export function getAssetIcon(asset: string, network?: NetworkEnum) {
+export function getAssetIcon(asset: string, network?: NetworkEnum, isAssetIcon?: boolean) {
   if (network) {
+    if (isAssetIcon && AssetIconByCurrency[asset]) {
+      return AssetIconByCurrency[asset];
+    }
     if (NetworkIconByCurrency[asset] && NetworkIconByCurrency[asset].length > 0) {
       return NetworkIconByCurrency[asset][0];
     } else {
