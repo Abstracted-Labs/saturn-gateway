@@ -240,7 +240,7 @@ export default function Assets() {
 
   return (
     <>
-      <div class="relative overflow-x-auto overscroll-contain min-h-64 h-4/5 pr-2 flex flex-col content-stretch">
+      <div class="relative saturn-scrollbar overflow-x-auto overscroll-contain min-h-64 h-4/5 pr-2 flex flex-col content-stretch">
         <table class="w-full text-sm text-left text-saturn-lightgrey">
           <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
             <tr>
