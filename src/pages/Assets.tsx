@@ -240,7 +240,7 @@ export default function Assets() {
 
   return (
     <>
-      <div class="relative saturn-scrollbar overflow-x-auto overscroll-contain min-h-64 h-full flex flex-col content-stretch">
+      <div class="relative overflow-x-auto overscroll-contain min-h-64 h-4/5 pr-2 flex flex-col content-stretch">
         <table class="w-full text-sm text-left text-saturn-lightgrey">
           <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
             <tr>
@@ -250,7 +250,7 @@ export default function Assets() {
               <th scope="col" class='w-[20%]'>Chains</th>
             </tr>
           </thead>
-          <tbody class="dark:text-saturn-offwhite text-saturn-black">
+          <tbody class="dark:text-saturn-offwhite text-saturn-black overflow-y-auto h-4/5">
             <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Gathering info..." /></div>}>
               <Match when={balances() && balances().length > 0}>
                 <For each={balances()}>{([network, assets]) => {

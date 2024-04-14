@@ -6,7 +6,7 @@ import { Show } from "solid-js";
 import PageLinks from "./PageLinks";
 
 const LeftContent = (props: { inDrawer: boolean; }) => {
-  return <div class={`h-5/6 px-5 py-3 pb-10 lg:pb-2 flex flex-col justify-between bg-transparent ${ props.inDrawer ? 'overflow-y-hidden' : 'overflow-y-hidden' }`}
+  return <div class={`px-5 py-3 pb-10 lg:pb-2 flex flex-col justify-between bg-transparent ${ props.inDrawer ? 'overflow-y-hidden' : 'overflow-y-hidden' }`}
   >
     <Show when={props.inDrawer}>
       <span id="inDrawer" />
