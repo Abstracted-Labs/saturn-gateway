@@ -719,7 +719,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
             }
           }
         } catch (error) {
-          console.warn("Error parsing name from metadata:", error);
+          // console.warn("Error parsing name from metadata:", error);
           multisigName = `Multisig ${ details.id }`;
         }
         const requiredApproval = new BigNumber(details.requiredApproval.toString());

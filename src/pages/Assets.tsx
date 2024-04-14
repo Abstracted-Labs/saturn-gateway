@@ -250,11 +250,11 @@ export default function Assets() {
               <th scope="col" class='w-[20%]'>Chains</th>
             </tr>
           </thead>
-          <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Gathering info..." /></div>}>
-            <Match when={balances() && balances().length > 0}>
-              <For each={balances()}>{([network, assets]) => {
-                return <Show when={assets.length}>
-                  <tbody class="dark:text-saturn-offwhite text-saturn-black">
+          <tbody class="dark:text-saturn-offwhite text-saturn-black">
+            <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Gathering info..." /></div>}>
+              <Match when={balances() && balances().length > 0}>
+                <For each={balances()}>{([network, assets]) => {
+                  return <Show when={assets.length}>
                     <For each={assets as unknown as [string, BalanceType][]}>{([asset, b]) => {
                       const totalLockAmount = !!b.locks && b.locks.length > 0 ? b.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
                       return <tr class="border-b border-gray-200 dark:border-gray-800">
@@ -312,12 +312,12 @@ export default function Assets() {
                       </tr>;
                     }
                     }</For>
-                  </tbody>
-                </Show>;
-              }
-              }</For>
-            </Match>
-          </Switch>
+                  </Show>;
+                }
+                }</For>
+              </Match>
+            </Switch>
+          </tbody>
         </table>
         {renderLoadingAnimations()}
       </div>
