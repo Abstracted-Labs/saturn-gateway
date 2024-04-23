@@ -98,7 +98,7 @@ const FeeAssetModal = () => {
       </div>
       <div class="flex flex-col">
         <div class="relative mx-3">
-          <p class="text-xs/none mb-3">Select the asset that you would like to use to pay for multisig transaction fees.</p>
+          <p class="text-xs/none mb-3">Select the asset that you would like to use to pay for omnisig transaction fees.</p>
           <SaturnSelect isOpen={isFeeDropDownActive()} toggleId={FEE_TOGGLE_ID} dropdownId={FEE_DROPDOWN_ID} initialOption={feeAsset()} onClick={openFeeDropdown}>
             <For each={Object.values(KusamaFeeAssetEnum)}>
               {(asset) => {
