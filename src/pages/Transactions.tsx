@@ -269,11 +269,11 @@ export default function Transactions() {
   const processCallDescription = (call: Call, metadata?: string): string => {
     const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
     const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString();
-    const recipient = stringShorten((call.toHuman().args as Record<string, AnyJson>).to?.toString() || 'self', 10);
+    const recipient = (call.toHuman().args as Record<string, AnyJson>).to?.toString() || 'self';
     const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
     const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
-    const target = stringShorten((call.toHuman().args as Record<string, AnyJson>).target?.toString() || 'self', 10);
-    const callHash = stringShorten(call.hash.toString(), 10);
+    const target = (call.toHuman().args as Record<string, AnyJson>).target?.toString() || 'self';
+    const callHash = call.hash.toString();
     let id;
 
     switch (call.method) {
@@ -299,13 +299,12 @@ export default function Transactions() {
 
       case 'transfer':
         if (!dest) return '';
-        id = stringShorten(dest.Id?.toString() || '', 10);
-        console.log('data: ', (call.toHuman().args as Record<string, AnyJson>));
+        id = dest.Id?.toString();
         return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
 
       case 'transferKeepAlive':
         if (!dest) return '';
-        id = stringShorten(dest.Id?.toString() || '', 10);
+        id = dest.Id?.toString();
         return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
 
       case 'transferAssets':
@@ -501,7 +500,6 @@ export default function Transactions() {
               <For each={pendingProposals()}>
                 {(pc: CallDetailsWithHash, index) => {
                   const metadata = pc.details.proposalMetadata;
-                  console.log('metadata: ', metadata);
                   const proposalMetadata = typeof metadata === 'string' ? metadata : metadata ? u8aToString(metadata) : null;
                   const parsedMetadata = proposalMetadata ? JSON.parse(proposalMetadata).message : null;
                   const preparer = pc.details.originalCaller;
@@ -514,7 +512,7 @@ export default function Transactions() {
                     <div class="flex flex-row">
                       {/* Call data */}
                       <div class="max-h-[300px] w-full my-2 grow">
-                        <FormattedCall call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+                        <FormattedCall hash={pc.callHash.toString()} call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
                       </div>
 
                       <div>
