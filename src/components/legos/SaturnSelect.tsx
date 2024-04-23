@@ -54,7 +54,7 @@ const SaturnSelect = (props: SaturnSelectType) => {
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5 5 1 1 5" />
       </svg>
     </button>
-    <div id={mergedProps.dropdownId} aria-labelledby={mergedProps.toggleId} aria-hidden={!open()} class={`${ BUTTON_COMMON_STYLE } hidden z-80 divide-y rounded-t-none border-t-0 dark:border-t-saturn-black focus:outline-none z-50 ${ mergedProps.isMini ? 'w-28' : 'w-44' } ${ isScrollable() ? 'pt-12 saturn-scrollbar overflow-y-auto h-[200px]' : '' }`}>
+    <div id={mergedProps.dropdownId} aria-labelledby={mergedProps.toggleId} aria-hidden={!open()} class={`${ BUTTON_COMMON_STYLE } hidden z-80 divide-y rounded-t-none border-t-0 dark:border-t-saturn-black focus:outline-none z-50 ${ mergedProps.isMini ? 'w-28' : 'w-44' } ${ isScrollable() ? 'saturn-scrollbar overflow-y-auto h-[200px]' : '' }`}>
       <div class={`${ mergedProps.isMini ? 'text-xxs' : 'text-sm' } text-gray-700 w-full dark:text-gray-200`}>
         {kids()}
       </div>
