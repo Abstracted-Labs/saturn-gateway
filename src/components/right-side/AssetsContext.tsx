@@ -55,12 +55,12 @@ const allTheNetworks = (): Record<string, JSXElement> => ({
   [NetworkEnum.BASILISK]: getNetworkBlock(NetworkEnum.BASILISK),
   [NetworkEnum.PICASSO]: getNetworkBlock(NetworkEnum.PICASSO),
   [NetworkEnum.ASSETHUB]: getNetworkBlock(NetworkEnum.ASSETHUB),
-  [NetworkEnum.BIFROST]: getNetworkBlock(NetworkEnum.BIFROST),
+  // [NetworkEnum.BIFROST]: getNetworkBlock(NetworkEnum.BIFROST),
   [NetworkEnum.SHIDEN]: getNetworkBlock(NetworkEnum.SHIDEN),
-  [NetworkEnum.KARURA]: getNetworkBlock(NetworkEnum.KARURA),
+  // [NetworkEnum.KARURA]: getNetworkBlock(NetworkEnum.KARURA),
   [NetworkEnum.MOONRIVER]: getNetworkBlock(NetworkEnum.MOONRIVER),
-  [NetworkEnum.TURING]: getNetworkBlock(NetworkEnum.TURING),
-  [NetworkEnum.KHALA]: getNetworkBlock(NetworkEnum.KHALA),
+  // [NetworkEnum.TURING]: getNetworkBlock(NetworkEnum.TURING),
+  // [NetworkEnum.KHALA]: getNetworkBlock(NetworkEnum.KHALA),
 });
 
 const allTheAssets = (): Record<string, JSXElement> => ({
@@ -111,6 +111,7 @@ const AssetsContext = () => {
   const [isLoggedIn, setIsLoggedIn] = createSignal<boolean>(false);
   const [fromNetworks, setFromNetworks] = createSignal<[string, JSXElement][]>([]);
   const [toNetworks, setToNetworks] = createSignal<[string, JSXElement][]>([]);
+  const [disableSubmit, setDisableSubmit] = createSignal<boolean>(false);
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
@@ -744,6 +745,42 @@ const AssetsContext = () => {
     });
   });
 
+  createEffect(() => {
+    // Disable submit button if the selected pair is Kusama to AssetHub or AssetHub to Kusama
+    const finalPair = finalNetworkPair();
+    if (finalPair.to === NetworkEnum.KUSAMA && finalPair.from === NetworkEnum.ASSETHUB || finalPair.to === NetworkEnum.ASSETHUB && finalPair.from === NetworkEnum.KUSAMA) {
+      setDisableSubmit(true);
+      toast.setToast('Cannot send assets between Kusama and AssetHub at this time.', 'error', 0);
+      return;
+    } else {
+      setDisableSubmit(false);
+    }
+  });
+
+  createEffect(() => {
+    // Disable submit button if the user has less than 0.01 KSM in their account,
+    // When on a from network that supports that fee asset
+    const userBalances = allBalances();
+    const finalPair = finalNetworkPair();
+    const networkBalances: NetworkAssetBalance | undefined = userBalances.find(([network, assets]) => network === finalPair.from);
+    if (networkBalances && Array.isArray(networkBalances[1])) {
+      const balanceArray = networkBalances[1];
+      const assetBalances = (balanceArray as unknown as [string, BalanceType][]).find(([token, balances]) => token === AssetEnum.KSM);
+      if (assetBalances) {
+        const balance = assetBalances[1].freeBalance;
+        const decimals = Rings[NetworkEnum.KUSAMA]?.decimals ?? 12;
+        const balanceInKSM = new BigNumber(balance).dividedBy(new BigNumber(10).pow(decimals));
+        if (balanceInKSM.isLessThan(0.03)) {
+          setDisableSubmit(true);
+          toast.setToast('Insufficient balance: this omnisig does not have enough KSM to pay for transaction fees.', 'error', 0);
+          return;
+        } else {
+          setDisableSubmit(false);
+        }
+      }
+    }
+  });
+
   const MyBalance = () => {
     return <dl class="mt-2 text-xs w-full">
       <div class="flex place-items-stretch pb-4 text-saturn-lightgrey">
@@ -879,7 +916,7 @@ const AssetsContext = () => {
         </div> */}
       </div>
 
-      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount()} onClick={proposeTransfer}>Propose Transaction</button>
+      <button type="button" class={`mt-4 text-sm rounded-md bg-saturn-purple grow px-6 py-3 text-white focus:outline-none hover:bg-purple-800 disabled:opacity-25 disabled:cursor-not-allowed`} disabled={!isLoggedIn() || !hasMultisigs() || !isMultisigId() || !maxAssetAmount() || disableSubmit()} onClick={proposeTransfer}>Propose Transaction</button>
     </div>;
   };
 
