@@ -3,6 +3,7 @@ import type { Call } from '@polkadot/types/interfaces';
 
 export type FormattedCallProps = {
   call: Call;
+  hash?: string;
 };
 
 export default function FormattedCall(props: FormattedCallProps) {
@@ -19,7 +20,9 @@ export default function FormattedCall(props: FormattedCallProps) {
               action: ac.method,
               details: detailsWithoutReference,
             };
-
+            if (props.hash) {
+              (renamedObject as any).hash = props.hash;
+            }
             return renamedObject;
           })()
           , null,
