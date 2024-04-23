@@ -18,9 +18,6 @@ type CopyAddressFieldProps = {
 };
 
 const CopyAddressField = (props: CopyAddressFieldProps) => {
-  const [relayAddress, setRelayAddress] = createSignal<string | undefined>(undefined);
-  const [evmAddress, setEvmAddress] = createSignal<string | undefined>(undefined);
-
   const modal = useMegaModal();
   const saContext = useSelectedAccountContext();
   const toast = useToast();

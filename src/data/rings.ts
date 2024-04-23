@@ -24,7 +24,9 @@ export type RingsType = {
   [key in NetworkEnum]?: RingsData;
 };
 
-export const RingAssets = {
+export type RingAssetsType = Record<string, { decimals: number; }>;
+
+export const RingAssets: RingAssetsType = {
   TNKR: {
     decimals: 12,
   },

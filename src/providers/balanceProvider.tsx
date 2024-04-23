@@ -28,6 +28,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
   const allNetworks = Object.values(NetworkEnum);
 
   const onAssetsPage = createMemo(() => loc.pathname.includes('/assets'));
+  const onTransactionsPage = createMemo(() => loc.pathname.includes('/transactions'));
 
   const clearBalances = () => {
     setBalances([]);
@@ -86,8 +87,9 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
   createEffect(on([networkBalances, onAssetsPage], () => {
     const nb = networkBalances();
     const onAssets = onAssetsPage();
+    const onTransactions = onTransactionsPage();
 
-    if (onAssets) {
+    if (onAssets || onTransactions) {
       Object.entries(nb).forEach(([network, assets], index) => {
         if (Object.keys(assets).length > 0) {
           setTimeout(() => {
