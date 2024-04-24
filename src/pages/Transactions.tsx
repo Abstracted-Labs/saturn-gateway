@@ -434,7 +434,7 @@ export default function Transactions() {
                       <div>
                         {/* Preparer */}
                         <div class="flex flex-col items-end ml-2 mt-2">
-                          <div class="text-xs text-saturn-lightgrey mb-1">Prepared by:</div>
+                          <div class="text-xs text-saturn-lightgrey mb-1">Proposed by:</div>
                           <Identity address={preparer} />
                         </div>
 
