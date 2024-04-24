@@ -124,7 +124,7 @@ const MainContainer = () => {
   });
 
   return (
-    <div class="m-5 lg:my-3 lg:mx-3">
+    <div class="m-5 lg:my-3 lg:mx-3 mb-10">
       <MainContent />
     </div>
   );

@@ -593,12 +593,12 @@ export default function Transactions() {
 
   return (
     <div>
-      <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col h-full">
+      <div id={ACCORDION_ID} data-accordion="collapse" class="flex flex-col">
         <Switch fallback={<div>
           {loading() ? <LoaderAnimation text="Please wait..." /> : <span class={FALLBACK_TEXT_STYLE}>No transactions to display.</span>}
         </div>}>
           <Match when={pendingProposals().length > 0}>
-            <div class="overflow-y-scroll saturn-scrollbar pr-5 md:h-[550px] mb-3">
+            <div class="overflow-y-scroll saturn-scrollbar pr-5 md:h-[90%]">
               <For each={pendingProposals()}>
                 {(pc: CallDetailsWithHash, index) => {
                   const metadata = pc.details.proposalMetadata;
