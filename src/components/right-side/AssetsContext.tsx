@@ -772,13 +772,13 @@ const AssetsContext = () => {
         const balance = assetBalances[1].freeBalance;
         const decimals = Rings[NetworkEnum.KUSAMA]?.decimals ?? 12;
         const balanceInKSM = new BigNumber(balance).dividedBy(new BigNumber(10).pow(decimals));
-        // if (balanceInKSM.isLessThan(0.03)) {
-        //   setDisableSubmit(true);
-        //   toast.setToast('Insufficient balance: this omnisig must have more than 0.03 KSM to pay for transaction fees.', 'error', 0);
-        //   return;
-        // } else {
-        //   setDisableSubmit(false);
-        // }
+        if (balanceInKSM.isLessThan(0.03)) {
+          setDisableSubmit(true);
+          toast.setToast('Insufficient balance: this omnisig must have more than 0.03 KSM to pay for transaction fees.', 'error', 0);
+          return;
+        } else {
+          setDisableSubmit(false);
+        }
       }
     }
   });
