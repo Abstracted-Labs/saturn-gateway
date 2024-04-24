@@ -24,6 +24,7 @@ import { usePriceContext } from "../../providers/priceProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
 import { getEncodedAddress } from "../../utils/getEncodedAddress";
 import { useToast } from "../../providers/toastProvider";
+import { getAssetsFromNetwork } from "../../utils/getAssetsFromNetwork";
 
 const FROM_TOGGLE_ID = 'networkToggleFrom';
 const FROM_DROPDOWN_ID = 'networkDropdownFrom';
@@ -180,7 +181,9 @@ const AssetsContext = () => {
     // }
 
     const registry = assetRegistry();
-    if (!registry || !(asset() in registry)) {
+    const isAssetInNetwork = getAssetsFromNetwork(pair.to).includes(asset() as AssetEnum);
+    console.log('isAssetInNetwork', isAssetInNetwork);
+    if (!registry || (!isAssetInNetwork && !(asset() in registry))) {
       toast.setToast(`Cannot send an asset that is not supported on the destination network.`, 'error', 0);
       return;
     }
@@ -769,13 +772,13 @@ const AssetsContext = () => {
         const balance = assetBalances[1].freeBalance;
         const decimals = Rings[NetworkEnum.KUSAMA]?.decimals ?? 12;
         const balanceInKSM = new BigNumber(balance).dividedBy(new BigNumber(10).pow(decimals));
-        if (balanceInKSM.isLessThan(0.03)) {
-          setDisableSubmit(true);
-          toast.setToast('Insufficient balance: this omnisig must have more than 0.03 KSM to pay for transaction fees.', 'error', 0);
-          return;
-        } else {
-          setDisableSubmit(false);
-        }
+        // if (balanceInKSM.isLessThan(0.03)) {
+        //   setDisableSubmit(true);
+        //   toast.setToast('Insufficient balance: this omnisig must have more than 0.03 KSM to pay for transaction fees.', 'error', 0);
+        //   return;
+        // } else {
+        //   setDisableSubmit(false);
+        // }
       }
     }
   });
