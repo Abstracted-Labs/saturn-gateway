@@ -73,10 +73,12 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
 
   createEffect(on(() => saturnContext.state.multisigAddress, () => {
     const address = saturnContext.state.multisigAddress;
+    const details = saturnContext.state.multisigDetails;
+    const evmAddress = details?.evmAccount;
 
     const loadBalances = async () => {
-      if (address) {
-        const nBalances = await getBalancesFromAllNetworks(address);
+      if (address && evmAddress) {
+        const nBalances = await getBalancesFromAllNetworks(address, evmAddress.toString());
         setNetworkBalances(nBalances);
       }
     };

@@ -744,19 +744,20 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
   }
 
   api.disconnect();
-  // console.log(`Balances for ${ network } network:`, balancesByNetwork);
+  console.log(`Balances for ${ network } network:`, balancesByNetwork);
   return ({ [network]: balancesByNetwork });
 }
 
-export async function getBalancesFromAllNetworks(address: string): Promise<NetworkBalances> {
+export async function getBalancesFromAllNetworks(address: string, evmAddress: string): Promise<NetworkBalances> {
   const apis = await createApis();
   const userAddress = address; // Substitute a string address to test Assets page
-  const isEthereumAddr = isEthereumAddress(userAddress);
+  const isEthereumAddr = isEthereumAddress(evmAddress);
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
-    if (isEthereumAddr && (network === NetworkEnum.MOONRIVER)) {
+    if ((network === NetworkEnum.MOONRIVER)) {
       // If EVM address, only fetch balances from Moonriver (add more EVM networks later)
       const api = apis[network as NetworkEnum];
-      return getBalancesFromNetwork(api, userAddress, network as NetworkEnum);
+      console.log(`Fetching balances for ${ network } network...`);
+      return getBalancesFromNetwork(api, evmAddress, network as NetworkEnum);
     } else if (!isEthereumAddr) {
       const api = apis[network as NetworkEnum];
       return getBalancesFromNetwork(api, userAddress, network as NetworkEnum);
