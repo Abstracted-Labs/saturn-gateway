@@ -1,5 +1,5 @@
 import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
-import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset } from '@invarch/saturn-sdk';
+import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset, CallDetails } from '@invarch/saturn-sdk';
 import { BN, hexToString, stringShorten, u8aToHex, u8aToString } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
 import type { Call, EventRecord } from '@polkadot/types/interfaces';
@@ -7,7 +7,7 @@ import { useLocation } from '@solidjs/router';
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
-import { Rings } from '../data/rings';
+import { AssetEnum, AssetHubAssetIdEnum, RingAssets, Rings } from '../data/rings';
 import FormattedCall from '../components/legos/FormattedCall';
 import { getAllMembers } from '../utils/getAllMembers';
 import { MembersType } from './Management';
@@ -24,6 +24,9 @@ import { getEncodedAddress } from '../utils/getEncodedAddress';
 import { useToast } from '../providers/toastProvider';
 import { Identity } from '../components';
 import { withTimeout } from '../utils/withTimeout';
+import { BalanceContextType, useBalanceContext } from '../providers/balanceProvider';
+import { NetworkAssetBalance } from './Assets';
+import { BalanceType } from '../utils/getBalances';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -38,6 +41,7 @@ export default function Transactions() {
   const [activeIndex, setActiveIndex] = createSignal<number>(-1);
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
 
+  const balances = useBalanceContext();
   const toast = useToast();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
@@ -51,6 +55,26 @@ export default function Transactions() {
   const getMultisigDetails = createMemo(() => saturnContext.state.multisigDetails);
   const isTraditionalMultisig = createMemo(() => getMultisigDetails()?.requiredApproval.toNumber() === 0);
   const getMembers = createMemo(() => members());
+  const getBalances = createMemo(() => balances?.balances);
+
+  const getAssetDecimalsFromBalance = (asset: string): number => {
+    const allBalances: NetworkAssetBalance[] | undefined = getBalances();
+    if (!allBalances) {
+      console.log('exiting getAssetDecimalsFromBalance');
+      return 0;
+    }
+    for (const balance of allBalances) {
+      for (const [name, { decimals }] of Object.entries(balance[1])) {
+        if (asset === name && decimals) {
+          return decimals;
+        }
+      }
+    }
+    if (asset in RingAssets) {
+      return RingAssets[asset].decimals;
+    }
+    return 0;
+  };
 
   const hasVoted = (pc: CallDetailsWithHash) => {
     const address = encodedAddress();
@@ -265,16 +289,87 @@ export default function Transactions() {
     }
   };
 
+  const fetchPendingCallDetails = async (id: number, callHash: string): Promise<CallDetails | null | undefined> => {
+    const call = await saturnContext.state.saturn?.getPendingCall({ id, callHash });
+    return call;
+  };
+
+  const getAssetFromCallDetails = (assetDetails: any): string | undefined => {
+    if (typeof assetDetails === 'object' && assetDetails !== null) {
+      const keys = Object.keys(assetDetails);
+      if (keys.length > 0) {
+        const firstLevelValue = assetDetails[keys[0]];
+        if (typeof firstLevelValue === 'string') {
+          return firstLevelValue;
+        } else if (typeof firstLevelValue === 'object' && firstLevelValue !== null) {
+          const secondLevelKeys = Object.keys(firstLevelValue);
+          if (secondLevelKeys.length > 0) {
+            const secondLevelValue = firstLevelValue[secondLevelKeys[0]];
+            if (typeof secondLevelValue === 'string') {
+              const matchingKey = Object.entries(AssetHubAssetIdEnum).find(([key, value]) => value === secondLevelValue)?.[0];
+              if (matchingKey) {
+                return matchingKey;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return undefined;
+  };
+
   // Decode transaction call hash
   const processCallDescription = (call: Call, metadata?: string): string => {
+    const multisigId = getMultisigId();
     const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
-    const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString();
+    const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString() || '0';
     const recipient = (call.toHuman().args as Record<string, AnyJson>).to?.toString() || 'self';
     const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
     const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
     const target = (call.toHuman().args as Record<string, AnyJson>).target?.toString() || 'self';
-    const callHash = call.hash.toString();
+    const cancelHash = (call.toHuman().args as Record<string, AnyJson>).call_hash?.toString();
     let id;
+    let asset: AssetEnum | AssetHubAssetIdEnum | undefined;
+    let decimals;
+
+    if (multisigId) {
+      fetchPendingCallDetails(multisigId, call.hash.toString()).then((callDetails) => {
+        if (!callDetails) return '';
+        const actualCall = callDetails.actualCall.toHuman();
+        if ('method' in actualCall) {
+          if (actualCall.method === 'transfer' || actualCall.method === 'transferKeepAlive') {
+            // Local transfer
+            asset = AssetEnum.TNKR;
+            // console.log('local transfer asset: ', asset);
+            return asset;
+          }
+          if (actualCall.method === 'bridgeAssets' || actualCall.method === 'transferAssets') {
+            // Bridge or xcm transfer
+            // access asset value stored in {asset: {[key]: value}}
+            const args = actualCall.args as Record<string, AnyJson>;
+            if (!args || !args.asset || !Object.keys(args.asset)) return;
+            const possibleAsset = getAssetFromCallDetails(args.asset);
+            console.log('possibleAsset: ', possibleAsset);
+            if (Object.values(AssetEnum).includes(possibleAsset as AssetEnum)) {
+              asset = possibleAsset as AssetEnum;
+              return asset;
+            }
+            if (Object.values(AssetHubAssetIdEnum).includes(possibleAsset as AssetHubAssetIdEnum)) {
+              asset = possibleAsset as AssetHubAssetIdEnum;
+              return asset;
+            }
+            return asset;
+          }
+        }
+      });
+      if (asset) {
+        decimals = getAssetDecimalsFromBalance(asset);
+        console.log({ asset, decimals });
+      } else {
+        console.error('No asset found for this call');
+      }
+    }
 
     switch (call.method) {
       case 'sendCall':
@@ -289,13 +384,20 @@ export default function Transactions() {
         return `Execute ${ xcmCall.section }.${ xcmCall.method } call`;
 
       case 'cancelMultisigProposal':
-        return `Cancel omnisig proposal with call hash ${ callHash }`;
+        // id = getMultisigId();
+        // if (!id || !cancelHash) return '';
+        // fetchPendingCallDetails(id, cancelHash).then((callDetails) => {
+        //   if (!callDetails) return '';
+        //   const actualCall = callDetails.actualCall.toHuman();
+        //   console.log('actualCall: ', actualCall);
+        // });
+        return `Cancel omnisig proposal with call hash ${ cancelHash }`;
 
       case 'tokenMint':
-        return `Add new member or increase voting power to ${ amount?.toString() } for ${ target }`;
+        return `Add new member or increase voting power to ${ new BN(amount).mul(new BN('1000000')).toString() } for ${ target }`;
 
       case 'tokenBurn':
-        return `Remove member or decrease voting power by ${ amount?.toString() } for ${ target }`;
+        return `Remove member or decrease voting power by ${ new BN(amount).mul(new BN('1000000')).toString() } for ${ target }`;
 
       case 'transfer':
         if (!dest) return '';
@@ -333,7 +435,7 @@ export default function Transactions() {
     }
   };
 
-  const processNetworkIcons = (call: Call): string[] => {
+  const processNetworkIcons = (call: Call): string[] | undefined => {
     const destinationChain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
 
     const sourceAssetInfo = ((call.toHuman().args as Record<string, AnyJson>).asset as Record<string, string> | string);
@@ -342,11 +444,11 @@ export default function Transactions() {
 
     if (destinationChain) {
       const ring = JSON.parse(JSON.stringify(Rings))[destinationChain];
-      console.log('ring: ', ring);
+      // console.log('ring: ', ring);
       return [ring.icon];
     } else if (sourceChain && !destinationChain) {
       const ring = JSON.parse(JSON.stringify(Rings))[sourceChain];
-      console.log('ring: ', ring);
+      // console.log('ring: ', ring);
       return [ring.icon];
     } else {
       return [Rings.tinkernet?.icon as string];
@@ -503,7 +605,16 @@ export default function Transactions() {
                   const proposalMetadata = typeof metadata === 'string' ? metadata : metadata ? u8aToString(metadata) : null;
                   const parsedMetadata = proposalMetadata ? JSON.parse(proposalMetadata).message : null;
                   const preparer = pc.details.originalCaller;
-                  return <SaturnAccordionItem heading={processCallDescription(pc.details.actualCall as unknown as Call, parsedMetadata)} icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} headingId={`heading${ index() }`} contentId={`content${ index() }`} onClick={() => handleAccordionClick(index())} active={isItemActive(index())}>
+                  return <SaturnAccordionItem
+                    // heading={processCallDescription(pc.details.actualCall as unknown as Call, parsedMetadata)} 
+                    // icon={processNetworkIcons(pc.details.actualCall as unknown as Call)} 
+                    headingId={`heading${ index() }`}
+                    contentId={`content${ index() }`}
+                    onClick={() => handleAccordionClick(index())}
+                    active={isItemActive(index())}
+                    callDetails={pc.details as unknown as CallDetails}
+                    call={pc.details.actualCall as unknown as Call}
+                    metadata={parsedMetadata}>
                     {/* Proposal description */}
                     {proposalMetadata && <div class="flex flex-col mt-3">
                       <div class="text-xs text-saturn-lightgrey mb-1">Proposal description:</div>
@@ -512,7 +623,7 @@ export default function Transactions() {
                     <div class="flex flex-row">
                       {/* Call data */}
                       <div class="max-h-[300px] w-full my-2 grow">
-                        <FormattedCall hash={pc.callHash.toString()} call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} />
+                        <FormattedCall hash={pc.callHash.toString()} call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} multisigId={getMultisigId()} />
                       </div>
 
                       <div>
