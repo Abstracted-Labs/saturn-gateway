@@ -598,7 +598,7 @@ export default function Transactions() {
           {loading() ? <LoaderAnimation text="Please wait..." /> : <span class={FALLBACK_TEXT_STYLE}>No transactions to display.</span>}
         </div>}>
           <Match when={pendingProposals().length > 0}>
-            <div class="overflow-y-scroll saturn-scrollbar pr-5 md:h-[90%]">
+            <div class="overflow-y-scroll saturn-scrollbar pr-5 h-[500px]">
               <For each={pendingProposals()}>
                 {(pc: CallDetailsWithHash, index) => {
                   const metadata = pc.details.proposalMetadata;
