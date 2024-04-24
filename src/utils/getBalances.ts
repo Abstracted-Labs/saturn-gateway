@@ -753,13 +753,11 @@ export async function getBalancesFromAllNetworks(address: string, evmAddress: st
   const userAddress = address; // Substitute a string address to test Assets page
   const isEthereumAddr = isEthereumAddress(evmAddress);
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
-    if ((network === NetworkEnum.MOONRIVER)) {
-      // If EVM address, only fetch balances from Moonriver (add more EVM networks later)
-      const api = apis[network as NetworkEnum];
-      console.log(`Fetching balances for ${ network } network...`);
+    const api = apis[network as NetworkEnum];
+    console.log(`Fetching balances for ${ network } network...`);
+    if (network === NetworkEnum.MOONRIVER && isEthereumAddr) {
       return getBalancesFromNetwork(api, evmAddress, network as NetworkEnum);
-    } else if (!isEthereumAddr) {
-      const api = apis[network as NetworkEnum];
+    } else if (!isEthereumAddr || network !== NetworkEnum.MOONRIVER) {
       return getBalancesFromNetwork(api, userAddress, network as NetworkEnum);
     }
     return Promise.resolve({ [network]: {} });

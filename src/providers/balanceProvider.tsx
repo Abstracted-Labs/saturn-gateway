@@ -6,6 +6,7 @@ import { useToast } from './toastProvider';
 import { NetworkEnum } from '../utils/consts';
 import { createStore } from 'solid-js/store';
 import { useLocation } from '@solidjs/router';
+import { u8aToHex } from '@polkadot/util';
 
 export interface BalanceContextType {
   balances: NetworkAssetBalance[];
@@ -74,7 +75,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
   createEffect(on(() => saturnContext.state.multisigAddress, () => {
     const address = saturnContext.state.multisigAddress;
     const details = saturnContext.state.multisigDetails;
-    const evmAddress = details?.evmAccount;
+    const evmAddress = u8aToHex(details?.evmAccount);
 
     const loadBalances = async () => {
       if (address && evmAddress) {

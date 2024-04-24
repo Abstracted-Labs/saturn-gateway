@@ -1,0 +1,34 @@
+endpoint: wss://tinkernet-rpc.dwellir.com
+mock-signature-host: true
+
+import-storage:
+  System:
+    Account:
+      -
+        -
+          - i4wycLZ3VkAPksYeiNrnjg2WhcnGTNyK13fhiMYQMUFVker32
+        - providers: 1
+          data:
+            free: 1000000000000000
+      -
+        -
+          - i4xtLgpG1kF6Hm4ep6oiUbTXyUE5LKzdGuFHbS5TCgW2tYDRE
+        - providers: 1
+          data:
+            free: 1000000000000000
+  CoreAssets:
+    Accounts:
+      -
+        - 
+          - i4wycLZ3VkAPksYeiNrnjg2WhcnGTNyK13fhiMYQMUFVker32
+          - 0
+        - free: 1000000000000000
+  Tokens:
+    Accounts:
+      -
+        - 
+          - i4xtLgpG1kF6Hm4ep6oiUbTXyUE5LKzdGuFHbS5TCgW2tYDRE
+          - 1
+        - free: 4200000000000000
+
+
