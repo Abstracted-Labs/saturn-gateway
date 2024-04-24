@@ -252,7 +252,7 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
 
       case 'operateMultisig':
         if (metadata && metadata.includes('removeMember')) {
-          description = 'Remove member from multisig';
+          description = 'Remove member from omnisig';
         } else if (metadata && metadata.includes('proposeNewVotingPower')) {
           description = 'Propose new voting power for a member';
         }
@@ -260,7 +260,7 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
 
       case 'batchAll':
         if (metadata && metadata.includes('proposeNewMembers')) {
-          description = 'Add new member(s) to multisig';
+          description = 'Add new member(s) to omnisig';
         }
         break;
     }
