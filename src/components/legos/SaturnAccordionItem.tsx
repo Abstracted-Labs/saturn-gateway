@@ -214,7 +214,7 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
         break;
 
       case 'cancelMultisigProposal':
-        description = `Cancel multisig proposal with call hash ${ cancelHash }`;
+        description = `Cancel omnisig proposal with call hash ${ cancelHash }`;
         break;
 
       case 'tokenMint':
