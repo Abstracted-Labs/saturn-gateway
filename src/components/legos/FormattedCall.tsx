@@ -18,7 +18,7 @@ export default function FormattedCall(props: FormattedCallProps) {
     const ac = props.call.toHuman();
     const detailsWithoutReference = JSON.parse(JSON.stringify(ac.args));
     let renamedObject = {
-      pallet: ac.section,
+      // pallet: ac.section,
       action: ac.method,
       details: detailsWithoutReference,
       ref: '',

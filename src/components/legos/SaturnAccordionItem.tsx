@@ -1,16 +1,14 @@
-import { CallDetails, CallDetailsWithHash } from "@invarch/saturn-sdk";
+import { CallDetails } from "@invarch/saturn-sdk";
 import { Call } from "@polkadot/types/interfaces";
 import { AnyJson } from "@polkadot/types/types";
 import { BN } from "@polkadot/util";
-import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { createEffect, createMemo, createSignal } from "solid-js";
 import { AssetEnum, AssetHubAssetIdEnum, ExtraAssetDecimalsEnum, RingAssets, Rings } from "../../data/rings";
 import { useSaturnContext } from "../../providers/saturnProvider";
 import { useBalanceContext } from "../../providers/balanceProvider";
 import { NetworkAssetBalance } from "../../pages/Assets";
 import { useRingApisContext } from "../../providers/ringApisProvider";
 import { NetworkEnum } from "../../utils/consts";
-import { getAssetsFromNetwork } from "../../utils/getAssetsFromNetwork";
-import BigNumber from "bignumber.js";
 import { formatAsset } from "../../utils/formatAsset";
 
 interface ISaturnAccordionItemProps {
@@ -105,11 +103,11 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
     const sourceAssetInfo = ((call.toHuman().args as Record<string, AnyJson>).asset as Record<string, string> | string);
     const sourceChain = typeof sourceAssetInfo !== 'string' && typeof sourceAssetInfo === 'object' ? Object.entries(sourceAssetInfo)[0][0].toLocaleLowerCase() as NetworkEnum : undefined;
 
-    if (destinationChain) {
-      const ring = JSON.parse(JSON.stringify(Rings))[destinationChain];
-      setAssetIcon([ring.icon]);
-      return;
-    }
+    // if (destinationChain) {
+    //   const ring = JSON.parse(JSON.stringify(Rings))[destinationChain];
+    //   setAssetIcon([ring.icon]);
+    //   return;
+    // }
 
     if (sourceChain) {
       const ring = JSON.parse(JSON.stringify(Rings))[sourceChain];
@@ -131,11 +129,13 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
             if (uncoverDetails) {
               const moreArgs = uncoverDetails.actualCall.toHuman().args as Record<string, AnyJson>;
               if (!moreArgs || typeof moreArgs !== 'object') return;
-              const destination = moreArgs.destination?.toString();
-              if (!destination) {
+              const assetObj = moreArgs.asset;
+              if (!assetObj) return;
+              const assetPropertyKey = Object.keys(assetObj)[0];
+              if (!assetPropertyKey) {
                 return;
-              };
-              const asset = Rings[destination.toLowerCase() as NetworkEnum];
+              }
+              const asset = Rings[assetPropertyKey.toLowerCase() as NetworkEnum];
               if (asset) {
                 setAssetIcon([asset.icon]);
               }
@@ -214,7 +214,7 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
         break;
 
       case 'cancelMultisigProposal':
-        description = `Cancel omnisig proposal with call hash ${ cancelHash }`;
+        description = `Cancel omnisig proposal with ref ${ cancelHash }`;
         break;
 
       case 'tokenMint':
@@ -227,18 +227,28 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
 
       case 'transfer':
       case 'transferKeepAlive':
-        const _transferAsset = asset();
-        const _transferDecimals = decimals();
-        if (dest && _transferAsset && _transferDecimals) {
+        const _keepAliveAsset = asset();
+        const _keepAliveDecimals = decimals();
+        if (dest && _keepAliveAsset && _keepAliveDecimals) {
           const id = dest.Id?.toString();
           const amt = value?.toString().replace(/,/g, '');
           if (!amt) return '';
-          const newAmt = formatAsset(amt, _transferDecimals, 4);
-          description = `Transfer ${ newAmt.toString() } ${ _transferAsset } to ${ id }`;
+          const newAmt = formatAsset(amt, _keepAliveDecimals, 4);
+          description = `Transfer ${ newAmt.toString() } ${ _keepAliveAsset } to ${ id }`;
         }
         break;
 
       case 'transferAssets':
+        const _transferAsset = asset();
+        const _transferDecimals = decimals();
+        if (_transferAsset && _transferDecimals) {
+          const amt = amount?.toString().replace(/,/g, '');
+          if (!amt) return '';
+          const newAmt = formatAsset(amt, _transferDecimals, 4);
+          description = `Transfer ${ newAmt.toString() } ${ _transferAsset } to ${ recipient }`;
+        }
+        break;
+
       case 'bridgeAssets':
         const _bridgeAsset = asset();
         const _bridgeDecimals = decimals();
@@ -246,7 +256,7 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
           const amt = amount?.toString().replace(/,/g, '');
           if (!amt) return '';
           const newAmt = formatAsset(amt, _bridgeDecimals, 4);
-          description = `Transfer ${ newAmt.toString() } ${ _bridgeAsset } to ${ recipient }`;
+          description = `Bridge ${ newAmt.toString() } ${ _bridgeAsset } to ${ recipient }`;
         }
         break;
 

@@ -1,32 +1,26 @@
-import { createSignal, For, createEffect, Switch, Match, onCleanup, createMemo, onMount, Show, JSX } from 'solid-js';
+import { createSignal, For, createEffect, Switch, Match, createMemo, Show, JSX } from 'solid-js';
 import { ParsedTallyRecords, type CallDetailsWithHash, type ParsedTallyRecordsVote, FeeAsset, CallDetails } from '@invarch/saturn-sdk';
-import { BN, hexToString, stringShorten, u8aToHex, u8aToString } from '@polkadot/util';
+import { BN, stringShorten, u8aToString } from '@polkadot/util';
 import type { AnyJson } from '@polkadot/types/types/codec';
-import type { Call, EventRecord } from '@polkadot/types/interfaces';
-import { useLocation } from '@solidjs/router';
+import type { Call } from '@polkadot/types/interfaces';
 import { useRingApisContext } from "../providers/ringApisProvider";
 import { useSaturnContext } from "../providers/saturnProvider";
 import { useSelectedAccountContext } from "../providers/selectedAccountProvider";
-import { AssetEnum, AssetHubAssetIdEnum, RingAssets, Rings } from '../data/rings';
 import FormattedCall from '../components/legos/FormattedCall';
 import { getAllMembers } from '../utils/getAllMembers';
 import { MembersType } from './Management';
 import SaturnAccordionItem from '../components/legos/SaturnAccordionItem';
-import { initAccordions, AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
+import { AccordionInterface, Accordion as FlowAccordion, AccordionItem as FlowAccordionItem } from 'flowbite';
 import { FALLBACK_TEXT_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../utils/consts';
 import { processCallData } from '../utils/processCallData';
 import AyeIcon from '../assets/icons/aye-icon-17x17.svg';
 import NayIcon from '../assets/icons/nay-icon-17x17.svg';
 import SaturnProgress from '../components/legos/SaturnProgress';
 import LoaderAnimation from '../components/legos/LoaderAnimation';
-import { SubmittableResult } from '@polkadot/api';
 import { getEncodedAddress } from '../utils/getEncodedAddress';
 import { useToast } from '../providers/toastProvider';
 import { Identity } from '../components';
 import { withTimeout } from '../utils/withTimeout';
-import { BalanceContextType, useBalanceContext } from '../providers/balanceProvider';
-import { NetworkAssetBalance } from './Assets';
-import { BalanceType } from '../utils/getBalances';
 
 export const ACCORDION_ID = 'accordion-collapse';
 
@@ -41,13 +35,10 @@ export default function Transactions() {
   const [activeIndex, setActiveIndex] = createSignal<number>(-1);
   const [feeAsset, setFeeAsset] = createSignal<KusamaFeeAssetEnum>(KusamaFeeAssetEnum.TNKR);
 
-  const balances = useBalanceContext();
   const toast = useToast();
   const ringApisContext = useRingApisContext();
   const saturnContext = useSaturnContext();
   const selectedAccountContext = useSelectedAccountContext();
-  const loc = useLocation();
-  const multisigHashId = loc.pathname.split('/')[1];
 
   const encodedAddress = createMemo(() => getEncodedAddress(selectedAccountContext.state.account?.address || '', 117));
   const saturn = createMemo(() => saturnContext.state.saturn);
@@ -55,26 +46,6 @@ export default function Transactions() {
   const getMultisigDetails = createMemo(() => saturnContext.state.multisigDetails);
   const isTraditionalMultisig = createMemo(() => getMultisigDetails()?.requiredApproval.toNumber() === 0);
   const getMembers = createMemo(() => members());
-  const getBalances = createMemo(() => balances?.balances);
-
-  const getAssetDecimalsFromBalance = (asset: string): number => {
-    const allBalances: NetworkAssetBalance[] | undefined = getBalances();
-    if (!allBalances) {
-      console.log('exiting getAssetDecimalsFromBalance');
-      return 0;
-    }
-    for (const balance of allBalances) {
-      for (const [name, { decimals }] of Object.entries(balance[1])) {
-        if (asset === name && decimals) {
-          return decimals;
-        }
-      }
-    }
-    if (asset in RingAssets) {
-      return RingAssets[asset].decimals;
-    }
-    return 0;
-  };
 
   const hasVoted = (pc: CallDetailsWithHash) => {
     const address = encodedAddress();
@@ -289,172 +260,6 @@ export default function Transactions() {
     }
   };
 
-  const fetchPendingCallDetails = async (id: number, callHash: string): Promise<CallDetails | null | undefined> => {
-    const call = await saturnContext.state.saturn?.getPendingCall({ id, callHash });
-    return call;
-  };
-
-  const getAssetFromCallDetails = (assetDetails: any): string | undefined => {
-    if (typeof assetDetails === 'object' && assetDetails !== null) {
-      const keys = Object.keys(assetDetails);
-      if (keys.length > 0) {
-        const firstLevelValue = assetDetails[keys[0]];
-        if (typeof firstLevelValue === 'string') {
-          return firstLevelValue;
-        } else if (typeof firstLevelValue === 'object' && firstLevelValue !== null) {
-          const secondLevelKeys = Object.keys(firstLevelValue);
-          if (secondLevelKeys.length > 0) {
-            const secondLevelValue = firstLevelValue[secondLevelKeys[0]];
-            if (typeof secondLevelValue === 'string') {
-              const matchingKey = Object.entries(AssetHubAssetIdEnum).find(([key, value]) => value === secondLevelValue)?.[0];
-              if (matchingKey) {
-                return matchingKey;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return undefined;
-  };
-
-  // Decode transaction call hash
-  const processCallDescription = (call: Call, metadata?: string): string => {
-    const multisigId = getMultisigId();
-    const chain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
-    const amount = (call.toHuman().args as Record<string, AnyJson>).amount?.toString() || '0';
-    const recipient = (call.toHuman().args as Record<string, AnyJson>).to?.toString() || 'self';
-    const value = (call.toHuman().args as Record<string, AnyJson>).value?.toString();
-    const dest = ((call.toHuman().args as Record<string, AnyJson>).dest as Record<string, AnyJson>);
-    const target = (call.toHuman().args as Record<string, AnyJson>).target?.toString() || 'self';
-    const cancelHash = (call.toHuman().args as Record<string, AnyJson>).call_hash?.toString();
-    let id;
-    let asset: AssetEnum | AssetHubAssetIdEnum | undefined;
-    let decimals;
-
-    if (multisigId) {
-      fetchPendingCallDetails(multisigId, call.hash.toString()).then((callDetails) => {
-        if (!callDetails) return '';
-        const actualCall = callDetails.actualCall.toHuman();
-        if ('method' in actualCall) {
-          if (actualCall.method === 'transfer' || actualCall.method === 'transferKeepAlive') {
-            // Local transfer
-            asset = AssetEnum.TNKR;
-            // console.log('local transfer asset: ', asset);
-            return asset;
-          }
-          if (actualCall.method === 'bridgeAssets' || actualCall.method === 'transferAssets') {
-            // Bridge or xcm transfer
-            // access asset value stored in {asset: {[key]: value}}
-            const args = actualCall.args as Record<string, AnyJson>;
-            if (!args || !args.asset || !Object.keys(args.asset)) return;
-            const possibleAsset = getAssetFromCallDetails(args.asset);
-            console.log('possibleAsset: ', possibleAsset);
-            if (Object.values(AssetEnum).includes(possibleAsset as AssetEnum)) {
-              asset = possibleAsset as AssetEnum;
-              return asset;
-            }
-            if (Object.values(AssetHubAssetIdEnum).includes(possibleAsset as AssetHubAssetIdEnum)) {
-              asset = possibleAsset as AssetHubAssetIdEnum;
-              return asset;
-            }
-            return asset;
-          }
-        }
-      });
-      if (asset) {
-        decimals = getAssetDecimalsFromBalance(asset);
-        console.log({ asset, decimals });
-      } else {
-        console.error('No asset found for this call');
-      }
-    }
-
-    switch (call.method) {
-      case 'sendCall':
-        const innerCall = (call.toHuman().args as Record<string, AnyJson>).call?.toString();
-
-        if (!chain || !innerCall || !ringApisContext.state[chain]) {
-          return '';
-        }
-
-        const xcmCall = ringApisContext.state[chain].createType('Call', innerCall);
-
-        return `Execute ${ xcmCall.section }.${ xcmCall.method } call`;
-
-      case 'cancelMultisigProposal':
-        // id = getMultisigId();
-        // if (!id || !cancelHash) return '';
-        // fetchPendingCallDetails(id, cancelHash).then((callDetails) => {
-        //   if (!callDetails) return '';
-        //   const actualCall = callDetails.actualCall.toHuman();
-        //   console.log('actualCall: ', actualCall);
-        // });
-        return `Cancel omnisig proposal with call hash ${ cancelHash }`;
-
-      case 'tokenMint':
-        return `Add new member or increase voting power to ${ new BN(amount).mul(new BN('1000000')).toString() } for ${ target }`;
-
-      case 'tokenBurn':
-        return `Remove member or decrease voting power by ${ new BN(amount).mul(new BN('1000000')).toString() } for ${ target }`;
-
-      case 'transfer':
-        if (!dest) return '';
-        id = dest.Id?.toString();
-        return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
-
-      case 'transferKeepAlive':
-        if (!dest) return '';
-        id = dest.Id?.toString();
-        return `Transfer tokens in the amount of ${ value?.toString() } to ${ id }`;
-
-      case 'transferAssets':
-        return `Transfer tokens in the amount of ${ amount?.toString() } to ${ recipient }`;
-
-      case 'bridgeAssets':
-        return `Transfer tokens in the amount of ${ amount?.toString() } to ${ recipient }`;
-
-      case 'operateMultisig':
-        const operateMultisigMsg = metadata;
-        if (operateMultisigMsg && operateMultisigMsg.includes('removeMember')) {
-          return 'Remove member from omnisig';
-        }
-        if (operateMultisigMsg && operateMultisigMsg.includes('proposeNewVotingPower')) {
-          return 'Propose new voting power for a member';
-        }
-
-      case 'batchAll':
-        const batchAllMsg = metadata;
-        if (batchAllMsg && batchAllMsg.includes('proposeNewMembers')) {
-          return 'Add new member(s) to omnisig';
-        }
-
-      default:
-        return `Execute ${ call.section }.${ call.method } call`;
-    }
-  };
-
-  const processNetworkIcons = (call: Call): string[] | undefined => {
-    const destinationChain = (call.toHuman().args as Record<string, AnyJson>).destination?.toString().toLowerCase();
-
-    const sourceAssetInfo = ((call.toHuman().args as Record<string, AnyJson>).asset as Record<string, string> | string);
-
-    const sourceChain = typeof sourceAssetInfo !== 'string' && typeof sourceAssetInfo === 'object' ? Object.entries(sourceAssetInfo)[0][0].toLocaleLowerCase() as NetworkEnum : undefined;
-
-    if (destinationChain) {
-      const ring = JSON.parse(JSON.stringify(Rings))[destinationChain];
-      // console.log('ring: ', ring);
-      return [ring.icon];
-    } else if (sourceChain && !destinationChain) {
-      const ring = JSON.parse(JSON.stringify(Rings))[sourceChain];
-      // console.log('ring: ', ring);
-      return [ring.icon];
-    } else {
-      return [Rings.tinkernet?.icon as string];
-    }
-  };
-
   // Decode external transaction to human readable format
   const processExternalCall = (fullCall: Call, call: string): Record<string, AnyJson> | string => {
     console.log('call: ', call);
@@ -470,7 +275,7 @@ export default function Transactions() {
       method: null,
       args: null,
     };
-    console.log('objectOrder: ', objectOrder);
+
     return Object.assign(objectOrder, ringApisContext.state[chain].createType('Call', call).toHuman());
   };
 

@@ -271,6 +271,7 @@ async function getAssetRegistryByNetwork(network: NetworkEnum, api: ApiPromise):
     }
   }
 
+  localStorage.setItem(`assetRegistry_${ network }`, JSON.stringify(assetRegistry));
   return assetRegistry;
 }
 
@@ -744,7 +745,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
   }
 
   api.disconnect();
-  console.log(`Balances for ${ network } network:`, balancesByNetwork);
+  // console.log(`Balances for ${ network } network:`, balancesByNetwork);
   return ({ [network]: balancesByNetwork });
 }
 
@@ -754,7 +755,6 @@ export async function getBalancesFromAllNetworks(address: string, evmAddress: st
   const isEthereumAddr = isEthereumAddress(evmAddress);
   const promises = Object.entries(Rings).map(async ([network, networkData]) => {
     const api = apis[network as NetworkEnum];
-    console.log(`Fetching balances for ${ network } network...`);
     if (network === NetworkEnum.MOONRIVER && isEthereumAddr) {
       return getBalancesFromNetwork(api, evmAddress, network as NetworkEnum);
     } else if (!isEthereumAddr || network !== NetworkEnum.MOONRIVER) {
@@ -766,4 +766,11 @@ export async function getBalancesFromAllNetworks(address: string, evmAddress: st
   const allBalances: NetworkBalances = Object.assign({}, ...results);
 
   return allBalances;
+}
+
+export type AssetRegistryType = Record<string, string | FeeAsset | number | [number | string, number]> | null;
+
+export function getLocalAssetRegistry(network: NetworkEnum): AssetRegistryType {
+  const data = localStorage.getItem(`assetRegistry_${ network }`);
+  return data ? JSON.parse(data) : null;
 }

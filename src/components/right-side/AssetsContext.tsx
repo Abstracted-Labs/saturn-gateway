@@ -11,7 +11,7 @@ import SaturnSelect from "../legos/SaturnSelect";
 import { Dropdown, type DropdownInterface, type DropdownOptions } from "flowbite";
 import { getNetworkBlock } from "../../utils/getNetworkBlock";
 import { getAssetBlock } from "../../utils/getAssetBlock";
-import { BalanceType } from "../../utils/getBalances";
+import { AssetRegistryType, BalanceType, getLocalAssetRegistry } from "../../utils/getBalances";
 import { formatAsset } from "../../utils/formatAsset";
 import { useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import { useLocation } from "@solidjs/router";
@@ -112,6 +112,7 @@ const AssetsContext = () => {
   const [fromNetworks, setFromNetworks] = createSignal<[string, JSXElement][]>([]);
   const [toNetworks, setToNetworks] = createSignal<[string, JSXElement][]>([]);
   const [disableSubmit, setDisableSubmit] = createSignal<boolean>(false);
+  const [assetRegistry, setAssetRegistry] = createSignal<AssetRegistryType>({});
 
   const proposeContext = useProposeContext();
   const ringApisContext = useRingApisContext();
@@ -178,11 +179,11 @@ const AssetsContext = () => {
     //   return;
     // }
 
-    // if (!OPEN_DESTINATIONS.includes(pair.to)) {
-    //   const destination = pair.to.charAt(0).toUpperCase() + pair.to.slice(1);
-    //   toast.setToast(`Cannot send assets to ${ destination } at this time.`, 'error', 0);
-    //   return;
-    // }
+    const registry = assetRegistry();
+    if (!registry || !(asset() in registry)) {
+      toast.setToast(`Cannot send an asset that is not supported on the destination network.`, 'error', 0);
+      return;
+    }
 
     const fromNetwork = pair.from;
     const toNetwork = pair.to;
@@ -216,8 +217,6 @@ const AssetsContext = () => {
     } else {
       bnAmount = new BigNumber(amount()).multipliedBy(new BigNumber(10).pow(Rings[pair.from as keyof typeof Rings]?.decimals ?? 0));
     }
-
-    console.log(asset(), bnAmount.toString());
 
     const amountPlank = new BigNumber(bnAmount.toString().split('.')[0]);
 
@@ -772,13 +771,19 @@ const AssetsContext = () => {
         const balanceInKSM = new BigNumber(balance).dividedBy(new BigNumber(10).pow(decimals));
         if (balanceInKSM.isLessThan(0.03)) {
           setDisableSubmit(true);
-          toast.setToast('Insufficient balance: this omnisig does not have enough KSM to pay for transaction fees.', 'error', 0);
+          toast.setToast('Insufficient balance: this omnisig must have more than 0.03 KSM to pay for transaction fees.', 'error', 0);
           return;
         } else {
           setDisableSubmit(false);
         }
       }
     }
+  });
+
+  createEffect(() => {
+    const toNetwork = finalNetworkPair().to;
+    const toNetworkAssetRegistry = getLocalAssetRegistry(toNetwork);
+    setAssetRegistry(toNetworkAssetRegistry);
   });
 
   const MyBalance = () => {
