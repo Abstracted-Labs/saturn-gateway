@@ -1,139 +1,326 @@
-import type { Setter } from 'solid-js';
-import { createSignal, For, createEffect, Show } from 'solid-js';
-import { Button } from '@hope-ui/solid';
-import { getBalancesFromAllNetworks } from '../utils/getBalances';
-import { Rings } from '../data/rings';
-import { BigNumber } from 'bignumber.js';
-import { type ApiPromise } from '@polkadot/api';
-import { type Saturn } from '@invarch/saturn-sdk';
-
-import TransferModal from '../modals/transfer';
-import { useSaturnContext } from "../providers/saturnProvider";
-import type { AssetsBalances, Balances } from "../utils/getBalances";
-
-export type AssetsPageProps = {
-};
+import { createSignal, For, createEffect, Show, Switch, Match, onCleanup, createMemo, on, onMount } from 'solid-js';
+import { AssetEnum, AssetHubEnum, ExtraAssetEnum, NetworksByAsset, Rings } from '../data/rings';
+import type { BalanceType } from "../utils/getBalances";
+import { formatAsset } from '../utils/formatAsset';
+import { getAssetIcon } from '../utils/getAssetIcon';
+import { getNetworkIconByAsset } from '../utils/getNetworkIconByAsset';
+import { FALLBACK_TEXT_STYLE, NetworkEnum } from '../utils/consts';
+import BigNumber from 'bignumber.js';
+import { createStore } from 'solid-js/store';
+import LoaderAnimation from '../components/legos/LoaderAnimation';
+import { usePriceContext } from '../providers/priceProvider';
+import { useBalanceContext } from '../providers/balanceProvider';
+import { useSaturnContext } from '../providers/saturnProvider';
+import { getNetworkIconByNetwork } from '../utils/getNetworkIconByNetwork';
+import { formatBalance } from '@polkadot/util';
 
 const StakePage = {
-    tinkernet_TNKR: 'https://tinker.network/staking',
+  tinkernet_TNKR: 'https://tinker.network/staking',
 };
 
+export type NetworkAssetBalance = [string, BalanceType[]];
+
+export type NetworkBalancesArray = [string, NetworkAssetBalance[]];
+
+export const findMatchingAssetKey = (asset: string) => Object.keys(NetworksByAsset).find(key => {
+  const normalizedAsset = asset.toLowerCase();
+  const normalizedKey = key.toLowerCase();
+  const isExactMatch = normalizedAsset === normalizedKey;
+  const isContainedMatch = normalizedAsset.includes(normalizedKey) || normalizedKey.includes(normalizedAsset);
+  const lengthDifference = Math.abs(normalizedAsset.length - normalizedKey.length);
+  const isLikelyPrefixSuffixDifference = lengthDifference <= 2;
+  return isExactMatch || (isContainedMatch && isLikelyPrefixSuffixDifference);
+});
+
 export default function Assets() {
-    const [balances, setBalances] = createSignal<Array<[string, [string, Balances][]]>>();
-    const [transferModalOpen, setTransferModalOpen] = createSignal<{ network: string; asset: string } | undefined>();
+  const [loading, setLoading] = createSignal<NetworkEnum[]>([]);
+  const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
+  const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
+  const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
+  const [usdPrices, setUsdPrices] = createStore<Record<string, string>>({});
 
-    const saturnContext = useSaturnContext();
+  const balanceContext = useBalanceContext();
+  const priceContext = usePriceContext();
+  const saturn = useSaturnContext();
 
-    createEffect(() => {
-        const id = saturnContext.state.multisigId;
-        const address = saturnContext.state.multisigAddress;
-        if (typeof id !== 'number' || !address) {
-            return;
+  const multisigId = createMemo(() => saturn.state.multisigId);
+  const getUsdPrices = createMemo(() => priceContext.prices);
+
+  const formatTransferBalance = (asset: AssetEnum | AssetHubEnum | ExtraAssetEnum | string, balance: BalanceType, network: NetworkEnum) => {
+    const matchingAssetKey = findMatchingAssetKey(asset);
+
+    if (matchingAssetKey === 'BAILEGO') {
+      return balance.freeBalance.toLocaleString();
+    }
+    const isAssetHubOrExtraAsset = Object.values(AssetHubEnum).includes(matchingAssetKey as AssetHubEnum) || Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum);
+    if (balance.decimals && isAssetHubOrExtraAsset) {
+      return formatAsset(balance.freeBalance, balance.decimals);
+    } else {
+      return formatAsset(balance.freeBalance, Rings[network]?.decimals ?? 12);
+    }
+  };
+
+  const formatTotalBalance = (balance: BalanceType, network: NetworkEnum, totalLockAmount: string, asset: AssetEnum | ExtraAssetEnum | string) => {
+    const matchingAssetKey = findMatchingAssetKey(asset);
+
+    if (matchingAssetKey === 'BAILEGO') {
+      return (+balance.freeBalance + +balance.reservedBalance + +totalLockAmount).toLocaleString();
+    }
+
+    const isAssetHubOrExtraAsset = Object.values(AssetHubEnum).includes(matchingAssetKey as AssetHubEnum) || Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum);
+    if (balance.decimals && isAssetHubOrExtraAsset) {
+      return formatAsset((+balance.freeBalance + +balance.reservedBalance + +totalLockAmount).toString(), balance.decimals);
+    } else {
+      return formatAsset((+balance.freeBalance + +balance.reservedBalance + +totalLockAmount).toString(), Rings[network]?.decimals ?? 12);
+    }
+  };
+
+  const convertAssetTotalToUsd = (asset: AssetEnum | ExtraAssetEnum, network: NetworkEnum, total: string, decimalFormat?: number) => {
+    let totalInUsd = '($0.00)';
+    const allPrices = usdPrices;
+
+    if (!allPrices) {
+      console.error('Prices not found');
+      return totalInUsd;
+    };
+
+    let currentMarketPrice = null;
+
+    const matchingAssetKey = findMatchingAssetKey(asset);
+    if (matchingAssetKey === AssetEnum.TNKR) {
+      const tnkrPrice = allPrices[NetworkEnum.TINKERNET];
+      if (tnkrPrice && new BigNumber(tnkrPrice).isGreaterThan(0)) {
+        currentMarketPrice = new BigNumber(tnkrPrice);
+      } else {
+        return totalInUsd;
+      }
+    } else {
+      let specificNetworkPrice: string | null = null;
+
+      if (!matchingAssetKey) {
+        console.error(`Matching asset not found for ${ matchingAssetKey }`);
+        return totalInUsd;
+      }
+
+      if (matchingAssetKey === AssetEnum.KSM) {
+        // Get a price for KSM from somewhere
+        specificNetworkPrice = allPrices[NetworkEnum.KUSAMA];
+      }
+
+      if (Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum)) {
+        // Handle price retrieval for extra tokens
+        specificNetworkPrice = allPrices[matchingAssetKey];
+      } else {
+        // Handle price retrieval for main tokens
+        specificNetworkPrice = allPrices[network];
+      }
+
+      if (specificNetworkPrice && new BigNumber(specificNetworkPrice).isGreaterThan(0)) {
+        currentMarketPrice = new BigNumber(specificNetworkPrice);
+      } else {
+        // Handle cases where the price is not available on the network
+        const networksHoldingAsset = matchingAssetKey ? (NetworksByAsset as Record<string, string[]>)[matchingAssetKey] : undefined;
+        if (networksHoldingAsset) {
+          for (const net of networksHoldingAsset) {
+            const price = allPrices[net];
+            if (price && new BigNumber(price).isGreaterThan(0)) {
+              currentMarketPrice = new BigNumber(price);
+              break; // Stop once a valid price is found
+            }
+          }
         }
+        if (!currentMarketPrice) currentMarketPrice = new BigNumber(0);
+      }
+    }
 
-        const runAsync = async () => {
-            const nb = await getBalancesFromAllNetworks(address);
+    if (total && currentMarketPrice !== null) {
+      let decimals = Object.values(ExtraAssetEnum).includes(matchingAssetKey as ExtraAssetEnum) && decimalFormat ? decimalFormat : Rings[network]?.decimals ?? 12;
 
-            const remapped = Object.entries(nb).map(([network, assets]) => {
-                const ret: [string, [string, Balances][]] = [network,
-                    Object.entries(assets)
-                        .map(([asset, assetBalances]) => {
-                            const ret: [string, Balances] = [asset, assetBalances as Balances];
+      totalInUsd = `($${ formatAsset(new BigNumber(total).times(currentMarketPrice).toString(), decimals, 4) })`;
+    } else {
+      console.error(`Decimals not found for asset: ${ matchingAssetKey } or market price is $0`);
+    }
 
-                            return ret;
-                        })
-                        .filter(([_, assetBalances]) => assetBalances.freeBalance != '0'
-                            || assetBalances.reservedBalance != '0'
-                            || assetBalances.frozenBalance != '0')];
+    return totalInUsd;
+  };
 
-                return ret;
-            });
+  createEffect(on([multisigId], () => {
+    setBalances([]);
+    const allBalances = balanceContext?.balances;
+    setBalances(allBalances as unknown as NetworkAssetBalance[]);
+  }));
 
-            setBalances(remapped);
-        };
+  createEffect(() => {
+    const allPrices = getUsdPrices();
 
-        runAsync();
-    });
+    if (!allPrices) return;
 
+    const loadPrices = () => {
+      const pricesInUsd = Object.entries(allPrices).reduce((acc, [network, priceInfo]) => {
+        acc[network] = priceInfo.usd;
+        return acc;
+      }, {} as Record<string, string>);
+      setUsdPrices(pricesInUsd);
+    };
+
+    loadPrices();
+  });
+
+  createEffect(() => {
+    // Convert transferable balances to USD
+    const userBalances = balances();
+    const loadTransferableBalances = () => {
+      for (const [network, assets] of userBalances) {
+        for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
+          const balances = b as unknown as BalanceType;
+          if (balances) {
+            if (asset === AssetEnum.KSM) {
+              const value = convertAssetTotalToUsd(AssetEnum.KSM, NetworkEnum.KUSAMA, balances.freeBalance);
+              setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+              continue;
+            }
+            const value = convertAssetTotalToUsd(asset as AssetEnum | ExtraAssetEnum, network as NetworkEnum, balances.freeBalance, balances.decimals);
+            setUsdValues(usdValues => ({ ...usdValues, [`${ network }-${ asset }`]: value }));
+          } else {
+            console.error(`Transferable USD balance not found for ${ asset } on ${ network }`);
+          }
+        }
+      }
+    };
+
+    loadTransferableBalances();
+  });
+
+  createEffect(() => {
+    // Convert total balances to USD
+    const userBalances = balances();
+    const loadTotalBalances = () => {
+      for (const [network, assets] of userBalances) {
+        for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
+          const balances = b as unknown as BalanceType;
+          const totalLockAmount = !!balances.locks && balances.locks.length > 0 ? balances.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
+          if (balances) {
+            const totalBalance = +balances.freeBalance + +balances.reservedBalance + +totalLockAmount;
+            if (asset === AssetEnum.KSM) {
+              const value = convertAssetTotalToUsd(AssetEnum.KSM, NetworkEnum.KUSAMA, totalBalance.toString());
+              setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
+              continue;
+            }
+            const value = convertAssetTotalToUsd(asset as AssetEnum | ExtraAssetEnum, network as NetworkEnum, totalBalance.toString(), balances.decimals);
+            setTotalValues(totalValues => ({ ...totalValues, [`${ network }-${ asset }`]: value }));
+          } else {
+            console.error(`Total USD balance not found for ${ asset } on ${ network }`);
+          }
+        }
+      }
+    };
+
+    loadTotalBalances();
+  });
+
+  const renderLoadingAnimations = () => {
+    const loadingNetworks = balanceContext?.loading;
+    if (!loadingNetworks || loadingNetworks.length === 0) return;
     return (
-        <>
-            <TransferModal
-                open={transferModalOpen()}
-                setOpen={setTransferModalOpen}
-            />
-
-            <div class='flex flex-col gap-4'>
-                {balances() ? (
-
-                    <For each={balances()}>{([network, assets]) =>
-                        <Show when={assets.length}>
-                            <div class='border border-[#D55E8A] shadow-sm rounded-lg overflow-hidden w-[60%] mx-auto'>
-                                <table class='w-full text-sm leading-5'>
-                                    <thead class='bg-[#D55E8A]'>
-                                        <tr>
-                                            <th>
-                                                <div class='flex flex-row gap-1 items-center px-2.5 py-2'>
-                                                    <div class='h-7 w-7 rounded-full border border-white'>
-                                                        <img src={Rings[network as keyof typeof Rings].icon} class='h-full w-full p-px rounded-full' />
-                                                    </div>
-                                                    <span class='capitalize text-lg'>
-                                                        {network}
-                                                    </span>
-                                                </div>
-                                            </th>
-                                            <th />
-                                            <th />
-                                            <th />
-                                        </tr>
-                                        <tr>
-                                            <th class='py-3 px-4 text-left font-medium text-white w-[20%]'>Asset</th>
-                                            <th class='py-3 px-4 text-left font-medium text-white w-[20%]'>Transferable</th>
-                                            <th class='py-3 px-4 text-left font-medium text-white w-[20%]'>Total</th>
-                                            <th class='w-[40%]' />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <For each={assets}>{([asset, b]) =>
-                                            <tr>
-                                                <td class='py-3 px-4 text-left font-medium text-white w-[20%]'>{asset}</td>
-                                                <td class='py-3 px-4 text-left w-[20%]'>{
-                                                    BigNumber(b.freeBalance)
-                                                        .div(
-                                                            BigNumber('10').pow(
-                                                                BigNumber(Rings[network as keyof typeof Rings].decimals),
-                                                            ),
-                                                        ).decimalPlaces(2, 1).toString()
-                                                } {asset}</td>
-                                                <td class='w-[20%]'>{
-                                                    BigNumber(b.freeBalance)
-                                                        .plus(
-                                                            BigNumber(b.reservedBalance).plus(BigNumber(b.frozenBalance))
-                                                        )
-                                                        .div(
-                                                            BigNumber('10').pow(
-                                                                BigNumber(Rings[network as keyof typeof Rings].decimals),
-                                                            ),
-                                                        ).decimalPlaces(2, 1).toString()
-                                                } {asset}</td>
-                                                <td class='flex gap-2.5 w-[40%] py-2'>
-                                                    <Button onClick={() => setTransferModalOpen({ network, asset })} class='bg-[#D55E8A] hover:bg-[#E40C5B]'>Transfer</Button>
-
-                                                    <Show when={StakePage[`${network}_${asset}` as keyof typeof StakePage]}>
-                                                        <form action={StakePage[`${network}_${asset}` as keyof typeof StakePage]} target='_blank'>
-                                                            <Button type='submit' class='bg-[#D55E8A] hover:bg-[#E40C5B]'>Stake</Button>
-                                                        </form>
-                                                    </Show>
-                                                </td>
-                                            </tr>
-                                        }</For>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </Show>
-                    }</For>
-
-                ) : null}
-            </div>
-        </>
+      <For each={Array.from(loadingNetworks)}>
+        {(network) => {
+          const icon = () => getNetworkIconByNetwork(network) ? <img src={getNetworkIconByNetwork(network as NetworkEnum)} alt="network icon" class="inline-block mr-1" /> : network;
+          const name = network.charAt(0).toUpperCase() + network.slice(1);
+          return <div class="flex flex-col justify-start py-1 ml-3 mt-2">
+            <LoaderAnimation text={
+              <span class="flex flex-row items-center justify-start">
+                Loading assets from <span class="pl-2">{icon()}</span> {name}
+              </span>
+            } />
+          </div>;
+        }}
+      </For>
     );
+  };
+
+  return (
+    <>
+      <div class="relative saturn-scrollbar overflow-x-auto overscroll-contain min-h-64 h-4/5 pr-2 flex flex-col content-stretch">
+        <table class="w-full text-sm text-left text-saturn-lightgrey">
+          <thead class="text-xs bg-saturn-offwhite dark:bg-saturn-black">
+            <tr>
+              <th scope="col" class='py-3 px-4 text-left w-[20%]'>Asset</th>
+              <th scope="col" class='py-3 px-4 text-left w-[30%]'>Transferable</th>
+              <th scope="col" class='py-3 px-4 text-left w-[30%]'>Total</th>
+              <th scope="col" class='w-[20%]'>Chains</th>
+            </tr>
+          </thead>
+          <tbody class="dark:text-saturn-offwhite text-saturn-black overflow-y-auto h-4/5">
+            <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Gathering info..." /></div>}>
+              <Match when={balances() && balances().length > 0}>
+                <For each={balances()}>{([network, assets]) => {
+                  return <Show when={assets.length}>
+                    <For each={assets as unknown as [string, BalanceType][]}>{([asset, b]) => {
+                      const totalLockAmount = !!b.locks && b.locks.length > 0 ? b.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
+                      return <tr class="border-b border-gray-200 dark:border-gray-800">
+                        {/* Asset */}
+                        <td class='py-3 px-4 text-left w-[20%]'>
+                          <span class="flex flex-row items-center gap-1">
+                            <span class='h-5 w-5 flex rounded-full bg-black'>
+                              <img src={getAssetIcon(asset, network as NetworkEnum, asset === AssetEnum.PHA)} class="p-1" alt={asset} />
+                            </span>
+                            <span>
+                              {asset}
+                            </span>
+                          </span>
+                        </td>
+
+                        {/* Transferable */}
+                        <td class='py-3 px-4 text-left w-[30%]'>
+                          <span class="flex flex-row items-baseline gap-1">
+                            <span>
+                              {formatTransferBalance(asset as AssetEnum | ExtraAssetEnum, b, network as NetworkEnum)}
+                            </span>
+                            <span class="text-[9px]">{asset}</span>
+                            <span class="text-saturn-lightgrey text-[8px]">
+                              {usdValues[`${ network }-${ asset }`]}
+                            </span>
+                          </span>
+                        </td>
+
+                        {/* Total */}
+                        <td class='py-3 px-4 text-left w-[30%]'>
+                          <span class="flex flex-row items-baseline gap-1">
+                            <span>
+                              {formatTotalBalance(b, network as NetworkEnum, totalLockAmount, asset as AssetEnum | ExtraAssetEnum)}
+                            </span>
+                            <span class="text-[9px]">{asset}</span>
+                            <span class="text-saturn-lightgrey text-[8px]">
+                              {totalValues[`${ network }-${ asset }`]}
+                            </span>
+                          </span>
+                        </td>
+
+                        {/* Chains */}
+                        <td>
+                          <span class="flex flex-row items-center gap-1">
+                            <For each={[getNetworkIconByAsset(asset, !Object.values(AssetEnum).includes(asset as AssetEnum) ? network as NetworkEnum : undefined)].flat().filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
+                              {icon =>
+                                <span class='h-5 w-5 flex rounded-full bg-black'>
+                                  <img src={icon} class="p-1" alt="asset-icon" />
+                                </span>
+                              }
+                            </For>
+                          </span>
+                        </td>
+
+                      </tr>;
+                    }
+                    }</For>
+                  </Show>;
+                }
+                }</For>
+              </Match>
+            </Switch>
+          </tbody>
+        </table>
+        {renderLoadingAnimations()}
+      </div>
+    </>
+  );
 }
