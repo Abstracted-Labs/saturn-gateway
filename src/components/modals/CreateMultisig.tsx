@@ -144,19 +144,17 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     }
     return false;
   });
-  const coreCreationFeeFormatted = createMemo(() => formatBalance(new BigNumber(coreCreationFee()).toString(), { withSi: false }));
   const estTxFeesFormatted = createMemo(() => {
     const txFees = new BigNumber(estTxFees().toString());
     const coreFee = new BigNumber(coreCreationFee()).multipliedBy(new BigNumber(10).pow(12));
-    const result = coreFee.minus(txFees);
+    const result = coreFee.plus(txFees);
     return formatBalance(result.toString(), { withSi: false, decimals: 12 });
   });
   const coreInitialFundingFormatted = createMemo(() => formatBalance(coreInitialFunding().toString(), { withSi: false }));
   const totalCosts = createMemo(() => {
-    const coreFee = new BigNumber(coreCreationFeeFormatted());
     const txFees = new BigNumber(estTxFeesFormatted());
     const initialFunding = new BigNumber(coreInitialFundingFormatted());
-    return coreFee.plus(txFees).plus(initialFunding).toString();
+    return txFees.plus(initialFunding).toString();
   });
 
   const finishCreation = () => {
@@ -1225,13 +1223,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                     </h3>
                     <dl class="mt-4 text-xs w-full">
                       <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-gray-700 border-dashed pt-2">
-                        <dt>Omnisig Account Costs</dt>
-                        <dd class="text-white">
-                          {coreCreationFeeFormatted()}
-                        </dd>
-                      </div>
-                      <div class="flex flex-row items-center justify-between mb-2 text-saturn-lightgrey border-t border-gray-700 border-dashed pt-2">
-                        <dt>Estimated Transaction Fees</dt>
+                        <dt>Creation Cost + Transaction Fees</dt>
                         <dd class="text-white">
                           {estTxFeesFormatted()}
                         </dd>
@@ -1252,12 +1244,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                     <div class="flex flex-row items-center justify-between mt-5 gap-3">
                       <button disabled={!enableCreateMultisig()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMultisig, false]}>
                         <span class="rounded-full border border-white px-2 py-[3px] mr-2">1</span>
-                        <span>Create Multisig</span>
+                        <span>Create Multisig (click to sign)</span>
                       </button>
                       <Show when={members().length > 1}>
                         <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
                           <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
-                          <span>Add Members</span>
+                          <span>Add Members (click to sign)</span>
                         </button>
                       </Show>
                     </div>

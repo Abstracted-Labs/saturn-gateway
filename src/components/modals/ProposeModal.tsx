@@ -204,7 +204,7 @@ export const proposeCall = async (props: IProposalProps) => {
     const to = (proposalData as { to: string; }).to;
     const asset = (proposalData as { asset: string; }).asset;
     const xcmFeeAsset = {
-      [chain]: feeAsset
+      [chain]: feeAsset()
     };
 
     let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
@@ -232,14 +232,14 @@ export const proposeCall = async (props: IProposalProps) => {
 
     if (!saturnContext.state.multisigAddress) return;
 
-    let partialFee = new BN("0");
+    const assetDecimals = (RingAssets[asset as keyof typeof RingAssets]?.decimals ?? RingAssets[AssetEnum.KSM].decimals) - 12; // use native relay fee asset decimals as default
+    let partialFeeWithDecimals = new BN("0");
+    let partialFee = new BN("10000000000");
     try {
-      const feeInfo = await ringApisContext.state[(proposalData as { chain: string; }).chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-      // partialFee = feeInfo.partialFee;
-      partialFee = new BN("10000000000");
+      partialFeeWithDecimals = partialFee.mul(new BN(10).pow(new BN(assetDecimals)));
     } catch (error) {
       console.error('Error fetching fee, using default fee: ', error);
-      partialFee = new BN("10000000000");
+      partialFeeWithDecimals = partialFee.mul(new BN(10).pow(new BN(assetDecimals)));
     }
 
     const transferCall = saturnContext.state.saturn
@@ -249,7 +249,7 @@ export const proposeCall = async (props: IProposalProps) => {
         amount: new BN(amount.toString()),
         to,
         xcmFeeAsset,
-        xcmFee: partialFee,
+        xcmFee: partialFeeWithDecimals,
         proposalMetadata,
       });
 
@@ -297,13 +297,15 @@ export const proposeCall = async (props: IProposalProps) => {
     };
 
     let partialFee;
+    const feeAssetKey = feeAsset() === 0 ? KusamaFeeAssetEnum.TNKR : KusamaFeeAssetEnum.KSM;
+    const feeAssetDecimals = (RingAssets[feeAssetKey as keyof typeof RingAssets]?.decimals ?? 12) - 12;
     try {
       const feeInfo = await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress);
-      // partialFee = feeInfo.partialFee.mul(new BN("2"));
-      partialFee = new BN("10000000000");
+
+      partialFee = new BN(feeInfo.partialFee.toString()).mul(new BN(10).pow(new BN(feeAssetDecimals)));
     } catch (error) {
       console.error('Error fetching fee, using default fee: ', error);
-      partialFee = new BN("10000000000");
+      partialFee = new BN("10000000000").mul(new BN(10).pow(new BN(feeAssetDecimals)));
     }
 
     const localTransferCall = ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString()));
@@ -378,14 +380,14 @@ export const proposeCall = async (props: IProposalProps) => {
 
     if (!saturnContext.state.multisigAddress) return;
 
-    let partialFee = new BN("0");
+    const assetDecimals = (RingAssets[asset as keyof typeof RingAssets]?.decimals ?? RingAssets[AssetEnum.KSM].decimals) - 12; // use native relay fee asset decimals as default
+    let partialFee = new BN("10000000000");
+    let partialFeeWithDecimals = new BN("0");
     try {
-      const feeInfo = (await ringApisContext.state[chain].tx.balances.transferKeepAlive(to, new BN(amount.toString())).paymentInfo(saturnContext.state.multisigAddress));
-      // partialFee = feeInfo.partialFee;
-      partialFee = new BN("10000000000");
+      partialFeeWithDecimals = partialFee.mul(new BN(10).pow(new BN(assetDecimals)));
     } catch (error) {
       console.error('Error fetching fee, using default fee: ', error);
-      partialFee = new BN("10000000000");
+      partialFeeWithDecimals = partialFee.mul(new BN(10).pow(new BN(assetDecimals)));
     }
 
     const bridgeCall = saturnContext.state.saturn
@@ -394,7 +396,7 @@ export const proposeCall = async (props: IProposalProps) => {
         asset: xcmAsset,
         amount: new BN(amount.toString()),
         to,
-        xcmFee: partialFee,
+        xcmFee: partialFeeWithDecimals,
         destination: (proposalData as { destinationChain: string; }).destinationChain,
         proposalMetadata,
       });
@@ -520,7 +522,7 @@ export default function ProposeModal() {
         }}
       />
     </Show>
-    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm mt-2" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() as unknown as FeeAsset, ringApisContext, modalContext, toast })}>Submit Proposal</button>
+    <button type="button" class="dark:bg-saturn-purple bg-saturn-purple rounded-md p-3 mb-4 hover:bg-purple-800 dark:hover:bg-purple-800 focus:outline-none text-sm mt-2" onClick={() => proposeCall({ preview: false, selectedAccountContext, saturnContext, proposeContext, message, feeAsset: () => feeAsset() === KusamaFeeAssetEnum.TNKR ? FeeAsset.Native : FeeAsset.Relay, ringApisContext, modalContext, toast })}>Submit Proposal</button>
   </div>;
 
   return <>
