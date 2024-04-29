@@ -203,7 +203,6 @@ export const proposeCall = async (props: IProposalProps) => {
     const amount = (proposalData as { amount: BN | BigNumber | string; }).amount || '0';
     const to = (proposalData as { to: string; }).to;
     const asset = (proposalData as { asset: string; }).asset;
-    console.log('feeAsset: ', feeAsset());
     const xcmFeeAsset = {
       [chain]: feeAsset()
     };
