@@ -167,7 +167,6 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
 
     const actualCall = callDetails.actualCall.toHuman();
     if ('method' in actualCall) {
-      1;
       if (actualCall.method === 'transfer' || actualCall.method === 'transferKeepAlive') {
         setAsset(AssetEnum.TNKR);
       } else if (actualCall.method === 'bridgeAssets' || actualCall.method === 'transferAssets') {
