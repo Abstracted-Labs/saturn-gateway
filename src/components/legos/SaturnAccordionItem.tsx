@@ -87,11 +87,14 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
               if (matchingKey) {
                 return matchingKey;
               }
+            } else if (secondLevelValue === null) {
+              return secondLevelKeys[0];
             }
           }
         }
       }
     }
+    console.log("No matching asset found");
 
     return undefined;
   };
@@ -164,19 +167,18 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
 
     const actualCall = callDetails.actualCall.toHuman();
     if ('method' in actualCall) {
+      1;
       if (actualCall.method === 'transfer' || actualCall.method === 'transferKeepAlive') {
         setAsset(AssetEnum.TNKR);
       } else if (actualCall.method === 'bridgeAssets' || actualCall.method === 'transferAssets') {
         const args = actualCall.args as Record<string, AnyJson>;
-        if (args && args.asset) {
-          const possibleAsset = getAssetFromCallDetails(args.asset);
-          if (Object.values(AssetEnum).includes(possibleAsset as AssetEnum)) {
-            setAsset(possibleAsset as AssetEnum);
-          } else {
-            const assetKey = Object.keys(AssetHubAssetIdEnum).find(key => key === possibleAsset);
-            if (assetKey) {
-              setAsset(assetKey);
-            }
+        const possibleAsset = getAssetFromCallDetails(args.asset);
+        if (Object.values(AssetEnum).includes(possibleAsset as AssetEnum)) {
+          setAsset(possibleAsset as AssetEnum);
+        } else {
+          const assetKey = Object.keys(AssetHubAssetIdEnum).find(key => key === possibleAsset);
+          if (assetKey) {
+            setAsset(assetKey);
           }
         }
       }
@@ -278,26 +280,35 @@ const SaturnAccordionItem = (props: ISaturnAccordionItemProps) => {
     return description;
   };
 
-  createEffect(async () => {
+  createEffect(() => {
     const call = props.call;
-    if (call) {
-      await fetchAndProcessCallDetails(call);
-    }
+    const load = async () => {
+      if (call) {
+        await fetchAndProcessCallDetails(call);
+      }
+    };
+    load();
   });
 
   createEffect(() => {
     const call = props.call;
     const metadata = props.metadata;
-    const description = processCallDescription(call, metadata);
-    setHeading(description);
+    const loadDescription = async () => {
+      const description = processCallDescription(call, metadata);
+      setHeading(description);
+    };
+    loadDescription();
   });
 
-  createEffect(async () => {
+  createEffect(() => {
     const deets = details();
     const call = deets?.actualCall;
-    if (call) {
-      await processNetworkIcons(call);
-    }
+    const load = async () => {
+      if (call) {
+        await processNetworkIcons(call);
+      }
+    };
+    load();
   });
 
   return <>
