@@ -34,7 +34,7 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
 
     navigator.clipboard.writeText(address ?? '--');
 
-    toast.setToast("Copied native address to clipboard", "info", 0);
+    toast.setToast("Copied address to clipboard", "info", 0);
 
     modal.hideAddressSelectorModal();
   };
