@@ -72,14 +72,14 @@ const MultisigList = (props: MultisigListProps) => {
     const sat = saturnContext.state.saturn;
 
     if (!sat) {
-      console.error('Saturn context not found');
+      // console.error('Saturn context not found');
       return;
     };
 
     const multisig = multisigItems()[orderIndex];
     const id = multisig.id;
 
-    console.log('multisig details', multisig);
+    // console.log('multisig details', multisig);
 
     if (isInModal()) {
       modal.hideMultisigListModal();

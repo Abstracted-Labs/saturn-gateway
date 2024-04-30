@@ -886,7 +886,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const hashId = loc.pathname.split('/')[1];
 
     if (!saturn || !hashId || hashId === 'undefined') {
-      console.error('Saturn or hashId not available');
+      // console.error('Saturn or hashId not available');
       return;
     };
 

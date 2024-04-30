@@ -181,7 +181,7 @@ export async function getBestIdentity(address: string): Promise<AggregatedIdenti
 
 async function getWeb3Name(address: string): Promise<Identity | undefined> {
   try {
-    await Kilt.connect('wss://kilt-rpc.dwellir.com/');
+    await Kilt.connect('wss://kilt-rpc.dwellir.com/', { noInitWarn: true });
   } catch (error) {
     console.error('Failed to connect to Kilt Spiritnet:', error);
     throw new Error('Connection to Kilt Spiritnet failed');
@@ -210,15 +210,14 @@ async function getWeb3Name(address: string): Promise<Identity | undefined> {
       return;
     }
   } catch (error) {
-    console.error('Error fetching web3Name:', error);
+    // console.error('Error fetching web3Name:', error);
     Kilt.disconnect();
-
     return;
   }
 }
 
 async function getKusamaIdentity(address: string): Promise<Identity | undefined> {
-  const kusamaApi = await ApiPromise.create({ provider: new WsProvider("wss://kusama-rpc.dwellir.com") });
+  const kusamaApi = await ApiPromise.create({ provider: new WsProvider("wss://kusama-rpc.dwellir.com"), noInitWarn: true });
 
   const iden = (
     (await kusamaApi.query.identity.identityOf(address))?.toHuman() as {
@@ -260,7 +259,7 @@ async function getKusamaIdentity(address: string): Promise<Identity | undefined>
 }
 
 async function getPolkadotIdentity(address: string): Promise<Identity | undefined> {
-  const polkadotApi = await ApiPromise.create({ provider: new WsProvider("wss://polkadot-rpc.dwellir.com") });
+  const polkadotApi = await ApiPromise.create({ provider: new WsProvider("wss://polkadot-rpc.dwellir.com"), noInitWarn: true });
 
   const iden = (
     (await polkadotApi.query.identity.identityOf(address))?.toHuman() as {
@@ -293,7 +292,7 @@ async function getPolkadotIdentity(address: string): Promise<Identity | undefine
 }
 
 async function getTinkernetIdentity(address: string, ringApi?: ApiPromise): Promise<Identity | undefined> {
-  const tinkernetApi = ringApi || await ApiPromise.create({ provider: new WsProvider(WSS_TINKERNET) });
+  const tinkernetApi = ringApi || await ApiPromise.create({ provider: new WsProvider(WSS_TINKERNET), noInitWarn: true });
 
   const iden = (
     (await tinkernetApi.query.identity.identityOf(address))?.toHuman() as {

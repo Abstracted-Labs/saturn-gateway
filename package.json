@@ -65,6 +65,14 @@
   },
   "resolutions": {
     "@polkadot/types": "10.11.2",
+    "@polkadot/api": "10.11.2",
+    "@polkadot/rpc-augment": "10.11.2",
+    "@polkadot/rpc-provider": "10.11.2",
+    "@polkadot/rpc-core": "10.11.2",
+    "@polkadot/types-known": "10.11.2",
+    "@polkadot/types-create": "10.11.2",
+    "@polkadot/types-codec": "10.11.2",
+    "@polkadot/api-derive": "10.11.2",
     "@invarch/saturn-sdk": "1.0.11"
   }
 }

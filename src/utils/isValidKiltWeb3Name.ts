@@ -8,7 +8,7 @@ export async function isValidKiltWeb3Name(web3Name: string) {
   let returnAddress = '';
   try {
     if (web3Name.trim() !== '') {
-      await Kilt.connect(spiritnet);
+      await Kilt.connect(spiritnet, { noInitWarn: true });
       const api = Kilt.ConfigService.get('api');
       const encodedDid = await api.call.did.queryByWeb3Name(web3Name);
       if (encodedDid !== null) {
