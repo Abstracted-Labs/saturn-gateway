@@ -749,7 +749,7 @@ export async function getBalancesFromNetwork(api: ApiPromise, address: string, n
   return ({ [network]: balancesByNetwork });
 }
 
-export async function getBalancesFromAllNetworks(address: string, evmAddress: string): Promise<NetworkBalances> {
+export async function getBalancesFromAllNetworks(address: string, evmAddress: string, relayAddress: string): Promise<NetworkBalances> {
   const apis = await createApis();
   const userAddress = address; // Substitute a string address to test Assets page
   const isEthereumAddr = isEthereumAddress(evmAddress);
@@ -757,6 +757,8 @@ export async function getBalancesFromAllNetworks(address: string, evmAddress: st
     const api = apis[network as NetworkEnum];
     if (network === NetworkEnum.MOONRIVER && isEthereumAddr) {
       return getBalancesFromNetwork(api, evmAddress, network as NetworkEnum);
+    } else if (network === NetworkEnum.KUSAMA && relayAddress) {
+      return getBalancesFromNetwork(api, relayAddress, network as NetworkEnum);
     } else if (!isEthereumAddr || network !== NetworkEnum.MOONRIVER) {
       return getBalancesFromNetwork(api, userAddress, network as NetworkEnum);
     }
