@@ -391,38 +391,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
         const innerCallsBatch = tinkernetApi.tx.utility.batchAll(innerCalls);
 
-        // const finalCalls = [
-        //   saturn.buildMultisigCall({
-        //     id,
-        //     call: innerCallsBatch,
-        //     feeAsset: creationFeeAsset,
-        //   }).call as Uint8Array | Call | SubmittableExtrinsic<ApiTypes, ISubmittableResult>
-        // ];
-
-        // const finalCallsBatch = tinkernetApi.tx.utility.batchAll(finalCalls);
-
-        // await withTimeout(finalCallsBatch.signAndSend(account.address, { signer: wallet.signer }, (result: ISubmittableResult) => {
-        //   if (result.isError && result.dispatchError) {
-        //     const error = result.dispatchError.toHuman();
-        //     if (error) {
-        //       const errorEntries = Object.entries(error);
-        //       for (const [key, value] of errorEntries) {
-        //         if (value === true) {
-        //           throw new Error(key);
-        //         }
-        //       }
-        //     }
-        //   }
-
-        //   toast.setToast('Finalizing...', 'loading');
-
-        //   if (result.isFinalized || result.isInBlock) {
-        //     toast.setToast('Members successfully added to multisig.', 'success');
-
-        //     saturnContext.submitProposal();
-        //   }
-        // }), 60000, 'Something went wrong; the request to propose new members timed out.');
-
         const finalCall = saturn.buildMultisigCall({
           id,
           call: innerCallsBatch,
@@ -443,7 +411,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
       console.error(error);
       toast.setToast('Failed to propose new members', 'error');
     } finally {
-      modal.hideCreateMultisigModal();
+      modal.hideAddMemberModal();
       wallet.disconnect();
     }
   };
@@ -605,7 +573,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     const instance = modal;
     if (instance) {
       if (multisigModalType() === ADD_MEMBER_MODAL_ID) {
-        toast.setToast('Add member operation cancelled', 'info');
+        // toast.setToast('Add member operation cancelled', 'info');
         instance.hideAddMemberModal();
       } else {
         // toast.setToast('Create multisig operation cancelled', 'info');
