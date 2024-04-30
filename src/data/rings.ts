@@ -193,7 +193,7 @@ export const NetworksByAsset: NetworksByAssetType = {
   TNKR: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET],
   BSX: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK],
   PICA: [NetworkEnum.KUSAMA, NetworkEnum.PICASSO],
-  KSM: [NetworkEnum.KUSAMA, NetworkEnum.BASILISK, NetworkEnum.TINKERNET, NetworkEnum.PICASSO],
+  KSM: [NetworkEnum.KUSAMA, NetworkEnum.ASSETHUB, NetworkEnum.BASILISK, NetworkEnum.TINKERNET, NetworkEnum.PICASSO],
   // DOT: [NetworkEnum.POLKADOT],
   ASSETHUB: [NetworkEnum.ASSETHUB],
   BILL: [NetworkEnum.ASSETHUB],
