@@ -330,11 +330,9 @@ export default function Assets() {
                     </td>
 
                   </tr>;
-                }
-                }</For>
+                }}</For>
               </Show>;
-            }
-            }</For>
+            }}</For>
           </tbody>
         </table>
         {renderLoadingAnimations()}
