@@ -76,10 +76,11 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     const address = saturnContext.state.multisigAddress;
     const details = saturnContext.state.multisigDetails;
     const evmAddress = u8aToHex(details?.evmAccount);
+    const relayAddress = u8aToHex(details?.relayAccount);
 
     const loadBalances = async () => {
       if (address && evmAddress) {
-        const nBalances = await getBalancesFromAllNetworks(address, evmAddress.toString());
+        const nBalances = await getBalancesFromAllNetworks(address, evmAddress.toString(), relayAddress.toString());
         setNetworkBalances(nBalances);
       }
     };
