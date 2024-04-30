@@ -193,13 +193,11 @@ export default function Management() {
   }));
 
   createEffect(on(search, () => {
-    // filter members by search
     let filteredMembers = members().filter((member) => {
       return member.address.toLowerCase().includes(search().toLowerCase());
     });
 
-    // handle blank value
-    if (search() === '' || filteredMembers.length === 0) {
+    if (search() === '') {
       filteredMembers = originalMembers;
     }
 
