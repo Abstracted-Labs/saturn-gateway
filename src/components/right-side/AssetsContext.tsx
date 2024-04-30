@@ -474,7 +474,7 @@ const AssetsContext = () => {
     const id = saturnContext.state.multisigId;
 
     if (typeof id !== 'number') {
-      console.error('Multisig ID is not a number');
+      // console.error('Multisig ID is not a number');
       return;
     }
 

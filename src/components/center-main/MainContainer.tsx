@@ -88,7 +88,7 @@ const MainContainer = () => {
       } else {
         id = parseInt(hashId);
         if (isNaN(id)) {
-          console.error('Invalid id provided:', multisigHashId);
+          // console.error('Invalid id provided:', multisigHashId);
           return;
         }
       }
@@ -105,7 +105,7 @@ const MainContainer = () => {
         saturnContext.setters.setMultisigDetails(maybeDetails);
         saturnContext.setters.setMultisigAddress(maybeDetails.parachainAccount.toHuman());
       } else {
-        console.error(`No details found for ID: ${ numericId }`);
+        // console.error(`No details found for ID: ${ numericId }`);
       }
     };
 

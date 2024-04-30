@@ -22,7 +22,7 @@ const Home = () => {
       if (!!id) {
         nav(`/${ id }/assets`);
       } else {
-        console.error('No multisig id found');
+        // console.error('No multisig id found');
         nav(`${ undefined }/assets`);
       }
     } catch (error) {

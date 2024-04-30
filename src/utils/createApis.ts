@@ -8,6 +8,7 @@ export const createApis = async (): Promise<Record<string, ApiPromise>> => {
         chain,
         await ApiPromise.create({
           provider: new WsProvider(data.websocket),
+          noInitWarn: true,
         }),
       ];
 
