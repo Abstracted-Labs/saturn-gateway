@@ -33,8 +33,8 @@ export const findMatchingAssetKey = (asset: string) => Object.keys(NetworksByAss
 });
 
 export default function Assets() {
-  const [loading, setLoading] = createSignal<NetworkEnum[]>([]);
-  const [balances, setBalances] = createSignal<NetworkAssetBalance[]>([]);
+  const [loading, setLoading] = createSignal<boolean>(true);
+  const [balances, setBalances] = createSignal<NetworkAssetBalance[] | undefined>(undefined);
   const [usdValues, setUsdValues] = createStore<Record<string, string>>({});
   const [totalValues, setTotalValues] = createStore<Record<string, string>>({});
   const [usdPrices, setUsdPrices] = createStore<Record<string, string>>({});
@@ -146,6 +146,7 @@ export default function Assets() {
 
   createEffect(on([multisigId], () => {
     setBalances([]);
+    setLoading(true);
     const allBalances = balanceContext?.balances;
     setBalances(allBalances as unknown as NetworkAssetBalance[]);
   }));
@@ -169,6 +170,7 @@ export default function Assets() {
   createEffect(() => {
     // Convert transferable balances to USD
     const userBalances = balances();
+    if (!userBalances) return;
     const loadTransferableBalances = () => {
       for (const [network, assets] of userBalances) {
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
@@ -194,6 +196,7 @@ export default function Assets() {
   createEffect(() => {
     // Convert total balances to USD
     const userBalances = balances();
+    if (!userBalances) return;
     const loadTotalBalances = () => {
       for (const [network, assets] of userBalances) {
         for (const [asset, b] of assets as unknown as NetworkBalancesArray) {
@@ -216,6 +219,22 @@ export default function Assets() {
     };
 
     loadTotalBalances();
+  });
+
+  createEffect(() => {
+    const loadingNetworks = balanceContext?.loading;
+    const bal = balances();
+    if (!loadingNetworks) {
+      console.error('No loading networks found');
+      return;
+    }
+    if (bal && bal.length) {
+      setLoading(false);
+    } else {
+      setTimeout(() => {
+        setLoading(false);
+      }, 9000);
+    }
   });
 
   const renderLoadingAnimations = () => {
@@ -251,72 +270,71 @@ export default function Assets() {
             </tr>
           </thead>
           <tbody class="dark:text-saturn-offwhite text-saturn-black overflow-y-auto h-4/5">
-            <Switch fallback={!balanceContext?.loading.length && <div class="mt-3 ml-3"><LoaderAnimation text="Gathering info..." /></div>}>
-              <Match when={balances() && balances().length > 0}>
-                <For each={balances()}>{([network, assets]) => {
-                  return <Show when={assets.length}>
-                    <For each={assets as unknown as [string, BalanceType][]}>{([asset, b]) => {
-                      const totalLockAmount = !!b.locks && b.locks.length > 0 ? b.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
-                      return <tr class="border-b border-gray-200 dark:border-gray-800">
-                        {/* Asset */}
-                        <td class='py-3 px-4 text-left w-[20%]'>
-                          <span class="flex flex-row items-center gap-1">
+            <Show when={loading() && !balances()?.length}>
+              <div class="mt-3 ml-3 text-xs"><LoaderAnimation text="Gathering info..." /></div>
+            </Show>
+            <For each={balances()}>{([network, assets]) => {
+              return <Show when={assets.length}>
+                <For each={assets as unknown as [string, BalanceType][]}>{([asset, b]) => {
+                  const totalLockAmount = !!b.locks && b.locks.length > 0 ? b.locks.reduce((acc, lock) => acc + parseInt(lock.amount.toString()), 0).toString() : '0';
+                  return <tr class="border-b border-gray-200 dark:border-gray-800">
+                    {/* Asset */}
+                    <td class='py-3 px-4 text-left w-[20%]'>
+                      <span class="flex flex-row items-center gap-1">
+                        <span class='h-5 w-5 flex rounded-full bg-black'>
+                          <img src={getAssetIcon(asset, network as NetworkEnum, asset === AssetEnum.PHA)} class="p-1" alt={asset} />
+                        </span>
+                        <span>
+                          {asset}
+                        </span>
+                      </span>
+                    </td>
+
+                    {/* Transferable */}
+                    <td class='py-3 px-4 text-left w-[30%]'>
+                      <span class="flex flex-row items-baseline gap-1">
+                        <span>
+                          {formatTransferBalance(asset as AssetEnum | ExtraAssetEnum, b, network as NetworkEnum)}
+                        </span>
+                        <span class="text-[9px]">{asset}</span>
+                        <span class="text-saturn-lightgrey text-[8px]">
+                          {usdValues[`${ network }-${ asset }`]}
+                        </span>
+                      </span>
+                    </td>
+
+                    {/* Total */}
+                    <td class='py-3 px-4 text-left w-[30%]'>
+                      <span class="flex flex-row items-baseline gap-1">
+                        <span>
+                          {formatTotalBalance(b, network as NetworkEnum, totalLockAmount, asset as AssetEnum | ExtraAssetEnum)}
+                        </span>
+                        <span class="text-[9px]">{asset}</span>
+                        <span class="text-saturn-lightgrey text-[8px]">
+                          {totalValues[`${ network }-${ asset }`]}
+                        </span>
+                      </span>
+                    </td>
+
+                    {/* Chains */}
+                    <td>
+                      <span class="flex flex-row items-center gap-1">
+                        <For each={[getNetworkIconByAsset(asset, !Object.values(AssetEnum).includes(asset as AssetEnum) ? network as NetworkEnum : undefined)].flat().filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
+                          {icon =>
                             <span class='h-5 w-5 flex rounded-full bg-black'>
-                              <img src={getAssetIcon(asset, network as NetworkEnum, asset === AssetEnum.PHA)} class="p-1" alt={asset} />
+                              <img src={icon} class="p-1" alt="asset-icon" />
                             </span>
-                            <span>
-                              {asset}
-                            </span>
-                          </span>
-                        </td>
+                          }
+                        </For>
+                      </span>
+                    </td>
 
-                        {/* Transferable */}
-                        <td class='py-3 px-4 text-left w-[30%]'>
-                          <span class="flex flex-row items-baseline gap-1">
-                            <span>
-                              {formatTransferBalance(asset as AssetEnum | ExtraAssetEnum, b, network as NetworkEnum)}
-                            </span>
-                            <span class="text-[9px]">{asset}</span>
-                            <span class="text-saturn-lightgrey text-[8px]">
-                              {usdValues[`${ network }-${ asset }`]}
-                            </span>
-                          </span>
-                        </td>
-
-                        {/* Total */}
-                        <td class='py-3 px-4 text-left w-[30%]'>
-                          <span class="flex flex-row items-baseline gap-1">
-                            <span>
-                              {formatTotalBalance(b, network as NetworkEnum, totalLockAmount, asset as AssetEnum | ExtraAssetEnum)}
-                            </span>
-                            <span class="text-[9px]">{asset}</span>
-                            <span class="text-saturn-lightgrey text-[8px]">
-                              {totalValues[`${ network }-${ asset }`]}
-                            </span>
-                          </span>
-                        </td>
-
-                        {/* Chains */}
-                        <td>
-                          <span class="flex flex-row items-center gap-1">
-                            <For each={[getNetworkIconByAsset(asset, !Object.values(AssetEnum).includes(asset as AssetEnum) ? network as NetworkEnum : undefined)].flat().filter(icon => icon.toLowerCase().includes(network.toLowerCase()))}>
-                              {icon =>
-                                <span class='h-5 w-5 flex rounded-full bg-black'>
-                                  <img src={icon} class="p-1" alt="asset-icon" />
-                                </span>
-                              }
-                            </For>
-                          </span>
-                        </td>
-
-                      </tr>;
-                    }
-                    }</For>
-                  </Show>;
+                  </tr>;
                 }
                 }</For>
-              </Match>
-            </Switch>
+              </Show>;
+            }
+            }</For>
           </tbody>
         </table>
         {renderLoadingAnimations()}

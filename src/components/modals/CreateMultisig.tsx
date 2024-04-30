@@ -163,6 +163,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     createMultisig(true);
   };
 
+  const closeModal = () => {
+    removeModal();
+    abortUi();
+    toast.setToast('Multisig creation cancelled', 'info');
+  };
+
   const createMultisig = async (previewTxFee: boolean) => {
     if (accessibleSteps().length !== MULTISIG_CRUMB_TRAIL.length) return;
 
@@ -237,10 +243,6 @@ const CreateMultisig = (props: CreateMultisigProps) => {
               }
             }
           }, 1000);
-
-          removeModal();
-
-          abortUi();
         }
       }
     } catch (error) {
@@ -249,6 +251,8 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         toast.setToast('Failed to create multisig', 'error');
       }
     } finally {
+      removeModal();
+      abortUi();
       wallet.disconnect();
     }
   };
@@ -600,7 +604,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         toast.setToast('Add member operation cancelled', 'info');
         instance.hideAddMemberModal();
       } else {
-        toast.setToast('Create multisig operation cancelled', 'info');
+        // toast.setToast('Create multisig operation cancelled', 'info');
         instance.hideCreateMultisigModal();
       }
     }
@@ -1173,7 +1177,7 @@ const CreateMultisig = (props: CreateMultisigProps) => {
     <div id={multisigModalType()} tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 hidden mx-auto md:p-4 md:mb-10 z-[60] w-auto">
       <div id="multisigModalBackdrop" class="fixed inset-0 bg-black bg-opacity-50 backdrop-filter backdrop-blur-sm z-1 w-full" />
       <div class="absolute top-[10px] right-2.5 mb-8 z-[90]">
-        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={removeModal}>
+        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-purple-900 dark:hover:text-white" onClick={closeModal}>
           <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"></path>
           </svg>
@@ -1244,12 +1248,12 @@ const CreateMultisig = (props: CreateMultisigProps) => {
                     <div class="flex flex-row items-center justify-between mt-5 gap-3">
                       <button disabled={!enableCreateMultisig()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMultisig, false]}>
                         <span class="rounded-full border border-white px-2 py-[3px] mr-2">1</span>
-                        <span>Create Multisig (click to sign)</span>
+                        <span class="text-center leading-tight">Create Multisig<br />(click to sign)</span>
                       </button>
                       <Show when={members().length > 1}>
                         <button disabled={!enableCreateMembership()} type="button" class={`${ BUTTON_LARGE_SMALL_PAD_STYLE } gap-2 text-xxs`} onClick={[createMembership, false]}>
                           <span class="rounded-full border border-white px-2 py-[3px] mr-2">2</span>
-                          <span>Add Members (click to sign)</span>
+                          <span class="text-center leading-tight">Add Members<br />(click to sign)</span>
                         </button>
                       </Show>
                     </div>
