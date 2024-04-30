@@ -226,7 +226,9 @@ const CreateMultisig = (props: CreateMultisigProps) => {
 
       if (createMultisigResult) {
         setCreateMultiSigResult(createMultisigResult);
-        setEnableCreateMembership(true);
+        if (members().length > 1) {
+          setEnableCreateMembership(true);
+        }
         setEnableCreateMultisig(false);
 
         toast.setToast('Multisig successfully created', 'success');
@@ -251,8 +253,10 @@ const CreateMultisig = (props: CreateMultisigProps) => {
         toast.setToast('Failed to create multisig', 'error');
       }
     } finally {
-      removeModal();
-      abortUi();
+      if (!enableCreateMembership()) {
+        removeModal();
+        abortUi();
+      }
       wallet.disconnect();
     }
   };
