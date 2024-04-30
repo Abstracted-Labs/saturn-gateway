@@ -150,7 +150,6 @@ export default function Management() {
     if (e.target instanceof HTMLInputElement) {
       const value = e.target.value;
       setSearch(value);
-      console.log('searching for: ', search());
     }
   };
 
