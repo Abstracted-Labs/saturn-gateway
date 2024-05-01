@@ -63,7 +63,6 @@ const CopyAddressField = (props: CopyAddressFieldProps) => {
       return;
     };
 
-    console.log({ multisigId });
     const details = await saturn.getDetails(multisigId as number);
 
     if (!details) {
