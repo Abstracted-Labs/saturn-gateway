@@ -78,7 +78,7 @@ export function BalanceProvider(props: { children: JSX.Element; }) {
     const details = saturnContext.state.multisigDetails;
     if (!details?.relayAccount || !details?.evmAccount || !address) return;
     const evmAddress = u8aToHex(details?.evmAccount);
-    const relayAddress = encodeAddress(address, 2);
+    const relayAddress = encodeAddress(details?.relayAccount, 2);
 
     const loadBalances = async () => {
       if (address && evmAddress && relayAddress) {
