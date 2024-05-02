@@ -1,14 +1,14 @@
 import { Accessor, createEffect, createMemo, createSignal, Match, Show, Switch } from 'solid-js';
 import { FeeAsset, MultisigCallResult, XcmAssetRepresentation } from '@invarch/saturn-sdk';
 import type { Call, DispatchResult } from '@polkadot/types/interfaces';
-import { u8aToHex, BN } from "@polkadot/util";
+import { u8aToHex, BN, hexToU8a } from "@polkadot/util";
 import { BigNumber } from 'bignumber.js';
 import { useProposeContext, ProposalType, ProposeContextType, ProposalData } from "../../providers/proposeProvider";
 import { SaturnContextType, useSaturnContext } from "../../providers/saturnProvider";
 import { IRingsContext, useRingApisContext } from "../../providers/ringApisProvider";
 import { SelectedAccountState, useSelectedAccountContext } from "../../providers/selectedAccountProvider";
 import FormattedCall from '../legos/FormattedCall';
-import { ExtraAssetDecimalsEnum, AssetHubAssetIdEnum, AssetHubEnum, RingAssets, ExtraAssetEnum, AssetEnum } from "../../data/rings";
+import { ExtraAssetDecimalsEnum, AssetHubAssetIdEnum, AssetHubEnum, RingAssets, ExtraAssetEnum, AssetEnum, Rings } from "../../data/rings";
 import { formatAsset } from '../../utils/formatAsset';
 import { INPUT_COMMON_STYLE, KusamaFeeAssetEnum, NetworkEnum } from '../../utils/consts';
 import { MegaModalContextType, useMegaModal } from '../../providers/megaModalProvider';
@@ -16,6 +16,8 @@ import { ISubmittableResult } from '@kiltprotocol/sdk-js';
 import { ToastContextType, useToast } from '../../providers/toastProvider';
 import { getNetworkBlock } from '../../utils/getNetworkBlock';
 import { withTimeout } from '../../utils/withTimeout';
+import { AssetTransferApi, constructApiPromise } from '@substrate/asset-transfer-api';
+import { decodeAddress } from '@polkadot/util-crypto';
 
 export const PROPOSE_MODAL_ID = 'proposeModal';
 
@@ -336,6 +338,108 @@ export const proposeCall = async (props: IProposalProps) => {
       return;
     } else {
       const partialFeePreview = formatAsset(new BN(partialFee).toString(), RingAssets[asset as keyof typeof RingAssets].decimals, 6);
+      return partialFeePreview;
+    }
+  }
+
+  // XcmBridge teleport (Relay<>System)
+  if (
+    proposalType === ProposalType.XcmBridge &&
+    (proposalData as { chain: string; }).chain &&
+    (proposalData as { destinationChain: string; }).destinationChain &&
+    (
+      (proposalData as { chain: string; }).chain == NetworkEnum.KUSAMA ||
+      (proposalData as { chain: string; }).chain == NetworkEnum.ASSETHUB
+    ) &&
+    (
+      (proposalData as { destinationChain: string; }).destinationChain == NetworkEnum.KUSAMA ||
+      (proposalData as { destinationChain: string; }).destinationChain == NetworkEnum.ASSETHUB
+    ) &&
+    (proposalData as { chain: string; }).chain !== (proposalData as { destinationChain: string; }).destinationChain
+  ) {
+    console.log("in XcmBridge teleport");
+
+    const chain = (proposalData as { chain: string; }).chain;
+    const destinationChain = (proposalData as { destinationChain: string; }).destinationChain;
+    const amount = (proposalData as { amount: BN | BigNumber | string; }).amount;
+    const to = (proposalData as { to: string; }).to;
+    const asset = (proposalData as { asset: string; }).asset;
+
+    let xcmAsset: XcmAssetRepresentation | undefined = saturnContext.state.saturn.chains.find((c) => c.chain.toLowerCase() == chain)?.assets.find((a) => a.label == asset)?.registerType;
+    if (!xcmAsset) {
+      if (Object.values(ExtraAssetEnum).includes(asset as ExtraAssetEnum)) {
+        xcmAsset = {
+          [chain]: {
+            ['Local']: asset
+          }
+        };
+      } else if (Object.values(AssetEnum).includes(asset as AssetEnum)) {
+        xcmAsset = {
+          [chain]: {
+            ['Native']: asset
+          }
+        };
+      } else {
+        xcmAsset = {
+          ['assethub']: {
+            ['Local']: getAssetIdFromAssetHubEnum(asset)
+          }
+        };
+      }
+    }
+
+    if (!saturnContext.state.multisigAddress) return;
+
+    const wss = Rings[chain as keyof typeof Rings]?.websocket;
+
+    if (!wss) return;
+
+    const { api, specName, safeXcmVersion } = await constructApiPromise(wss);
+    const assetApi = new AssetTransferApi(api, specName, safeXcmVersion);
+
+    const teleportCall = await assetApi.createTransferTransaction(
+      destinationChain == NetworkEnum.ASSETHUB ? '1000' : '0',
+      to,
+      [asset],
+      [amount.toString()],
+      {
+        format: 'call',
+        xcmVersion: 3,
+      }
+    );
+
+    const call = api.createType('Call', hexToU8a(teleportCall.tx)) as unknown as Call;
+
+    const paymentInfo = await api.tx(call).paymentInfo(to);
+
+    const weight = { refTime: paymentInfo.weight.refTime, proofSize: paymentInfo.weight.proofSize };
+    const partialFee = paymentInfo.partialFee.mul(new BN(2));
+
+    const bridgeCall = saturnContext.state.saturn.buildMultisigCall({
+      id: saturnContext.state.multisigId,
+      proposalMetadata,
+      call: ringApisContext.state.tinkernet.tx.rings.sendCall(chain, weight, xcmAsset, partialFee, teleportCall.tx)
+    });
+
+    if (!preview) {
+      try {
+        await withTimeout(bridgeCall.signAndSend(selected.account.address, selected.wallet.signer, feeAsset()), 60000, 'Something went wrong and your request to submit an XCM bridge timed out.');
+
+        toast.setToast('XCM Bridge proposal submitted successfully', 'success');
+
+        saturnContext.submitProposal();
+      } catch (error) {
+        console.error('Error submitting proposal: ', error);
+        toast.setToast('Error submitting XCM Bridge proposal', 'error');
+      } finally {
+        modal.hideProposeModal();
+        selected.wallet.disconnect();
+      }
+
+      return;
+    } else {
+      const assetDecimals = RingAssets[asset as keyof typeof RingAssets]?.decimals ?? getAssetDecimals(asset);
+      const partialFeePreview = formatAsset(new BN(partialFee).toString(), assetDecimals, 6);
       return partialFeePreview;
     }
   }
