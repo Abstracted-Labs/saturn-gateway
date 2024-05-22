@@ -175,7 +175,7 @@ const MultisigList = (props: MultisigListProps) => {
     };
 
     const load = async () => {
-      let iden;
+      let iden: { display: { Raw: string; }; image: { Raw: string; }; } | null = null;
       const path = loc.pathname;
       const urlId = path.split('/')[1];
 
@@ -196,25 +196,43 @@ const MultisigList = (props: MultisigListProps) => {
 
         const address = multisigDetails?.parachainAccount.toHuman() as string;
 
-        iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
-          info: {
-            display: { Raw: string; };
-            image: { Raw: string; };
-          };
-        })?.info);
+        try {
+          iden = await api.query.identity.identityOf(address).then((i) => (i?.toHuman() as {
+            info: {
+              display: { Raw: string; };
+              image: { Raw: string; };
+            };
+          })?.info);
+        } catch (error) {
+          console.error("Failed to fetch identity details:", error);
+        }
 
         let name = `Omnisig ${ m }`;
         if (!!iden && iden?.display?.Raw) {
           name = iden.display.Raw;
         } else {
           try {
-            const metadata = multisigDetails && multisigDetails.metadata ? JSON.parse(hexToString(multisigDetails.metadata)) : null;
-            if (metadata) {
-              const parsedData = JSON.parse(metadata);
-              name = parsedData.name;
+            const rawMetadata = multisigDetails && multisigDetails.metadata ? hexToString(multisigDetails.metadata) : null;
+            let metadata;
+            if (rawMetadata) {
+              try {
+                // Attempt to parse the metadata as JSON
+                metadata = JSON.parse(rawMetadata);
+              } catch (parseError) {
+                // If parsing fails, treat it as a plain string
+                metadata = rawMetadata;
+              }
+
+              // Determine if metadata is an object with a name property
+              if (typeof metadata === 'object' && metadata.name) {
+                name = metadata.name;
+              } else if (typeof metadata === 'string') {
+                // If metadata is a plain string, use it as the name
+                name = metadata;
+              }
             }
           } catch (error) {
-            console.warn("Error parsing name from multisigDetails.metadata.name:", error);
+            console.warn("Error processing metadata for omnisig:", error);
           }
         }
 
@@ -224,7 +242,13 @@ const MultisigList = (props: MultisigListProps) => {
 
         const capitalizedFirstName = name ? capitalizeFirstName(name) : "";
 
-        const activeTransactions = (await sat.getPendingCalls(m)).length;
+        let activeTransactions = 0;
+        try {
+          const pendingCalls = await sat.getPendingCalls(m);
+          activeTransactions = pendingCalls.length;
+        } catch (error) {
+          console.log('No calls found for', name);
+        }
 
         return {
           id: m,
