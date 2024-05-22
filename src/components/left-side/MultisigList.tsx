@@ -218,6 +218,10 @@ const MultisigList = (props: MultisigListProps) => {
               try {
                 // Attempt to parse the metadata as JSON
                 metadata = JSON.parse(rawMetadata);
+                // If the parsed metadata is a string, parse it again
+                if (typeof metadata === 'string') {
+                  metadata = JSON.parse(metadata);
+                }
               } catch (parseError) {
                 // If parsing fails, treat it as a plain string
                 metadata = rawMetadata;
