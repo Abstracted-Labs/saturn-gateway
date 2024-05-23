@@ -425,7 +425,7 @@ export default function Transactions() {
                       <div class="text-xs text-saturn-lightgrey mb-1">Proposal description:</div>
                       <p class="rounded-md p-3 border-2 border-gray-800 text-sm">{parsedMetadata}</p>
                     </div>}
-                    <div class="flex flex-row">
+                    <div class="flex flex-col md:flex-row">
                       {/* Call data */}
                       <div class="max-h-[300px] w-full my-2 grow">
                         <FormattedCall hash={pc.callHash.toString()} call={processCallData(pc.details.actualCall as unknown as Call, ringApisContext)} multisigId={getMultisigId()} />
@@ -439,7 +439,7 @@ export default function Transactions() {
                         </div>
 
                         {/* Votes history */}
-                        <div class='relative items-center flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-60 h-32 overflow-y-scroll saturn-scrollbar p-2'>
+                        <div class='relative items-center flex-col shrink border border-px rounded-md border-gray-100 dark:border-gray-800 my-2 ml-2 px-2 w-auto md:w-60 h-32 overflow-y-scroll saturn-scrollbar p-2'>
                           <For each={Object.entries(pc.details.tally.records)}>
                             {([voter, vote]: [string, ParsedTallyRecordsVote]) => {
                               const voteCount = new BN(vote.aye?.toString() || vote.nay?.toString() || '0').div(new BN('1000000')).toString();
